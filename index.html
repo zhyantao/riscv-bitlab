@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>字节转换工具</title>
+    <style>
+      :root {
+        --card-bg: #fff;
+        --border: #e2e2e2;
+        --accent: #4caf50;
+        --danger: #c62828;
+        --text: #333;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: -apple-system, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f0f2f5;
+        color: var(--text);
+      }
+      h1 { font-size: 22px; margin: 8px 0 4px; }
+      .subtitle { color: #666; font-size: 13px; margin: 0 0 16px; line-height: 1.7; }
+      .control-panel {
+        background: var(--card-bg);
+        padding: 20px 24px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+      .section { margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid #eee; }
+      .section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+      h2 { font-size: 14px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+      .step-badge {
+        background: var(--accent);
+        color: #fff;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        flex-shrink: 0;
+      }
+      .input-row { display: flex; align-items: end; gap: 12px; }
+      .input-field { flex: 1; min-width: 0; }
+      label { display: block; font-size: 13px; margin-bottom: 6px; }
+      input, select {
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--text);
+        font-size: 14px;
+        min-height: 42px;
+      }
+      input { width: 100%; font-family: "SF Mono", Menlo, monospace; }
+      input[aria-invalid="true"] { border-color: var(--danger); }
+      :focus-visible { outline: 2px solid #287d2c; outline-offset: 3px; }
+      .tip { font-size: 12px; color: #666; margin: 8px 0 0; line-height: 1.7; }
+      .error { color: var(--danger); font-size: 13px; margin: 8px 0 0; }
+      .examples { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+      button {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 7px 12px;
+        background: #fafafa;
+        color: var(--text);
+        cursor: pointer;
+        font-size: 12px;
+      }
+      button:hover { background: #edf7ee; border-color: var(--accent); }
+      #clear-btn { margin-left: auto; color: var(--danger); }
+      table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
+      th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+      th { background: #f6f8fa; font-weight: 600; line-height: 1.6; }
+      th:first-child { width: 15%; }
+      td { font-family: "SF Mono", Menlo, "Courier New", monospace; overflow-wrap: anywhere; line-height: 1.7; }
+      td:first-child { font-family: inherit; color: #666; }
+      tbody tr:last-child td { border-bottom: none; }
+      .unit { display: block; color: #287d2c; font-size: 12px; }
+      @media (max-width: 540px) {
+        body { padding: 12px; }
+        .control-panel { padding: 16px 12px; }
+        .input-row { flex-direction: column; align-items: stretch; }
+        select { width: 100%; }
+        th, td { padding: 10px 6px; }
+        th:first-child { width: 18%; }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>字节转换工具</h1>
+    <p class="subtitle">十六进制 / 十进制输入 · 实时换算 · 本地计算，无需联网</p>
+
+    <main class="control-panel">
+      <section class="section">
+        <h2><span class="step-badge">1</span> 输入数字</h2>
+        <div class="input-row">
+          <div class="input-field">
+            <label for="number-input">字节数</label>
+            <input id="number-input" type="text" value="0x40000000" placeholder="例如 0x40000000 或 1073741824"
+              autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="4096"
+              aria-describedby="input-tip input-error" aria-invalid="false" />
+          </div>
+          <div>
+            <label for="input-base">输入进制</label>
+            <select id="input-base">
+              <option value="auto">自动识别</option>
+              <option value="10">十进制（DEC）</option>
+              <option value="16">十六进制（HEX）</option>
+            </select>
+          </div>
+        </div>
+        <p class="tip" id="input-tip" aria-live="polite"></p>
+        <p class="error" id="input-error" role="alert" hidden></p>
+        <div class="examples" aria-label="输入示例">
+          <button type="button" data-example="0x100000">0x100000 · 1 MiB</button>
+          <button type="button" data-example="1073741824">1073741824 · 1 GiB</button>
+          <button type="button" data-example="0x10000000000">0x10000000000 · 1 TiB</button>
+          <button type="button" id="clear-btn">清空</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2><span class="step-badge">2</span> 单位换算</h2>
+        <table aria-label="字节单位换算结果">
+          <thead>
+            <tr><th scope="col">量级</th><th scope="col">十进制单位<br />每级 1000 字节倍数</th><th scope="col">二进制单位<br />每级 1024 字节倍数</th></tr>
+          </thead>
+          <tbody id="results"></tbody>
+        </table>
+        <p class="tip">1 B = 1 字节；1 MB = 1,000,000 B，1 MiB = 1,048,576 B。内存容量常用 1024 进制，标准单位为 KiB / MiB / GiB / TiB。</p>
+        <p class="tip">使用 BigInt 精确计算，完整显示有限小数，不进行浮点近似或四舍五入。</p>
+      </section>
+    </main>
+
+    <script>
+      const input = document.getElementById("number-input");
+      const baseSelect = document.getElementById("input-base");
+      const error = document.getElementById("input-error");
+      const inputTip = document.getElementById("input-tip");
+      const inputTips = {
+        auto: "自动识别：0x 前缀或含 A–F 的整数按十六进制，其余按十进制。纯数字十六进制请加 0x 或选择 HEX。",
+        "10": "十进制：仅使用数字 0–9，例如 1073741824。不支持 0x 前缀、小数或分隔符。",
+        "16": "十六进制：使用数字 0–9 和字母 A–F，不区分大小写，0x 前缀可省略。例如 FF 或 0xFF；纯数字 10 表示十进制的 16。",
+      };
+      const units = [
+        ["字节", "B", "B"],
+        ["千字节", "KB", "KiB"],
+        ["兆字节", "MB", "MiB"],
+        ["吉字节", "GB", "GiB"],
+        ["太字节", "TB", "TiB"],
+      ];
+      const resultCells = units.map(([label, decimalUnit, binaryUnit]) => {
+        const row = document.createElement("tr");
+        const name = document.createElement("td");
+        name.textContent = label;
+        row.appendChild(name);
+        const cells = [decimalUnit, binaryUnit].map((unit) => {
+          const cell = document.createElement("td");
+          const value = document.createElement("span");
+          const suffix = document.createElement("span");
+          suffix.className = "unit";
+          suffix.textContent = unit;
+          cell.append(value, suffix);
+          row.appendChild(cell);
+          return value;
+        });
+        document.getElementById("results").appendChild(row);
+        return cells;
+      });
+
+      function parseBytes(raw, mode) {
+        const text = raw.trim();
+        if (!text) return null;
+        if (raw.length > 4096) throw new Error("输入不能超过 4096 个字符。");
+        const base = mode === "auto"
+          ? (/^0x/i.test(text) || /[a-f]/i.test(text) ? "16" : "10")
+          : mode;
+        if (base === "16") {
+          if (!/^(?:0x)?[0-9a-f]+$/i.test(text)) {
+            throw new Error("请输入有效的十六进制非负整数，例如 0xFF 或 FF。");
+          }
+          return BigInt("0x" + text.replace(/^0x/i, ""));
+        }
+        if (!/^[0-9]+$/.test(text)) {
+          throw new Error("请输入有效的十进制非负整数，不支持小数、负数或分隔符。");
+        }
+        return BigInt(text);
+      }
+
+      function formatRatio(bytes, divisor) {
+        const integer = bytes / divisor;
+        let remainder = bytes % divisor;
+        let fraction = "";
+        // 1000 和 1024 的幂仅包含因子 2、5，因此小数展开一定终止。
+        while (remainder !== 0n) {
+          remainder *= 10n;
+          fraction += (remainder / divisor).toString();
+          remainder %= divisor;
+        }
+        return integer.toString() + (fraction ? "." + fraction : "");
+      }
+
+      function updateResults() {
+        inputTip.textContent = inputTips[baseSelect.value] + "仅接受非负整数，最多 4096 个字符。";
+        let bytes = null;
+        error.textContent = "";
+        error.hidden = true;
+        input.setAttribute("aria-invalid", "false");
+        try {
+          bytes = parseBytes(input.value, baseSelect.value);
+        } catch (failure) {
+          error.textContent = failure.message;
+          error.hidden = false;
+          input.setAttribute("aria-invalid", "true");
+        }
+        resultCells.forEach((cells, index) => {
+          cells.forEach((cell, column) => {
+            const divisor = (column === 0 ? 1000n : 1024n) ** BigInt(index);
+            cell.textContent = bytes === null ? "—" : formatRatio(bytes, divisor);
+          });
+        });
+      }
+
+      input.addEventListener("input", updateResults);
+      baseSelect.addEventListener("change", updateResults);
+      document.querySelectorAll("[data-example]").forEach((button) => {
+        button.addEventListener("click", () => {
+          input.value = button.dataset.example;
+          baseSelect.value = "auto";
+          updateResults();
+        });
+      });
+      document.getElementById("clear-btn").addEventListener("click", () => {
+        input.value = "";
+        updateResults();
+        input.focus();
+      });
+      updateResults();
+    </script>
+  </body>
+</html>
