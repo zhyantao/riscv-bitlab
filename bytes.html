@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RISC-V 位域速查</title>
+<style>
+  :root { --bg:#f6f7f9; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; background:var(--bg); color:var(--fg); }
+  header { padding:16px 24px; background:#111827; color:white; display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
+  h1 { font-size:18px; margin:0; }
+  nav { display:flex; flex-wrap:wrap; gap:8px; }
+  nav a { color:#d1d5db; text-decoration:none; padding:6px 10px; border-radius:6px; font-size:14px; }
+  nav a[aria-current], nav a:hover { background:#374151; color:white; }
+  main { max-width:1200px; margin:auto; padding:20px; }
+  .card { background:white; border:1px solid var(--line); border-radius:8px; padding:20px; margin-bottom:20px; }
+  h2 { margin:0 0 12px; font-size:20px; }
+  h3 { font-size:16px; margin:0 0 12px; }
+  .section { margin-top:20px; padding-top:20px; border-top:1px solid var(--line); }
+  .desc, .tip { color:var(--muted); font-size:13px; line-height:1.7; }
+  .input-row { display:flex; align-items:end; gap:12px; }
+  .input-field { flex:1; min-width:0; }
+  label { display:block; font-size:14px; margin-bottom:6px; }
+  input, button { padding:9px 12px; border:1px solid var(--line); border-radius:6px; background:white; color:var(--fg); font:inherit; }
+  input { width:100%; font-family:ui-monospace,monospace; }
+  input[aria-invalid="true"] { border-color:#b91c1c; }
+  button { cursor:pointer; font-size:13px; }
+  button:hover { background:#eff6ff; border-color:var(--accent); }
+  #clear-btn { flex-shrink:0; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .error { color:#b91c1c; font-size:13px; line-height:1.7; }
+  .bit-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px 12px; }
+  .bit-byte { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:3px; }
+  .bit-cell { min-width:0; text-align:center; }
+  .bit-index { display:block; margin-bottom:5px; font-size:11px; color:var(--muted); }
+  .bit-button { width:100%; padding:9px 0; border-radius:4px; font:14px ui-monospace,monospace; }
+  .bit-button[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:white; }
+  .bit-button:disabled { cursor:not-allowed; opacity:0.5; }
+  table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:13px; }
+  th, td { text-align:left; padding:12px 10px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.7; }
+  th { background:#f9fafb; }
+  th:first-child { width:15%; }
+  td { font-family:ui-monospace,monospace; overflow-wrap:anywhere; }
+  td:first-child { font-family:inherit; color:var(--muted); }
+  .unit { display:block; color:var(--accent); font-size:12px; }
+  @media (max-width:600px) {
+    header { padding:16px; } main { padding:12px; } .card { padding:14px; }
+    .bit-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    th, td { padding:10px 6px; } th:first-child { width:18%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>RISC-V 位域速查</h1>
+  <nav aria-label="页面导航">
+    <a href="index.html">寄存器位域</a>
+    <a href="instructions.html">指令编码</a>
+    <a href="traps.html">异常与中断</a>
+    <a href="translation.html">地址翻译</a>
+    <a href="bytes.html" aria-current="page">字节换算</a>
+  </nav>
+</header>
+<main>
+  <section class="card" aria-label="字节换算">
+    <section aria-labelledby="binary-title">
+      <h3 id="binary-title">64 位二进制表示</h3>
+      <div id="bit-grid" class="bit-grid" role="group" aria-labelledby="binary-title" aria-describedby="bit-tip"></div>
+      <p class="tip" id="bit-tip"></p>
+    </section>
+    <section class="section" aria-labelledby="input-title">
+      <h3 id="input-title">输入数字</h3>
+      <div class="input-row">
+        <div class="input-field">
+          <label for="number-input">字节数</label>
+          <input id="number-input" type="text" value="0x40000000" placeholder="例如 0x40000000 或 1073741824"
+            autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="4096"
+            aria-describedby="input-tip input-error" aria-invalid="false">
+        </div>
+        <button type="button" id="clear-btn">清空</button>
+      </div>
+      <p class="tip" id="input-tip">自动识别：0x 前缀或含 A–F 的整数按十六进制，纯数字按十进制。纯数字十六进制请加 0x。仅接受非负整数，最多 4096 个字符。不支持科学计数法；例如 1e3 会按十六进制解析为 483。</p>
+      <p class="error" id="input-error" role="alert" hidden></p>
+    </section>
+    <section class="section" aria-labelledby="units-title">
+      <h3 id="units-title">单位换算</h3>
+      <table aria-label="字节单位换算结果">
+        <thead><tr><th scope="col">量级</th><th scope="col">十进制单位<br>每级 1000 字节倍数</th><th scope="col">二进制单位<br>每级 1024 字节倍数</th></tr></thead>
+        <tbody id="results"></tbody>
+      </table>
+      <p class="tip">1 B = 1 字节；1 MB = 1,000,000 B，1 MiB = 1,048,576 B。内存容量常用 1024 进制，标准单位为 KiB / MiB / GiB / TiB。</p>
+      <p class="tip">使用 BigInt 精确计算，完整显示有限小数，不进行浮点近似或四舍五入。大于 64 位的值仍参与完整换算，位图仅显示低 64 位；翻转时保留高位。</p>
+    </section>
+  </section>
+</main>
+<script>
+const input = document.getElementById('number-input');
+const error = document.getElementById('input-error');
+const bitGrid = document.getElementById('bit-grid');
+const bitTip = document.getElementById('bit-tip');
+let currentBytes = 0n;
+const bitButtons = [];
+for (let byte = 7; byte >= 0; byte--) {
+  const group = document.createElement('div'); group.className = 'bit-byte';
+  for (let offset = 7; offset >= 0; offset--) {
+    const bit = byte * 8 + offset;
+    const cell = document.createElement('div'); cell.className = 'bit-cell';
+    const index = document.createElement('span'); index.className = 'bit-index'; index.textContent = bit.toString();
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'bit-button';
+    button.addEventListener('click', () => {
+      if (currentBytes === null) return;
+      const value = currentBytes ^ (1n << BigInt(bit));
+      const hexadecimal = /^0x/i.test(input.value.trim()) || /[a-f]/i.test(input.value);
+      input.value = hexadecimal ? '0x' + value.toString(16).toUpperCase() : value.toString();
+      updateResults();
+    });
+    bitButtons.push({button, bit}); cell.append(index, button); group.appendChild(cell);
+  }
+  bitGrid.appendChild(group);
+}
+const units = [['字节','B','B'], ['千字节','KB','KiB'], ['兆字节','MB','MiB'], ['吉字节','GB','GiB'], ['太字节','TB','TiB']];
+const resultCells = units.map(([label, decimalUnit, binaryUnit]) => {
+  const row = document.createElement('tr');
+  const name = document.createElement('td'); name.textContent = label; row.appendChild(name);
+  const cells = [decimalUnit, binaryUnit].map(unit => {
+    const cell = document.createElement('td');
+    const value = document.createElement('span');
+    const suffix = document.createElement('span'); suffix.className = 'unit'; suffix.textContent = unit;
+    cell.append(value, suffix); row.appendChild(cell); return value;
+  });
+  document.getElementById('results').appendChild(row); return cells;
+});
+function parseBytes(raw) {
+  const text = raw.trim();
+  if (raw.length > 4096) throw new Error('输入不能超过 4096 个字符。');
+  if (!text) return null;
+  if (/^0x/i.test(text) || /[a-f]/i.test(text)) {
+    if (!/^(?:0x)?[0-9a-f]+$/i.test(text)) throw new Error('请输入有效的十六进制非负整数，例如 0xFF 或 FF。');
+    return BigInt('0x' + text.replace(/^0x/i, ''));
+  }
+  if (!/^[0-9]+$/.test(text)) throw new Error('请输入有效的十进制非负整数，不支持小数、负数或分隔符。');
+  return BigInt(text);
+}
+function formatRatio(bytes, divisor) {
+  const integer = bytes / divisor;
+  let remainder = bytes % divisor;
+  let fraction = '';
+  // 1000 和 1024 的幂仅含因子 2、5，因此小数展开一定终止。
+  while (remainder !== 0n) {
+    remainder *= 10n; fraction += (remainder / divisor).toString(); remainder %= divisor;
+  }
+  return integer.toString() + (fraction ? '.' + fraction : '');
+}
+function updateResults() {
+  let bytes = null;
+  error.textContent = ''; error.hidden = true; input.setAttribute('aria-invalid', 'false');
+  try { bytes = parseBytes(input.value); }
+  catch (failure) { error.textContent = failure.message; error.hidden = false; input.setAttribute('aria-invalid', 'true'); }
+  currentBytes = error.hidden ? (bytes ?? 0n) : null;
+  bitButtons.forEach(({button, bit}) => {
+    const enabled = currentBytes !== null;
+    const isSet = enabled && (currentBytes & (1n << BigInt(bit))) !== 0n;
+    button.disabled = !enabled; button.textContent = enabled ? (isSet ? '1' : '0') : '—';
+    button.setAttribute('aria-pressed', String(isSet));
+    button.setAttribute('aria-label', `第 ${bit} 位：${enabled ? (isSet ? '1' : '0') : '不可用'}，点击翻转`);
+  });
+  bitTip.hidden = currentBytes === null || currentBytes < (1n << 64n);
+  bitTip.textContent = bitTip.hidden ? '' : '当前数值超过 64 位，仅显示低 64 位，翻转时保留高位。';
+  resultCells.forEach((cells, index) => cells.forEach((cell, column) => {
+    const divisor = (column === 0 ? 1000n : 1024n) ** BigInt(index);
+    cell.textContent = bytes === null ? '—' : formatRatio(bytes, divisor);
+  }));
+}
+input.addEventListener('input', updateResults);
+document.getElementById('clear-btn').addEventListener('click', () => { input.value = ''; updateResults(); input.focus(); });
+updateResults();
+</script>
+</body>
+</html>
