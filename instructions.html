@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RISC-V 位域速查</title>
+<style>
+  :root { --bg:#f6f7f9; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; background:var(--bg); color:var(--fg); }
+  header { padding:16px 24px; background:#111827; color:white; display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
+  h1 { font-size:18px; margin:0; }
+  nav { display:flex; flex-wrap:wrap; gap:8px; }
+  nav a { color:#d1d5db; text-decoration:none; padding:6px 10px; border-radius:6px; font-size:14px; }
+  nav a[aria-current], nav a:hover { background:#374151; color:white; }
+  main { max-width:1200px; margin:auto; padding:20px; }
+  .intro, .card { background:white; border:1px solid var(--line); border-radius:8px; padding:20px; margin-bottom:20px; }
+  .intro p { margin:0 0 12px; line-height:1.7; color:var(--muted); font-size:14px; }
+  .controls { display:flex; gap:12px; flex-wrap:wrap; align-items:center; font-size:14px; }
+  select { padding:7px 12px; border:1px solid var(--line); border-radius:6px; background:white; color:var(--fg); font:inherit; }
+  .legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; font-size:12px; }
+  .legend span { padding:4px 10px; border-radius:4px; }
+  h2 { margin:0; font-size:20px; }
+  .heading { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+  .tag { font-size:12px; color:#3730a3; background:#e0e7ff; border-radius:10px; padding:3px 8px; }
+  .desc { color:var(--muted); font-size:14px; line-height:1.6; }
+  .scroll { overflow-x:auto; padding:4px 2px 8px; }
+  .bit-labels, .bit-row { display:grid; grid-template-columns:repeat(32,minmax(0,1fr)); min-width:1024px; }
+  .bit-labels span { font:11px ui-monospace,monospace; text-align:center; color:var(--muted); padding:5px 0; }
+  .field { min-width:0; min-height:102px; padding:12px 4px; border:1px solid #9ca3af; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; position:relative; }
+  .field-name { font:600 13px/1.4 ui-monospace,monospace; white-space:nowrap; flex-shrink:0; }
+  .field small { font-size:11px; color:#4b5563; }
+  .field.narrow .field-name { writing-mode:vertical-rl; font-size:12px; }
+  .field.narrow small { display:none; }
+  .opcode { background:#dbeafe; }
+  .function { background:#ede9fe; }
+  .destination { background:#dcfce7; }
+  .source { background:#fef3c7; }
+  .immediate { background:#fce7f3; }
+  .field.active { outline:2px solid var(--accent); outline-offset:-2px; z-index:1; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:10px; }
+  th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); line-height:1.5; }
+  th { background:#f9fafb; }
+  tr.active { background:#eff6ff; }
+  code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; background:#f3f4f6; padding:2px 5px; border-radius:4px; overflow-wrap:anywhere; }
+  .notes { background:#f8fafc; border-left:3px solid var(--accent); padding:12px 14px; margin-top:16px; font-size:13px; line-height:1.8; }
+  .notes p { margin:4px 0; }
+  .example { font-size:13px; line-height:1.9; margin-bottom:0; }
+  a:focus-visible, select:focus-visible, .field:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }
+  .codec-controls { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:12px 0; }
+  .codec-form { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0; }
+  .codec-form label { min-width:6em; font-size:14px; }
+  .codec-input { flex:1; min-width:180px; font:14px ui-monospace,monospace; padding:9px; border:1px solid #9ca3af; border-radius:6px; }
+  .codec-button { padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; background:#f8fafc; color:var(--fg); cursor:pointer; }
+  .codec-error { min-height:1.6em; color:#b91c1c; font-size:13px; line-height:1.6; }
+  .codec-summary { font-size:14px; line-height:1.9; overflow-wrap:anywhere; }
+  .codec-bits { display:grid; grid-template-columns:repeat(32,minmax(0,1fr)); min-width:1024px; }
+  .codec-bit { border:1px solid #d6dae1; background:#f8fafc; padding:6px 0; font:13px ui-monospace,monospace; cursor:pointer; }
+  .codec-bit[aria-pressed="true"] { background:#2563eb; color:white; }
+  .codec-field-input { width:15ch; padding:6px; border:1px solid #9ca3af; border-radius:4px; font:13px ui-monospace,monospace; }
+  .codec-field-value { font:12px ui-monospace,monospace; max-width:100%; overflow-wrap:anywhere; }
+  .field.narrow .codec-field-value { writing-mode:vertical-rl; white-space:nowrap; }
+  .codec-input[aria-invalid="true"], .codec-field-input[aria-invalid="true"] { border-color:#b91c1c; }
+  .codec-field-error { display:block; color:#b91c1c; font-size:12px; }
+  input:focus-visible, button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  @media (max-width:600px) { header { padding:16px; } main { padding:12px; } .card, .intro { padding:14px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>RISC-V 位域速查</h1>
+  <nav aria-label="页面导航">
+    <a href="index.html">寄存器位域</a>
+    <a href="instructions.html" aria-current="page">指令编码</a>
+    <a href="traps.html">异常与中断</a>
+    <a href="translation.html">地址翻译</a>
+    <a href="bytes.html">字节换算</a>
+  </nav>
+</header>
+<main>
+  <section class="card" aria-labelledby="codec-title">
+    <h2 id="codec-title">汇编 / 反汇编</h2>
+    <p class="desc">单条指令、32 位机器码与位域双向联动，按 RISC-V ISA 编码规则进行汇编和反汇编。</p>
+    <div class="codec-controls">
+      <label for="codec-xlen">架构</label>
+      <select id="codec-xlen"><option value="64">RV64</option><option value="32">RV32</option></select>
+      <span>I 基础指令</span>
+      <label><input type="checkbox" id="codec-m" checked> M</label>
+      <label><input type="checkbox" id="codec-csr" checked> Zicsr</label>
+      <label><input type="checkbox" id="codec-fence" checked> Zifencei</label>
+    </div>
+    <form id="codec-asm-form" class="codec-form">
+      <label for="codec-asm">汇编文本</label>
+      <input id="codec-asm" class="codec-input" value="add x1, x2, x3" maxlength="256" spellcheck="false" aria-describedby="codec-help codec-error">
+      <button type="submit" class="codec-button">汇编</button>
+    </form>
+    <form id="codec-word-form" class="codec-form">
+      <label for="codec-word">机器码</label>
+      <input id="codec-word" class="codec-input" value="0x003100b3" maxlength="66" spellcheck="false" aria-describedby="codec-help codec-error">
+      <button type="submit" class="codec-button">反汇编</button>
+    </form>
+    <div id="codec-error" class="codec-error" role="status"></div>
+    <p id="codec-help" class="desc">输入即转换；机器码为 0x 十六进制、0b 二进制或无前缀十进制，不是字节串。支持 x0–x31 和 ABI 别名。分支 / JAL 操作数为相对当前 PC 的字节偏移，不接受标签或绝对目标地址；2 字节步长可编码，但实际跳转仍受 IALIGN 约束。仅单条指令，不支持多行程序、重定位及 C/A/F/D/V 等扩展。伪指令反解为规范指令。</p>
+    <details><summary>当前支持的指令与语法</summary><p id="codec-supported" class="desc"></p><p class="desc">伪指令：nop、mv、not、neg、negw（RV64）、j、jr、ret、beqz、bnez、csrr、csrw、csrwi、csrsi、csrci。li 仅支持 −2048 … 2047，不展开为多条指令。fence 仅支持 fm=0 的规范编码，fence.i 仅支持保留字段为 0 的规范编码。CSR 名称可用 mstatus、satp 等常见名称，其他地址请写 0x000 … 0xfff；这里只验证编码，不验证访问权限或 CSR 是否实现。</p></details>
+    <div id="codec-result">
+      <p id="codec-summary" class="codec-summary"></p>
+      <p id="codec-bytes" class="desc"></p>
+      <p class="desc">位号下方的 0/1 可点击翻转；表格字段为原始无符号编码，按 Enter 或移开焦点提交。修改固定字段可能变成其他指令或无法识别的编码。</p>
+      <div id="codec-diagram" class="scroll"></div>
+      <div class="scroll"><table><thead><tr><th>位</th><th>字段</th><th>原始值（可编辑）</th><th>说明</th></tr></thead><tbody id="codec-fields"></tbody></table></div>
+    </div>
+  </section>
+  <section class="intro" aria-label="指令编码说明">
+    <p>展示 R、I、S、B、U、J 六种常见格式。以下均为 <strong>32 位指令编码</strong>，适用于 RV32 / RV64 基础整数指令；XLEN 不改变这些格式的指令长度。不包含 16 位压缩指令与扩展专用格式。</p>
+    <div class="controls">
+      <label for="format">指令格式</label>
+      <select id="format">
+        <option value="all">全部格式</option>
+        <option value="R">R-type · 寄存器运算</option>
+        <option value="I">I-type · 立即数 / 加载</option>
+        <option value="S">S-type · 存储</option>
+        <option value="B">B-type · 条件分支</option>
+        <option value="U">U-type · 高位立即数</option>
+        <option value="J">J-type · 无条件跳转</option>
+      </select>
+    </div>
+    <div class="legend" aria-label="位域颜色图例">
+      <span class="opcode">opcode · 操作码</span>
+      <span class="function">funct · 功能码</span>
+      <span class="destination">rd · 目标寄存器</span>
+      <span class="source">rs1 / rs2 · 源寄存器</span>
+      <span class="immediate">imm · 立即数</span>
+    </div>
+    <p style="margin:12px 0 0">位序从左侧 bit 31 到右侧 bit 0；imm[n] 表示重组后立即数的第 n 位，并非指令位号。悬停或用 Tab 聚焦位域可联动说明表；窄屏可横向滚动位域图。</p>
+  </section>
+  <div id="formats"></div>
+  <noscript>请启用 JavaScript 以显示指令位域图与字段说明。</noscript>
+</main>
+<script>
+const opcode = ['opcode', 6, 0, 'opcode', '7 位主操作码，用于区分指令大类。'];
+const rd = ['rd', 11, 7, 'destination', '目标整数寄存器编号，5 位编码对应 x0–x31。'];
+const rs1 = ['rs1', 19, 15, 'source', '第一源整数寄存器编号；加载 / 存储时通常为基址寄存器。'];
+const rs2 = ['rs2', 24, 20, 'source', '第二源整数寄存器编号；存储时提供待写入的数据。'];
+const funct3 = ['funct3', 14, 12, 'function', '3 位功能码，与 opcode 等字段共同确定操作。'];
+const FORMATS = [
+  {
+    id:'R', kind:'寄存器运算', instructions:'ADD / SUB / AND / OR / SLL',
+    desc:'使用两个源寄存器，将结果写入 rd。典型形式：op rd, rs1, rs2。',
+    fields:[['funct7',31,25,'function','7 位功能码。例如 ADD 为 0000000，SUB 为 0100000。'],rs2,rs1,funct3,rd,opcode],
+    formula:'无立即数；由 opcode + funct3 + funct7 区分具体操作。',
+    note:'例如 ADD 和 SUB 的 opcode 均为 0110011、funct3 均为 000，通过 funct7 区分。',
+    example:'add x1, x2, x3', word:0x003100b3,
+    values:['0000000','00011','00010','000','00001','0110011']
+  },
+  {
+    id:'I', kind:'立即数运算 / 加载 / JALR', instructions:'ADDI / ANDI / LW / JALR',
+    desc:'一个源寄存器和一个连续的 12 位立即数，结果写入 rd。典型形式：op rd, rs1, imm。',
+    fields:[['imm[11:0]',31,20,'immediate','12 位立即数，普通算术、加载和 JALR 使用符号扩展。'],rs1,funct3,rd,opcode],
+    formula:'imm = sext(inst[31:20])；有符号范围 −2048 … 2047。',
+    note:'加载地址为 rs1 + imm；JALR 目标为 (rs1 + imm) & ~1。移位立即数指令在该区域编码 shamt 与功能位，并非普通 12 位有符号立即数；CSR 指令也复用此布局，但高 12 位是 CSR 地址。',
+    example:'addi x1, x2, -1', word:0xfff10093,
+    values:['111111111111','00010','000','00001','0010011']
+  },
+  {
+    id:'S', kind:'存储', instructions:'SB / SH / SW / SD（RV64）',
+    desc:'将 rs2 的数据写入 rs1 + 偏移指定的内存位置，不包含 rd。立即数被拆成高 7 位与低 5 位。',
+    fields:[['imm[11:5]',31,25,'immediate','存储偏移的高 7 位，inst[31] 为符号位。'],rs2,rs1,funct3,['imm[4:0]',11,7,'immediate','存储偏移的低 5 位，占用 R / I 格式中 rd 的位置。'],opcode],
+    formula:'imm = sext({inst[31:25], inst[11:7]})；范围 −2048 … 2047 字节。',
+    note:'有效地址 = x[rs1] + imm；funct3 决定存储宽度，例如 SW 为 010。',
+    example:'sw x3, 12(x2)', word:0x00312623,
+    values:['0000000','00011','00010','010','01100','0100011']
+  },
+  {
+    id:'B', kind:'条件分支', instructions:'BEQ / BNE / BLT / BGE / BLTU / BGEU',
+    desc:'比较 rs1 与 rs2，条件成立时跳转到当前指令 PC + 偏移。立即数分散在四个区域，最低位隐含为 0。',
+    fields:[['imm[12]',31,31,'immediate','分支偏移的符号位。'],['imm[10:5]',30,25,'immediate','偏移的第 10 到 5 位。'],rs2,rs1,funct3,['imm[4:1]',11,8,'immediate','偏移的第 4 到 1 位。'],['imm[11]',7,7,'immediate','偏移的第 11 位，注意它不与 imm[12] 相邻。'],opcode],
+    formula:'offset = sext({inst[31], inst[7], inst[30:25], inst[11:8], 0})。',
+    note:'13 位有符号字节偏移，范围 −4096 … +4094，步长 2 字节。目标基于当前 PC，而非 PC + 4。仅支持 IALIGN=32 时，实际跳转目标仍须 4 字节对齐。',
+    example:'beq x1, x2, +16', word:0x00208863,
+    values:['0','000000','00010','00001','000','1000','0','1100011']
+  },
+  {
+    id:'U', kind:'高位立即数', instructions:'LUI / AUIPC',
+    desc:'指令高 20 位携带立即数，构造结果时低 12 位补 0。只包含 rd，无源寄存器字段。',
+    fields:[['imm[31:12]',31,12,'immediate','立即数高 20 位，低 12 位不编码、固定补 0。'],rd,opcode],
+    formula:'imm32 = {inst[31:12], 12 个 0}；RV64 将该 32 位值符号扩展到 XLEN。',
+    note:'LUI 将构造值写入 rd；AUIPC 将构造值加到当前 PC 后写入 rd。汇编操作数写的是高 20 位，例如 0x12345 构造 0x12345000。',
+    example:'lui x1, 0x12345', word:0x123450b7,
+    values:['00010010001101000101','00001','0110111']
+  },
+  {
+    id:'J', kind:'无条件跳转', instructions:'JAL',
+    desc:'跳转到当前 PC + 偏移，并将返回地址 PC + 4 写入 rd。立即数分散排列，最低位隐含为 0。',
+    fields:[['imm[20]',31,31,'immediate','跳转偏移的符号位。'],['imm[10:1]',30,21,'immediate','偏移的第 10 到 1 位。'],['imm[11]',20,20,'immediate','偏移的第 11 位。'],['imm[19:12]',19,12,'immediate','偏移的第 19 到 12 位。'],rd,opcode],
+    formula:'offset = sext({inst[31], inst[19:12], inst[20], inst[30:21], 0})。',
+    note:'21 位有符号字节偏移，范围 −1048576 … +1048574，步长 2 字节。rd = x0 时丢弃返回地址（伪指令 j）。JALR 属于 I-type，不属于 J-type；IALIGN=32 时目标须 4 字节对齐。',
+    example:'jal x1, +32', word:0x020000ef,
+    values:['0','0000010000','0','00000000','00001','1101111']
+  }
+];
+
+const container = document.getElementById('formats');
+const select = document.getElementById('format');
+function element(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+function render() {
+  container.replaceChildren();
+  const measure = document.createElement('canvas').getContext('2d');
+  measure.font = '600 13px ui-monospace,monospace';
+  FORMATS.filter(format => select.value === 'all' || select.value === format.id).forEach(format => {
+    const card = element('section', 'card');
+    card.id = format.id + '-type';
+    const heading = element('div', 'heading');
+    heading.append(element('h2', '', format.id + '-type'), element('span', 'tag', format.kind));
+    card.append(heading, element('p', 'desc', format.desc), element('p', 'desc', '常见指令：' + format.instructions));
+    const scroll = element('div', 'scroll');
+    const labels = element('div', 'bit-labels');
+    labels.setAttribute('aria-hidden', 'true');
+    for (let bit = 31; bit >= 0; bit--) labels.append(element('span', '', bit));
+    const diagram = element('div', 'bit-row');
+    const table = element('table');
+    const head = element('thead');
+    const header = element('tr');
+    ['指令位', '字段', '宽度', '说明'].forEach(text => {
+      const th = element('th', '', text);
+      th.scope = 'col';
+      header.append(th);
+    });
+    head.append(header);
+    const body = element('tbody');
+    format.fields.forEach(([name, hi, lo, color, description]) => {
+      const width = hi - lo + 1;
+      const range = hi === lo ? String(hi) : hi + ':' + lo;
+      const narrow = measure.measureText(name).width > width * 32 - 10;
+      const field = element('div', 'field ' + color + (narrow ? ' narrow' : ''));
+      field.style.gridColumn = 'span ' + width;
+      field.tabIndex = 0;
+      field.setAttribute('aria-label', name + '，指令位 ' + range + '。' + description);
+      field.title = name + ' [' + range + '] ' + description;
+      field.append(element('span', 'field-name', name), element('small', '', width + ' 位'));
+      const row = element('tr');
+      [range, name, width + ' 位', description].forEach(text => row.append(element('td', '', text)));
+      let hovered = false;
+      let focused = false;
+      const highlight = () => [field, row].forEach(node => node.classList.toggle('active', hovered || focused));
+      [field, row].forEach(node => {
+        node.addEventListener('mouseenter', () => { hovered = true; highlight(); });
+        node.addEventListener('mouseleave', () => { hovered = false; highlight(); });
+      });
+      field.addEventListener('focus', () => { focused = true; highlight(); });
+      field.addEventListener('blur', () => { focused = false; highlight(); });
+      diagram.append(field);
+      body.append(row);
+    });
+    scroll.append(labels, diagram);
+    table.append(head, body);
+    const notes = element('div', 'notes');
+    notes.append(element('p', '', format.formula), element('p', '', format.note));
+    const example = element('p', 'example');
+    example.append(element('strong', '', '编码示例：'), element('code', '', format.example),
+      document.createTextNode(' → '), element('code', '', '0x' + format.word.toString(16).padStart(8, '0')),
+      element('br'), document.createTextNode('按上图字段从左到右：'), element('code', '', format.values.join(' | ')));
+    card.append(scroll, table, notes, example);
+    container.append(card);
+  });
+}
+select.addEventListener('change', render);
+render();
+</script>
+<script src="riscv-codec.js"></script>
+<script>
+const codecAsm = document.getElementById('codec-asm');
+const codecWordInput = document.getElementById('codec-word');
+const codecError = document.getElementById('codec-error');
+const codecResult = document.getElementById('codec-result');
+let codecWord = 0x003100b3n;
+let codecSource = 'assembly';
+let codecRenderVersion = 0;
+function codecOptions() {
+  const extensions = ['I'];
+  for (const [id, name] of [['codec-m','M'], ['codec-csr','Zicsr'], ['codec-fence','Zifencei']]) {
+    if (document.getElementById(id).checked) extensions.push(name);
+  }
+  return { xlen:Number(document.getElementById('codec-xlen').value), extensions };
+}
+function codecHex(value) { return '0x' + value.toString(16).padStart(8, '0'); }
+function renderCodecWord(decoded) {
+  const renderVersion = ++codecRenderVersion;
+  codecResult.hidden = false;
+  document.getElementById('codec-summary').textContent = decoded
+    ? decoded.assembly + ' · ' + decoded.extension + ' · ' + decoded.format + '-type · 匹配掩码=' + codecHex(decoded.mask) + ' / 固定值=' + codecHex(decoded.match)
+    : '当前机器码未被所选架构 / 扩展的编解码器识别。下方仅显示原始位段，不代表已判定指令类型或架构非法。';
+  const bytes = Array.from({length:4}, (_, i) => ((codecWord >> BigInt(i * 8)) & 255n).toString(16).padStart(2, '0'));
+  document.getElementById('codec-bytes').textContent = codecHex(codecWord) + ' · 小端字节（低地址 → 高地址）：' + bytes.join(' ');
+  const diagram = document.getElementById('codec-diagram');
+  const body = document.getElementById('codec-fields');
+  diagram.replaceChildren(); body.replaceChildren();
+  const labels = element('div', 'bit-labels');
+  labels.setAttribute('aria-hidden', 'true');
+  const bits = element('div', 'codec-bits');
+  for (let bit = 31; bit >= 0; bit--) {
+    labels.append(element('span', '', bit));
+    const value = (codecWord >> BigInt(bit)) & 1n;
+    const button = element('button', 'codec-bit', value.toString());
+    button.type = 'button'; button.id = 'codec-bit-' + bit;
+    button.setAttribute('aria-pressed', String(value === 1n));
+    button.setAttribute('aria-label', '第 ' + bit + ' 位 = ' + value + '，点击翻转');
+    button.addEventListener('click', () => {
+      codecSource = 'word'; codecWord ^= 1n << BigInt(bit);
+      codecWordInput.value = codecHex(codecWord); updateCodec('word');
+      document.getElementById('codec-bit-' + bit).focus();
+    });
+    bits.append(button);
+  }
+  const row = element('div', 'bit-row');
+  const fields = decoded ? decoded.fields : [[31,25],[24,20],[19,15],[14,12],[11,7],[6,0]].map(([hi,lo]) => ({name:'bits['+hi+':'+lo+']', hi, lo, value:(codecWord >> BigInt(lo)) & ((1n << BigInt(hi-lo+1))-1n), category:'function', description:'原始位段；尚未识别指令。'}));
+  const measure = document.createElement('canvas').getContext('2d');
+  measure.font = '600 13px ui-monospace,monospace';
+  fields.forEach(field => {
+    const width = field.hi - field.lo + 1;
+    const narrow = measure.measureText(field.name).width > width * 32 - 10;
+    const box = element('div', 'field ' + field.category + (narrow ? ' narrow' : ''));
+    box.style.gridColumn = 'span ' + width;
+    box.append(element('span', 'field-name', field.name), element('small', '', width + ' 位'), element('span', 'codec-field-value', '0x' + field.value.toString(16)));
+    const tr = element('tr');
+    tr.append(element('td', '', field.hi === field.lo ? field.hi : field.hi + ':' + field.lo), element('td', '', field.name));
+    const td = element('td');
+    const editor = element('input', 'codec-field-input');
+    editor.type = 'text'; editor.spellcheck = false; editor.maxLength = 66;
+    editor.value = '0x' + field.value.toString(16);
+    editor.setAttribute('aria-label', field.name + ' 原始无符号编码');
+    const error = element('span', 'codec-field-error'); error.setAttribute('aria-live', 'polite');
+    const apply = () => {
+      // 移除聚焦的输入框可能在重绘过程中触发 change，旧编辑框不得再次提交。
+      if (renderVersion !== codecRenderVersion) return;
+      try {
+        const next = RISCVCodec.parseWord(editor.value);
+        const mask = (1n << BigInt(width)) - 1n;
+        if (next > mask) throw new Error('字段超出 ' + width + ' 位范围。');
+        codecWord = (codecWord & ~(mask << BigInt(field.lo))) | (next << BigInt(field.lo));
+        codecWordInput.value = codecHex(codecWord); updateCodec('word');
+      } catch (e) { error.textContent = e.message; editor.setAttribute('aria-invalid', 'true'); }
+    };
+    editor.addEventListener('change', apply);
+    editor.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); apply(); } });
+    td.append(editor, error); tr.append(td, element('td', '', field.description));
+    box.tabIndex = 0;
+    box.setAttribute('aria-label', field.name + '，值 ' + field.value + '。' + field.description);
+    for (const node of [box, tr]) {
+      node.addEventListener('mouseenter', () => { box.classList.add('active'); tr.classList.add('active'); });
+      node.addEventListener('mouseleave', () => { box.classList.remove('active'); tr.classList.remove('active'); });
+    }
+    box.addEventListener('focus', () => tr.classList.add('active'));
+    box.addEventListener('blur', () => tr.classList.remove('active'));
+    row.append(box); body.append(tr);
+  });
+  diagram.append(labels, bits, row);
+}
+function updateCodec(source) {
+  codecSource = source;
+  codecError.textContent = '';
+  codecAsm.setAttribute('aria-invalid', 'false'); codecWordInput.setAttribute('aria-invalid', 'false');
+  const options = codecOptions();
+  if (source === 'assembly') {
+    try {
+      const decoded = RISCVCodec.assemble(codecAsm.value, options);
+      codecWord = decoded.word; codecWordInput.value = codecHex(codecWord);
+      renderCodecWord(decoded);
+    } catch (error) {
+      codecError.textContent = error.message; codecAsm.setAttribute('aria-invalid', 'true');
+      codecWordInput.value = ''; codecResult.hidden = true;
+    }
+  } else {
+    try { codecWord = RISCVCodec.parseWord(codecWordInput.value); }
+    catch (error) {
+      codecError.textContent = error.message; codecWordInput.setAttribute('aria-invalid', 'true');
+      codecAsm.value = ''; codecResult.hidden = true; return;
+    }
+    try {
+      const decoded = RISCVCodec.decode(codecWord, options);
+      codecAsm.value = decoded.assembly; renderCodecWord(decoded);
+    } catch (error) {
+      codecAsm.value = ''; codecError.textContent = error.message;
+      renderCodecWord(null);
+    }
+  }
+}
+function updateCodecOptions() {
+  document.getElementById('codec-supported').textContent = RISCVCodec.definitions(codecOptions()).map(definition => definition.syntax).join('；');
+  updateCodec(codecSource);
+}
+document.getElementById('codec-asm-form').addEventListener('submit', event => { event.preventDefault(); updateCodec('assembly'); });
+document.getElementById('codec-word-form').addEventListener('submit', event => { event.preventDefault(); updateCodec('word'); });
+codecAsm.addEventListener('input', () => updateCodec('assembly'));
+codecWordInput.addEventListener('input', () => updateCodec('word'));
+for (const id of ['codec-xlen','codec-m','codec-csr','codec-fence']) document.getElementById(id).addEventListener('change', updateCodecOptions);
+updateCodecOptions();
+</script>
+</body>
+</html>
