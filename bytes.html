@@ -169,9 +169,11 @@ function updateResults() {
   bitButtons.forEach(({button, bit}) => {
     const enabled = currentBytes !== null;
     const isSet = enabled && (currentBytes & (1n << BigInt(bit))) !== 0n;
+    const weight = 1n << BigInt(bit);
     button.disabled = !enabled; button.textContent = enabled ? (isSet ? '1' : '0') : '—';
+    button.title = `第 ${bit} 位 · 权重 2^${bit} = 0x${weight.toString(16).toUpperCase()} = ${weight.toString()}`;
     button.setAttribute('aria-pressed', String(isSet));
-    button.setAttribute('aria-label', `第 ${bit} 位：${enabled ? (isSet ? '1' : '0') : '不可用'}，点击翻转`);
+    button.setAttribute('aria-label', `第 ${bit} 位：${enabled ? (isSet ? '1' : '0') : '不可用'}，权重 2^${bit}，点击翻转`);
   });
   bitTip.hidden = currentBytes === null || currentBytes < (1n << 64n);
   bitTip.textContent = bitTip.hidden ? '' : '当前数值超过 64 位，仅显示低 64 位，翻转时保留高位。';

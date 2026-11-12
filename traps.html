@@ -282,6 +282,10 @@ function renderRegisterCards(result) {
         labels.append(element('span', '', String(bit)));
         const toggle = element('button', 'bit-value');
         toggle.type = 'button';
+        const bf = def.fields.find(f => bit >= f.lo && bit <= f.hi);
+        toggle.title = bf
+          ? def.id + ' bit ' + bit + ' · ' + bf.name + ' [' + bf.hi + (bf.hi !== bf.lo ? ':' + bf.lo : '') + ']：' + bf.desc
+          : def.id + ' bit ' + bit + ' · 保留 / 未定义位';
         const on = (def.value >> BigInt(bit)) & 1n;
         toggle.textContent = on ? '1' : '0';
         toggle.setAttribute('aria-pressed', String(on === 1n));

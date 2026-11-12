@@ -503,6 +503,10 @@ function render() {
         labels.appendChild(label);
         const toggle = document.createElement('button'); toggle.className = 'bit-value';
         toggle.type = 'button';
+        const bc = cells.find(c => bit >= c.lo && bit <= c.hi);
+        toggle.title = bc && !bc.gap && !bc.f[5]
+          ? `${reg.name} bit ${bit} · ${bc.f[0]} [${bc.hi}${bc.hi !== bc.lo ? ':' + bc.lo : ''}]：${bc.f[3]}`
+          : `${reg.name} bit ${bit} · 保留 / 未定义位`;
         toggle.addEventListener('click', () => { value ^= 1n << BigInt(bit); refresh(); });
         bindings.push(() => {
           const on = readField(value, bit, bit) === 1n;

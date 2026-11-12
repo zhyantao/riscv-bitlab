@@ -181,17 +181,20 @@ function decodeVA(text, modeName) {
     if (high !== expected) {
       throw new Error(mode.name + ' 非 canonical VA：VA[63:' + mode.vaBits + '] 必须全部等于 bit ' + signBit + '（当前为 ' + sign + '）。请输入完整的 64 位无符号符号扩展地址；不会自动修正。');
     }
-    fields.push({ name:'符号扩展', hi:63, lo:mode.vaBits, value:high, color:'extension' });
+    fields.push({ name:'符号扩展', hi:63, lo:mode.vaBits, value:high, color:'extension',
+      desc:'Canonical 高位：必须全部等于 bit ' + signBit + '，不参与地址翻译。' });
   }
   const vpn = [];
   for (let level = mode.levels - 1; level >= 0; level--) {
     const lo = 12 + level * mode.vpnBits;
     const value = (va >> BigInt(lo)) & mask(mode.vpnBits);
     vpn[level] = value;
-    fields.push({ name:'VPN[' + level + ']', hi:lo + mode.vpnBits - 1, lo, value, color:level % 2 ? 'vpn-odd' : 'vpn-even' });
+    fields.push({ name:'VPN[' + level + ']', hi:lo + mode.vpnBits - 1, lo, value, color:level % 2 ? 'vpn-odd' : 'vpn-even',
+      desc:'第 ' + level + ' 级页表索引（' + mode.vpnBits + ' 位），用于索引第 ' + level + ' 级页表。' });
   }
   const offset = va & mask(12);
-  fields.push({ name:'offset', hi:11, lo:0, value:offset, color:'offset' });
+  fields.push({ name:'offset', hi:11, lo:0, value:offset, color:'offset',
+    desc:'页内偏移（12 位），直接复制到物理地址低 12 位，不经过翻译。' });
   return { mode, va, vpn, offset, fields };
 }
 
@@ -243,6 +246,8 @@ function renderBreakdown(decoded) {
     const binary = field.value.toString(2).padStart(width, '0');
     const box = element('div', 'field ' + field.color);
     box.style.gridColumn = 'span ' + width;
+    box.title = field.name + ' [' + range + ']：' + field.desc;
+    box.setAttribute('aria-label', box.title);
     box.append(element('span', 'field-name', field.name), element('code', '', hex(field.value)));
     diagram.append(box);
     const row = element('tr');

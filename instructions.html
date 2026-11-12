@@ -307,6 +307,7 @@ function renderCodecWord(decoded) {
   const labels = element('div', 'bit-labels');
   labels.setAttribute('aria-hidden', 'true');
   const bits = element('div', 'codec-bits');
+  const fields = decoded ? decoded.fields : [[31,25],[24,20],[19,15],[14,12],[11,7],[6,0]].map(([hi,lo]) => ({name:'bits['+hi+':'+lo+']', hi, lo, value:(codecWord >> BigInt(lo)) & ((1n << BigInt(hi-lo+1))-1n), category:'function', description:'原始位段；尚未识别指令。'}));
   for (let bit = 31; bit >= 0; bit--) {
     labels.append(element('span', '', bit));
     const value = (codecWord >> BigInt(bit)) & 1n;
@@ -314,6 +315,10 @@ function renderCodecWord(decoded) {
     button.type = 'button'; button.id = 'codec-bit-' + bit;
     button.setAttribute('aria-pressed', String(value === 1n));
     button.setAttribute('aria-label', '第 ' + bit + ' 位 = ' + value + '，点击翻转');
+    const bf = fields.find(f => bit >= f.lo && bit <= f.hi);
+    button.title = bf
+      ? '第 ' + bit + ' 位 · ' + bf.name + '：' + bf.description
+      : '第 ' + bit + ' 位 · 保留 / 未定义位';
     button.addEventListener('click', () => {
       codecSource = 'word'; codecWord ^= 1n << BigInt(bit);
       codecWordInput.value = codecHex(codecWord); updateCodec('word');
@@ -322,7 +327,6 @@ function renderCodecWord(decoded) {
     bits.append(button);
   }
   const row = element('div', 'bit-row');
-  const fields = decoded ? decoded.fields : [[31,25],[24,20],[19,15],[14,12],[11,7],[6,0]].map(([hi,lo]) => ({name:'bits['+hi+':'+lo+']', hi, lo, value:(codecWord >> BigInt(lo)) & ((1n << BigInt(hi-lo+1))-1n), category:'function', description:'原始位段；尚未识别指令。'}));
   const measure = document.createElement('canvas').getContext('2d');
   measure.font = '600 13px ui-monospace,monospace';
   fields.forEach(field => {
@@ -354,6 +358,7 @@ function renderCodecWord(decoded) {
     editor.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); apply(); } });
     td.append(editor, error); tr.append(td, element('td', '', field.description));
     box.tabIndex = 0;
+    box.title = field.name + ' [' + (field.hi === field.lo ? field.hi : field.hi + ':' + field.lo) + ']：' + field.description;
     box.setAttribute('aria-label', field.name + '，值 ' + field.value + '。' + field.description);
     for (const node of [box, tr]) {
       node.addEventListener('mouseenter', () => { box.classList.add('active'); tr.classList.add('active'); });
