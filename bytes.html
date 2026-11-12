@@ -3,17 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RISC-V 位域速查</title>
+<title>RISC-V 速查工具箱</title>
 <style>
   :root { --bg:#f6f7f9; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
   body { margin:0; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; background:var(--bg); color:var(--fg); }
-  header { padding:16px 24px; background:#111827; color:white; display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
-  h1 { font-size:18px; margin:0; }
-  nav { display:flex; flex-wrap:wrap; gap:8px; }
-  nav a { color:#d1d5db; text-decoration:none; padding:6px 10px; border-radius:6px; font-size:14px; }
-  nav a[aria-current], nav a:hover { background:#374151; color:white; }
+  header { position:sticky; top:0; z-index:100; padding:10px max(24px, calc((100% - 1160px) / 2)); background:#111827; color:white; display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,0.25); }
+  h1 { font-size:17px; margin:0; font-weight:700; display:flex; align-items:center; gap:8px; }
+  h1::before { content:''; width:10px; height:10px; border-radius:3px; background:linear-gradient(135deg,#2563eb,#7c3aed); flex-shrink:0; }
+  nav { display:flex; flex-wrap:wrap; gap:4px; margin-right:auto; }
+  nav a { color:#9ca3af; text-decoration:none; padding:5px 12px; border-radius:999px; font-size:14px; transition:background .15s, color .15s; }
+  nav a:hover { color:white; background:rgba(255,255,255,0.1); }
+  nav a[aria-current] { background:var(--accent); color:white; }
   main { max-width:1200px; margin:auto; padding:20px; }
   .card { background:white; border:1px solid var(--line); border-radius:8px; padding:20px; margin-bottom:20px; }
   h2 { margin:0 0 12px; font-size:20px; }
@@ -34,27 +36,28 @@
   .bit-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px 12px; }
   .bit-byte { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:3px; }
   .bit-cell { min-width:0; text-align:center; }
-  .bit-index { display:block; margin-bottom:5px; font-size:11px; color:var(--muted); }
-  .bit-button { width:100%; padding:9px 0; border-radius:4px; font:14px ui-monospace,monospace; }
+  .bit-index { display:block; margin-bottom:3px; font-size:11px; color:var(--muted); }
+  .bit-button { width:100%; padding:5px 0; border-radius:4px; font:14px ui-monospace,monospace; }
   .bit-button[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:white; }
   .bit-button:disabled { cursor:not-allowed; opacity:0.5; }
   table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:13px; }
-  th, td { text-align:left; padding:12px 10px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.7; }
-  th { background:#f9fafb; }
-  th:first-child { width:15%; }
+  th, td { text-align:left; padding:12px 10px; border-bottom:1px solid var(--line); vertical-align:middle; line-height:1.7; }
+  th { background:#f3f4f6; color:#4b5563; font-weight:600; border-bottom:2px solid #d1d5db; }
+  th:first-child { width:26%; }
   td { font-family:ui-monospace,monospace; overflow-wrap:anywhere; }
   td:first-child { font-family:inherit; color:var(--muted); }
-  .unit { display:block; color:var(--accent); font-size:12px; }
+  .unit-value { display:inline-block; min-width:22ch; text-align:right; }
+  .unit { display:inline-block; width:3ch; text-align:left; margin-left:6px; color:var(--accent); font-size:12px; }
   @media (max-width:600px) {
-    header { padding:16px; } main { padding:12px; } .card { padding:14px; }
+    header { padding-left:16px; padding-right:16px; } main { padding:12px; } .card { padding:14px; }
     .bit-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-    th, td { padding:10px 6px; } th:first-child { width:18%; }
+    th, td { padding:10px 6px; } th:first-child { width:26%; }
   }
 </style>
 </head>
 <body>
 <header>
-  <h1>RISC-V 位域速查</h1>
+  <h1>RISC-V 速查工具箱</h1>
   <nav aria-label="页面导航">
     <a href="index.html">寄存器位域</a>
     <a href="instructions.html">指令编码</a>
@@ -65,17 +68,15 @@
 </header>
 <main>
   <section class="card" aria-label="字节换算">
-    <section aria-labelledby="binary-title">
-      <h3 id="binary-title">64 位二进制表示</h3>
-      <div id="bit-grid" class="bit-grid" role="group" aria-labelledby="binary-title" aria-describedby="bit-tip"></div>
+    <section aria-label="64 位二进制表示">
+      <div id="bit-grid" class="bit-grid" role="group" aria-label="64 位二进制表示" aria-describedby="bit-tip"></div>
       <p class="tip" id="bit-tip"></p>
     </section>
     <section class="section" aria-labelledby="input-title">
       <h3 id="input-title">输入数字</h3>
       <div class="input-row">
         <div class="input-field">
-          <label for="number-input">字节数</label>
-          <input id="number-input" type="text" value="0x40000000" placeholder="例如 0x40000000 或 1073741824"
+          <input id="number-input" type="text" aria-label="字节数" value="0x40000000" placeholder="例如 0x40000000 或 1073741824"
             autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="4096"
             aria-describedby="input-tip input-error" aria-invalid="false">
         </div>
@@ -87,11 +88,11 @@
     <section class="section" aria-labelledby="units-title">
       <h3 id="units-title">单位换算</h3>
       <table aria-label="字节单位换算结果">
-        <thead><tr><th scope="col">量级</th><th scope="col">十进制单位<br>每级 1000 字节倍数</th><th scope="col">二进制单位<br>每级 1024 字节倍数</th></tr></thead>
+        <thead><tr><th scope="col">量级</th><th scope="col">十进制单位（每级 1000 字节倍数）</th><th scope="col">二进制单位（每级 1024 字节倍数）</th></tr></thead>
         <tbody id="results"></tbody>
       </table>
       <p class="tip">1 B = 1 字节；1 MB = 1,000,000 B，1 MiB = 1,048,576 B。内存容量常用 1024 进制，标准单位为 KiB / MiB / GiB / TiB。</p>
-      <p class="tip">使用 BigInt 精确计算，完整显示有限小数，不进行浮点近似或四舍五入。大于 64 位的值仍参与完整换算，位图仅显示低 64 位；翻转时保留高位。</p>
+      <p class="tip">使用 BigInt 精确计算，不经过浮点数；小数最多保留 4 位（四舍五入），整除时不显示小数部分。</p>
     </section>
   </section>
 </main>
@@ -126,7 +127,7 @@ const resultCells = units.map(([label, decimalUnit, binaryUnit]) => {
   const name = document.createElement('td'); name.textContent = label; row.appendChild(name);
   const cells = [decimalUnit, binaryUnit].map(unit => {
     const cell = document.createElement('td');
-    const value = document.createElement('span');
+    const value = document.createElement('span'); value.className = 'unit-value';
     const suffix = document.createElement('span'); suffix.className = 'unit'; suffix.textContent = unit;
     cell.append(value, suffix); row.appendChild(cell); return value;
   });
@@ -146,11 +147,17 @@ function parseBytes(raw) {
 function formatRatio(bytes, divisor) {
   const integer = bytes / divisor;
   let remainder = bytes % divisor;
-  let fraction = '';
-  // 1000 和 1024 的幂仅含因子 2、5，因此小数展开一定终止。
-  while (remainder !== 0n) {
-    remainder *= 10n; fraction += (remainder / divisor).toString(); remainder %= divisor;
+  if (remainder === 0n) return integer.toString();
+  // 取 5 位小数用于四舍五入到 4 位
+  let digits = '';
+  for (let i = 0; i < 5; i++) {
+    remainder *= 10n;
+    digits += (remainder / divisor).toString();
+    remainder %= divisor;
   }
+  const rounded = (BigInt(digits) + 5n) / 10n;
+  if (rounded === 10000n) return (integer + 1n).toString();
+  const fraction = rounded.toString().padStart(4, '0').replace(/0+$/, '');
   return integer.toString() + (fraction ? '.' + fraction : '');
 }
 function updateResults() {

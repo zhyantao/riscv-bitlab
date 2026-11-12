@@ -3,66 +3,70 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RISC-V 位域速查</title>
+<title>RISC-V 速查工具箱</title>
 <style>
   :root { --bg:#f6f7f9; --card:#fff; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
   * { box-sizing: border-box; }
   body { margin:0; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; background:var(--bg); color:var(--fg); }
-  header { padding:16px 24px; background:#111827; color:#fff; display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
-  header h1 { font-size:18px; margin:0; }
-  nav { display:flex; flex-wrap:wrap; gap:8px; }
-  nav a { color:#d1d5db; text-decoration:none; padding:6px 10px; border-radius:6px; font-size:14px; }
-  nav a[aria-current], nav a:hover { background:#374151; color:#fff; }
+  header { position:sticky; top:0; z-index:100; padding:10px max(24px, calc((100% - 1160px) / 2)); background:#111827; color:#fff; display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,0.25); }
+  header h1 { font-size:17px; margin:0; font-weight:700; display:flex; align-items:center; gap:8px; }
+  header h1::before { content:''; width:10px; height:10px; border-radius:3px; background:linear-gradient(135deg,#2563eb,#7c3aed); flex-shrink:0; }
+  nav { display:flex; flex-wrap:wrap; gap:4px; margin-right:auto; }
+  nav a { color:#9ca3af; text-decoration:none; padding:5px 12px; border-radius:999px; font-size:14px; transition:background .15s, color .15s; }
+  nav a:hover { color:#fff; background:rgba(255,255,255,0.1); }
+  nav a[aria-current] { background:var(--accent); color:#fff; }
   nav a:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }
-  header select, header input { padding:6px 10px; border-radius:6px; border:1px solid #374151; background:#1f2937; color:#fff; font-size:14px; }
+  header select { padding:6px 10px; border-radius:6px; border:1px solid #374151; background:#1f2937; color:#fff; font-size:14px; }
+  header select { -webkit-appearance:none; appearance:none; padding-right:28px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239ca3af' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 9px center; }
   main { max-width:1200px; margin:0 auto; padding:20px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:20px; }
   .card h2 { margin:0 0 4px; font-size:18px; }
   .desc { color:var(--muted); font-size:13px; margin-bottom:12px; }
   .bits-wrap { overflow-x:auto; padding:4px 2px 8px; }
   .bit-labels, .row { display:grid; grid-template-columns:repeat(var(--bits),minmax(0,1fr)); min-width:calc(var(--bits) * 32px); }
-  .bit-labels span { font:11px ui-monospace,monospace; text-align:center; color:var(--muted); padding:5px 0; }
-  .row { margin-bottom:12px; }
-  .cell { min-width:0; min-height:102px; padding:12px 4px; border:1px solid #9ca3af; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; position:relative; }
+  .bit-labels span { font:11px ui-monospace,monospace; text-align:center; color:var(--muted); padding:3px 0; }
+  .row { margin-bottom:10px; }
+  .cell { min-width:0; min-height:68px; padding:8px 4px; border:1px solid #9ca3af; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; position:relative; }
   .cell-label { font:600 13px/1.4 ui-monospace,monospace; white-space:nowrap; flex-shrink:0; }
-  .cell small { font-size:11px; color:#4b5563; }
   .cell.narrow .cell-label { writing-mode:vertical-rl; font-size:12px; }
-  .cell.narrow small { display:none; }
   .cell.rsv { background:repeating-linear-gradient(45deg,#f3f4f6,#f3f4f6 4px,#e5e7eb 4px,#e5e7eb 8px); color:var(--muted); }
   .cell.hover, .cell:hover { outline:2px solid var(--accent); outline-offset:-2px; z-index:1; }
   .c0 { background:#dbeafe; } .c1 { background:#dcfce7; } .c2 { background:#fef3c7; } .c3 { background:#fce7f3; } .c4 { background:#ede9fe; }
   table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
-  th, td { border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
-  th { background:#f9fafb; }
+  th, td { border-bottom:1px solid var(--line); padding:4px 8px; text-align:left; vertical-align:middle; }
+  th { background:#f3f4f6; color:#4b5563; font-weight:600; border-bottom:2px solid #d1d5db; }
   tr.hover { background:#eff6ff; }
   code { background:#f3f4f6; padding:1px 4px; border-radius:3px; font-size:12px; }
   .tag { font-size:11px; padding:1px 6px; border-radius:10px; background:#e0e7ff; color:#3730a3; }
   .hidden { display:none; }
   .value-panel { background:#f8fafc; border:1px solid var(--line); border-radius:6px; padding:12px; margin:12px 0; }
   .value-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-  .value-input, .field-input { font:14px ui-monospace,monospace; padding:7px 8px; border:1px solid #9ca3af; border-radius:4px; max-width:100%; }
+  .value-input, .field-input { font:13px ui-monospace,monospace; padding:4px 8px; border:1px solid #9ca3af; border-radius:4px; max-width:100%; }
   .value-input { width:25ch; }
   .field-input { width:20ch; }
-  .value-error { color:#b91c1c; font-size:12px; min-height:1.4em; margin-top:4px; }
+  .value-error { color:#b91c1c; font-size:12px; margin-top:2px; }
+  .value-error:empty { display:none; }
+  .value-divider { width:1px; align-self:stretch; background:var(--line); }
+  .search-input { flex:1 1 220px; min-width:180px; font:13px ui-monospace,monospace; padding:5px 10px 5px 28px; border:1px solid #d1d5db; border-radius:6px; background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E") no-repeat left 9px center; }
   input[aria-invalid="true"] { border-color:#b91c1c; }
-  .value-help { color:var(--muted); font-size:12px; line-height:1.6; margin:8px 0 0; }
   .binary-value { display:block; overflow-wrap:anywhere; font:12px/1.8 ui-monospace,monospace; margin-top:8px; }
   .bit-values { display:grid; grid-template-columns:repeat(var(--bits),minmax(0,1fr)); min-width:calc(var(--bits) * 32px); }
-  .bit-value { border:1px solid #d6dae1; background:#f8fafc; color:#6b7280; padding:6px 0; font:13px ui-monospace,monospace; cursor:pointer; }
+  .bit-value { border:1px solid #d6dae1; background:#f8fafc; color:#6b7280; padding:4px 0; font:13px ui-monospace,monospace; cursor:pointer; }
   .bit-value[aria-pressed="true"] { background:#2563eb; color:#fff; }
   .cell[role="button"] { cursor:pointer; }
   .cell.nonzero { box-shadow:inset 0 -3px #2563eb; }
   .cell-value { font:600 12px ui-monospace,monospace; overflow-wrap:anywhere; max-width:100%; text-align:center; }
   .cell.narrow .cell-value { writing-mode:vertical-rl; white-space:nowrap; }
-  .field-meaning { display:block; color:#3730a3; font-size:12px; margin-top:4px; }
+  .field-meaning { display:block; color:#3730a3; font-size:12px; line-height:1.4; }
+  .field-meaning:empty::after { content:'—'; color:#9ca3af; }
   button:focus-visible, input:focus-visible, .cell:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   .table-wrap { overflow-x:auto; }
-  .value-reset { padding:7px 12px; border:1px solid #9ca3af; border-radius:4px; background:white; cursor:pointer; }
+  .value-reset { padding:4px 12px; border:1px solid #9ca3af; border-radius:4px; background:white; cursor:pointer; }
 </style>
 </head>
 <body>
 <header>
-  <h1>RISC-V 位域速查</h1>
+  <h1>RISC-V 速查工具箱</h1>
   <nav aria-label="页面导航">
     <a href="index.html" aria-current="page">寄存器位域</a>
     <a href="instructions.html">指令编码</a>
@@ -75,16 +79,18 @@
     <option value="64">RV64</option>
     <option value="32">RV32</option>
   </select>
-  <input id="q" placeholder="全局搜索，如 MPP / SUM" aria-label="搜索寄存器或字段名" title="输入时搜索全部寄存器；多个关键词用斜杠、逗号或空格分隔，匹配任意一个">
 </header>
 <section class="value-panel" style="max-width:1160px; margin:20px auto 0" aria-label="CSR 赋值解析">
-  <form id="assignment-form" class="value-controls">
-    <label for="assignment">粘贴 CSR 赋值</label>
-    <input id="assignment" class="value-input" style="width:34ch" placeholder="mstatus = 0x1800" maxlength="100" spellcheck="false" aria-describedby="assignment-error assignment-help">
-    <button class="value-reset" type="submit">解析并定位</button>
-  </form>
+  <div class="value-controls">
+    <form id="assignment-form" class="value-controls" novalidate>
+      <label for="assignment">粘贴 CSR 赋值</label>
+      <input id="assignment" class="value-input" style="width:34ch" placeholder="mstatus = 0x1800" maxlength="100" spellcheck="false" aria-describedby="assignment-error">
+      <button class="value-reset" type="submit">解析并定位</button>
+    </form>
+    <span class="value-divider" aria-hidden="true"></span>
+    <input id="q" class="search-input" placeholder="搜索寄存器 / 字段，如 MPP / SUM" aria-label="搜索寄存器或字段名" title="输入时搜索全部寄存器；多个关键词用斜杠、逗号或空格分隔，匹配任意一个">
+  </div>
   <div id="assignment-error" class="value-error" role="status"></div>
-  <p id="assignment-help" class="value-help">按顶部 RV32 / RV64 解析；支持本页卡片名，如 mstatus、sstatus、misa、mie、mtvec、mcause、satp、fcsr、vtype、hstatus。解析后可继续编辑位域；不模拟硬件或不同 CSR 间的状态同步。</p>
 </section>
 <main id="main"></main>
 
@@ -325,19 +331,104 @@ function parseAssignment(text, xlen) {
   const width = regTop(reg, xlen);
   return { reg, width, value: parseValue(match[2], width) };
 }
-function fieldMeaning(reg, field, value, width) {
+// 多位枚举字段：键为字段名，值为 编码 → 含义
+const ENUM_FIELDS = {
+  MPP: {0:'U 模式',1:'S 模式',2:'保留',3:'M 模式'},
+  SPP: {0:'U 模式',1:'S 模式'},
+  MXL: {1:'32 位',2:'64 位',3:'128 位 / 需核对实现'},
+  SXL: {1:'32 位',2:'64 位'},
+  UXL: {1:'32 位',2:'64 位'},
+  VSXL: {1:'32 位',2:'64 位'},
+  frm: {0:'RNE 就近偶数',1:'RTZ 向零',2:'RDN 向下',3:'RUP 向上',4:'RMM 就近最大',5:'保留',6:'保留',7:'保留'},
+  Interrupt: {0:'异常',1:'中断'},
+  FS: {0:'Off 关闭',1:'Initial 初始',2:'Clean 干净',3:'Dirty 脏'},
+  VS: {0:'Off 关闭',1:'Initial 初始',2:'Clean 干净',3:'Dirty 脏'},
+  XS: {0:'Off 关闭',1:'Initial 初始',2:'Clean 干净',3:'Dirty 脏'},
+  vsew: {0:'SEW=8 位',1:'SEW=16 位',2:'SEW=32 位',3:'SEW=64 位',4:'保留',5:'保留',6:'保留',7:'保留'},
+  vlmul: {0:'LMUL=1',1:'LMUL=2',2:'LMUL=4',3:'LMUL=8',4:'保留',5:'LMUL=1/8',6:'LMUL=1/4',7:'LMUL=1/2'},
+  PBMT: {0:'按 PMA 属性',1:'NC 非缓存一致',2:'IO 内存',3:'保留'},
+};
+// 单位布尔字段：[清零含义, 置位含义]
+const BOOL_FIELDS = {
+  SD: ['无脏状态','存在脏状态（FS/VS/XS 有 Dirty）'],
+  SDT: ['S 模式 double trap 使能','S 模式 double trap 已推迟'],
+  MDT: ['M 模式 double trap 使能','M 模式 double trap 已推迟'],
+  SPELP: ['landing pad 关闭','landing pad 期望置位（ELP 已置位）'],
+  MPELP: ['landing pad 关闭','landing pad 期望置位（ELP 已置位）'],
+  TSR: ['S 模式 SRET 正常执行','S 模式 SRET 陷入 M 模式'],
+  TW: ['WFI 正常执行','低特权级 WFI 超时陷入 M'],
+  TVM: ['S 模式可访问 satp / SFENCE.VMA','S 模式访问虚拟内存操作陷入 M'],
+  MXR: ['仅可读可读页','可读页和仅可执行页'],
+  SUM: ['S 模式不可访问 U 页','S 模式可访问 U 页'],
+  MPRV: ['load/store 按当前特权级','load/store 按 MPP 特权级与翻译'],
+  MPIE: ['陷入前 MIE=0','陷入前 MIE=1'],
+  SPIE: ['陷入前 SIE=0','陷入前 SIE=1'],
+  MIE: ['M 模式中断禁止','M 模式中断使能'],
+  SIE: ['S 模式中断禁止','S 模式中断使能'],
+  UBE: ['U 模式小端','U 模式大端'],
+  MBE: ['M 模式小端','M 模式大端'],
+  SBE: ['S 模式小端','S 模式大端'],
+  MPV: ['陷入前非虚拟化模式','陷入前为虚拟化 guest（需 H 扩展）'],
+  GVA: ['mtval 为原始地址','mtval 为 guest 虚拟地址'],
+  'LCOFIE/LCOFIP': ['未使能 / 未挂起','使能 / 挂起中'],
+  'MEIE/MEIP': ['未使能 / 未挂起','使能 / 挂起中'],
+  'SEIE/SEIP': ['未使能 / 未挂起','使能 / 挂起中'],
+  'MTIE/MTIP': ['未使能 / 未挂起','使能 / 挂起中'],
+  'STIE/STIP': ['未使能 / 未挂起','使能 / 挂起中'],
+  'MSIE/MSIP': ['未使能 / 未挂起','使能 / 挂起中'],
+  'SSIE/SSIP': ['未使能 / 未挂起','使能 / 挂起中'],
+  vill: ['vtype 配置合法','vtype 配置非法，其余字段值无效'],
+  vma: ['tail/mask undisturbed','tail/mask agnostic'],
+  vta: ['tail/mask undisturbed','tail/mask agnostic'],
+  N: ['普通 PTE','NAPOT 连续页（Svnapot）'],
+  V: ['PTE 无效','PTE 有效'],
+  R: ['禁止读','允许读'],
+  W: ['禁止写','允许写'],
+  X: ['禁止执行','允许执行'],
+  U: ['仅 S/U 之外特权级可访问（非用户）','用户模式可访问'],
+  G: ['非全局映射','全局映射（所有地址空间共享）'],
+  A: ['页未被访问，硬件或软件需先置位','页已被访问'],
+  D: ['页未被修改，写入前需先置位','页已被修改'],
+  L: ['未锁定','已锁定（M 模式写入也受限）'],
+  NV: ['未发生','已发生无效操作'],
+  DZ: ['未发生','已发生除零'],
+  OF: ['未发生','已发生上溢'],
+  UF: ['未发生','已发生下溢'],
+  NX: ['未发生','已发生不精确'],
+  VTSR: ['VS 模式 SRET 正常执行','VS 模式 SRET 陷入 HS'],
+  VTW: ['VS 模式 WFI 正常执行','VS 模式 WFI 超时陷入 HS'],
+  VTVM: ['VS 模式可访问 satp / SFENCE.VMA','VS 模式访问虚拟内存操作陷入 HS'],
+  HU: ['VU 模式不能执行 hypervisor load/store','VU 模式可执行 hypervisor load/store'],
+  SPVP: ['陷入前为 VU 模式（U）','陷入前为 VS 模式（S）'],
+  SPV: ['陷入前为 VS 模式','陷入前为 VU 模式'],
+  VSBE: ['VS 模式小端','VS 模式大端'],
+};
+const MCAUSE_EXCEPTIONS = {0:'指令地址未对齐',1:'指令访问错误',2:'非法指令',3:'断点',4:'load 地址未对齐',5:'load 访问错误',6:'store 地址未对齐',7:'store 访问错误',8:'U-ecall',9:'S-ecall',11:'M-ecall',12:'指令缺页',13:'load 缺页',15:'store 缺页'};
+const MCAUSE_INTERRUPTS = {1:'S 模式软件中断',3:'M 模式软件中断',5:'S 模式定时器中断',7:'M 模式定时器中断',9:'S 模式外部中断',11:'M 模式外部中断',13:'S 模式 guest 外部中断'};
+function fieldMeaning(reg, field, value, width, word) {
   const name = field[0];
-  let choices;
-  if (['FS','VS','XS'].includes(name)) choices = ['Off','Initial','Clean','Dirty'];
-  if (name === 'MPP') choices = {0:'U 模式',1:'S 模式',2:'保留',3:'M 模式'};
-  if (name === 'SPP') choices = ['U 模式','S 模式'];
-  if (['MXL','SXL','UXL','VSXL'].includes(name)) choices = {1:'32 位',2:'64 位',3:'128 位 / 需核对实现'};
-  if (reg.id === 'satp' && name === 'MODE') choices = width === 32 ? {0:'Bare',1:'Sv32'} : {0:'Bare',8:'Sv39',9:'Sv48',10:'Sv57'};
-  if (reg.id === 'mtvec' && name === 'MODE') choices = ['Direct','Vectored'];
-  if (reg.id === 'pmpcfg' && name === 'A') choices = ['OFF','TOR','NA4','NAPOT'];
-  if (name === 'frm') choices = ['RNE','RTZ','RDN','RUP','RMM'];
-  if (name === 'Interrupt') choices = ['异常','中断'];
-  if (choices) return choices[value.toString()] ?? '保留 / 未定义编码';
+  const key = value.toString();
+  if (name === 'Extensions') {
+    if (value === 0n) return '未声明任何扩展';
+    const letters = [];
+    for (let bit = 0; bit <= 25; bit++) if ((value >> BigInt(bit)) & 1n) letters.push(String.fromCharCode(65 + bit));
+    return '已置位扩展：' + letters.join(' ');
+  }
+  if (name === 'RSW') return '软件保留：硬件忽略，供软件使用';
+  if (name === 'Exception Code' && reg.id === 'mcause') {
+    const isInterrupt = (word >> BigInt(width - 1)) & 1n;
+    const table = isInterrupt ? MCAUSE_INTERRUPTS : MCAUSE_EXCEPTIONS;
+    return table[key] ?? (isInterrupt ? '标准未分配 / 平台专用中断号' : '标准未分配 / 平台自定义异常码');
+  }
+  if (reg.id === 'pmpcfg' && name === 'A')
+    return {0:'OFF 不匹配',1:'TOR 上界匹配',2:'NA4 4 字节匹配',3:'NAPOT 2 的幂匹配'}[key] ?? '保留编码';
+  if (reg.id === 'satp' && name === 'MODE')
+    return ({0:'Bare 不翻译',1:'Sv32',8:'Sv39',9:'Sv48',10:'Sv57'})[key] ?? '保留编码';
+  if (reg.id === 'mtvec' && name === 'MODE')
+    return {0:'Direct 直接模式',1:'Vectored 向量模式'}[key] ?? '保留编码';
+  if (reg.id === 'fcsr' && name === 'frm' && key === '7') return '保留（DYN=7 仅用于指令 rm 字段）';
+  if (ENUM_FIELDS[name]) return ENUM_FIELDS[name][key] ?? '保留 / 未定义编码';
+  if (BOOL_FIELDS[name] && (field[1] === field[2] || value <= 1n)) return BOOL_FIELDS[name][key] ?? '';
   return '';
 }
 
@@ -370,10 +461,8 @@ function render() {
     error.id = `${reg.id}-error`; error.setAttribute('aria-live', 'polite');
     input.setAttribute('aria-describedby', error.id);
     const binary = document.createElement('output'); binary.className = 'binary-value';
-    const help = document.createElement('p'); help.className = 'value-help';
-    help.textContent = '输入 0x 十六进制、0b 二进制或十进制，实时联动。点击位值翻转 0/1；点击多位字段定位下方编辑框。按寄存器卡片和位宽分别暂存，切换、筛选不会丢失，刷新页面清空。仅解析原始编码，不模拟只读、WARL、SD 派生规则或寄存器间别名关系；保留位也可通过原始值修改。组合标题共用一份布局演示值，fcsr 按完整 fcsr 布局解释。';
     controls.append(label, input, reset);
-    panel.append(controls, error, binary, help);
+    panel.append(controls, error, binary);
     card.appendChild(panel);
     function refresh(origin) {
       registerValues.set(stateKey, value);
@@ -434,7 +523,7 @@ function render() {
         const narrow = !c.gap && measure.measureText(c.f[0]).width > width * 32 - 10;
         d.className = 'cell ' + (isRsv ? 'rsv' : 'c' + (i % 5)) + (narrow ? ' narrow' : '');
         d.style.gridColumn = `span ${width}`;
-        d.innerHTML = c.gap ? '' : `<span class="cell-label">${esc(c.f[0])}</span><small>${width} bits</small>`;
+        d.innerHTML = c.gap ? '' : `<span class="cell-label">${esc(c.f[0])}</span>`;
         if (!c.gap) {
           d.dataset.k = c.f[0] + '_' + c.f[1];
           d.title = `${c.f[0]}[${hi}${hi!==lo?':'+lo:''}] ${c.f[3]}`;
@@ -469,7 +558,7 @@ function render() {
     card.appendChild(wrap);
 
     const tb = document.createElement('table');
-    tb.innerHTML = '<tr><th>位</th><th>字段</th><th>当前值（可编辑）</th><th>说明</th></tr>';
+    tb.innerHTML = '<tr><th>位</th><th>字段</th><th>当前值（可编辑）</th><th>当前值解释</th><th>说明</th></tr>';
     fs.forEach(f => {
       if (f[5]) return;
       const tr = document.createElement('tr');
@@ -482,6 +571,7 @@ function render() {
       editor.setAttribute('aria-label', `${reg.name} ${f[0]} [${bits}] 字段值`);
       editors.set(tr.dataset.k, editor);
       const meaning = document.createElement('span'); meaning.className = 'field-meaning';
+      const meaningCell = document.createElement('td');
       const fieldError = document.createElement('div'); fieldError.className = 'value-error';
       fieldError.id = `${reg.id}-field-${f[1]}-error`;
       fieldError.setAttribute('aria-live', 'polite');
@@ -496,11 +586,13 @@ function render() {
         const fieldValue = readField(value, f[1], f[2]);
         if (origin !== editor) editor.value = f[1] - f[2] < 4 ? fieldValue.toString() : '0x' + fieldValue.toString(16);
         editor.setAttribute('aria-invalid', 'false'); fieldError.textContent = '';
-        meaning.textContent = fieldMeaning(reg, f, fieldValue, width);
+        const text = fieldMeaning(reg, f, fieldValue, width, value);
+        meaning.textContent = text;
       });
-      valueCell.append(editor, meaning, fieldError);
+      valueCell.append(editor, fieldError);
+      meaningCell.appendChild(meaning);
       const description = document.createElement('td'); description.textContent = f[3];
-      tr.append(valueCell, description);
+      tr.append(valueCell, meaningCell, description);
       if (matches(f[0])) tr.style.background = '#fef9c3';
       tb.appendChild(tr);
     });

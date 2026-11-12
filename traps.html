@@ -3,16 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RISC-V 位域速查</title>
+<title>RISC-V 速查工具箱</title>
 <style>
   :root { --bg:#f6f7f9; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
   * { box-sizing:border-box; }
   body { margin:0; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; background:var(--bg); color:var(--fg); }
-  header { padding:16px 24px; background:#111827; color:white; display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
-  h1 { font-size:18px; margin:0; }
-  nav { display:flex; flex-wrap:wrap; gap:8px; }
-  nav a { color:#d1d5db; text-decoration:none; padding:6px 10px; border-radius:6px; font-size:14px; }
-  nav a[aria-current], nav a:hover { background:#374151; color:white; }
+  header { position:sticky; top:0; z-index:100; padding:10px max(24px, calc((100% - 1160px) / 2)); background:#111827; color:white; display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,0.25); }
+  h1 { font-size:17px; margin:0; font-weight:700; display:flex; align-items:center; gap:8px; }
+  h1::before { content:''; width:10px; height:10px; border-radius:3px; background:linear-gradient(135deg,#2563eb,#7c3aed); flex-shrink:0; }
+  nav { display:flex; flex-wrap:wrap; gap:4px; margin-right:auto; }
+  nav a { color:#9ca3af; text-decoration:none; padding:5px 12px; border-radius:999px; font-size:14px; transition:background .15s, color .15s; }
+  nav a:hover { color:white; background:rgba(255,255,255,0.1); }
+  nav a[aria-current] { background:var(--accent); color:white; }
   main { max-width:1200px; margin:auto; padding:20px; }
   .intro, .card { background:white; border:1px solid var(--line); border-radius:8px; padding:20px; margin-bottom:20px; }
   p, li { line-height:1.7; font-size:14px; }
@@ -20,10 +22,12 @@
   .intro > p:first-child { margin-top:0; }
   h2 { margin:0 0 12px; font-size:20px; }
   h3 { font-size:16px; margin:20px 0 8px; }
-  .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:end; }
+  .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:stretch; }
+  .input-group :is(input, select) { flex:1; }
   .input-group { display:flex; flex:1 1 240px; flex-direction:column; gap:6px; font-size:14px; min-width:0; }
   .width-group { flex:0 1 130px; }
   input, select, button { padding:9px 12px; border:1px solid var(--line); border-radius:6px; background:white; color:var(--fg); font:inherit; }
+  select { -webkit-appearance:none; appearance:none; padding-right:30px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
   input { min-width:0; width:100%; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
   button { cursor:pointer; background:var(--accent); color:white; }
   .help { font-size:13px; color:var(--muted); }
@@ -35,20 +39,28 @@
   .heading { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   .heading h2 { margin:0; }
   .tag { font-size:12px; color:#3730a3; background:#e0e7ff; border-radius:10px; padding:3px 8px; }
-  .bit-row { display:grid; grid-template-columns:minmax(130px,1fr) minmax(280px,5fr); min-width:450px; margin-top:16px; }
-  .field { padding:14px; border:1px solid #9ca3af; text-align:center; min-width:0; }
-  .field:first-child { background:#fce7f3; }
-  .field:last-child { background:#dbeafe; }
-  .field strong, .field small { display:block; margin-bottom:8px; }
-  .field small { color:#4b5563; }
+  .bit-labels, .bit-values, .bit-row { display:grid; grid-template-columns:repeat(var(--bits),minmax(0,1fr)); min-width:calc(var(--bits) * 32px); }
+  .bit-labels span { font:11px ui-monospace,monospace; text-align:center; color:var(--muted); padding:3px 0; }
+  .bit-value { border:1px solid #d6dae1; border-radius:0; background:#f8fafc; color:#6b7280; padding:4px 0; font:13px ui-monospace,monospace; cursor:pointer; }
+  .bit-value[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:white; }
+  .cell { min-width:0; min-height:68px; padding:8px 4px; border:1px solid #9ca3af; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; }
+  .cell-label { font:600 13px/1.4 ui-monospace,monospace; white-space:nowrap; }
+  .cell.narrow .cell-label { writing-mode:vertical-rl; font-size:12px; }
+  .cell-value { font:600 12px ui-monospace,monospace; overflow-wrap:anywhere; text-align:center; }
+  .cell.nonzero { box-shadow:inset 0 -3px var(--accent); }
+  .f-int { background:#fce7f3; } .f-code { background:#dbeafe; } .f-pc { background:#ede9fe; } .f-val { background:#fef3c7; }
+  .reg-hex { font:600 14px ui-monospace,monospace; overflow-wrap:anywhere; margin:8px 0 0; }
+  .reg-binary { font:12px/1.8 ui-monospace,monospace; color:var(--muted); overflow-wrap:anywhere; margin:2px 0 10px; }
+  .reg-block { margin-top:14px; }
+  .reg-block:first-child { margin-top:0; }
+  .diag-name { font:600 13px ui-monospace,monospace; color:var(--muted); margin-bottom:6px; }
   .binary { font:13px/1.8 ui-monospace,monospace; overflow-wrap:anywhere; }
+  .result-title { font-size:16px; font-weight:600; margin:12px 0 0; }
   .scroll { overflow-x:auto; padding:4px 2px 8px; }
   table { width:100%; border-collapse:collapse; font-size:13px; margin-top:10px; }
   caption { text-align:left; font-weight:600; padding:6px 0; }
-  th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); line-height:1.6; vertical-align:top; }
-  th { background:#f9fafb; }
-  .reference { min-width:720px; }
-  .reference td:first-child { white-space:nowrap; }
+  th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); line-height:1.6; vertical-align:middle; }
+  th { background:#f3f4f6; color:#4b5563; font-weight:600; border-bottom:2px solid #d1d5db; }
   code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; background:#f3f4f6; padding:2px 5px; border-radius:4px; overflow-wrap:anywhere; }
   dl { display:grid; grid-template-columns:90px minmax(0,1fr); gap:12px; font-size:14px; line-height:1.7; }
   dt { font-weight:600; }
@@ -56,12 +68,12 @@
   dd p { margin:6px 0 0; }
   a:focus-visible, input:focus-visible, select:focus-visible, button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   [hidden] { display:none !important; }
-  @media (max-width:600px) { header { padding:16px; } main { padding:12px; } .card, .intro { padding:14px; } dl { grid-template-columns:1fr; gap:6px; } dd { margin-bottom:10px; } }
+  @media (max-width:600px) { header { padding-left:16px; padding-right:16px; } main { padding:12px; } .card, .intro { padding:14px; } dl { grid-template-columns:1fr; gap:6px; } dd { margin-bottom:10px; } }
 </style>
 </head>
 <body>
 <header>
-  <h1>RISC-V 位域速查</h1>
+  <h1>RISC-V 速查工具箱</h1>
   <nav aria-label="页面导航">
     <a href="index.html">寄存器位域</a>
     <a href="instructions.html">指令编码</a>
@@ -85,32 +97,16 @@
         <div class="input-group"><label for="mtval">mtval</label><input id="mtval" type="text" value="0x0" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
         <button type="submit">解读</button>
       </div>
-      <p class="help" id="input-help">自动更新。三个值均必填；支持十进制、0x 十六进制、0b 二进制、0o 八进制，忽略首尾空白。只接受 0 … 2^XLEN − 1；不接受正负号、小数、指数、分隔符或尾随字符。切换位宽不截断输入。</p>
+      <p class="help" id="input-help">三个值均必填；支持十进制、0x 十六进制、0b 二进制、0o 八进制，忽略首尾空白。只接受 <code>0 … 2<sup>XLEN</sup> − 1</code>；不接受正负号、小数、指数、分隔符或尾随字符。切换位宽不截断输入。</p>
       <p id="input-error" class="error" role="alert"></p>
     </form>
     <div class="notes warning"><strong>这是编码速查，不是根因诊断。</strong> 相同原因码可能对应不同硬件、软件或权限问题。还需结合指令、特权状态、页表、平台文档及其他 CSR；三个值不能确认根因。默认值仅为演示。</div>
   </section>
   <section id="result" class="card" aria-labelledby="result-heading" aria-live="polite" aria-atomic="true" hidden>
     <div class="heading"><h2 id="result-heading">解读结果</h2><span class="tag" id="trap-kind"></span></div>
-    <p id="cause-name"></p>
-    <div class="scroll">
-      <div class="bit-row" aria-label="mcause 位域">
-        <div class="field"><strong id="interrupt-label"></strong><small>Interrupt · 最高位</small><span class="binary" id="interrupt-value"></span></div>
-        <div class="field"><strong id="code-label"></strong><small>Exception Code · 中断 / 异常原因码</small><span class="binary" id="code-value"></span></div>
-      </div>
-    </div>
-    <dl>
-      <dt>mcause</dt><dd><code id="cause-raw"></code><p id="cause-detail"></p></dd>
-      <dt>mepc</dt><dd><code id="pc-raw"></code><p id="pc-detail"></p></dd>
-      <dt>mtval</dt><dd><code id="tval-raw"></code><p id="tval-detail"></p></dd>
-    </dl>
+    <p id="cause-name" class="result-title"></p>
+    <div id="reg-diagrams"></div>
     <div class="notes" id="context-note"></div>
-  </section>
-  <section class="card" aria-labelledby="reference-heading">
-    <h2 id="reference-heading">原因码参考</h2>
-    <p class="desc">下表按 Interrupt 位分别查找，编号均为十进制。覆盖这里列出的标准分配和其余编码范围；“保留”不表示输入无效。扩展相关编号只有在对应扩展 / 模式受支持时才有相应含义，编号本身不能证明扩展已实现。</p>
-    <div class="scroll"><table class="reference"><caption>同步异常 · Interrupt = 0</caption><thead><tr><th scope="col">原因码</th><th scope="col">名称</th><th scope="col">适用 / 说明</th><th scope="col">mtval 解读边界</th></tr></thead><tbody id="exception-table"></tbody></table></div>
-    <div class="scroll"><table class="reference"><caption>中断 · Interrupt = 1</caption><thead><tr><th scope="col">原因码</th><th scope="col">名称</th><th scope="col">适用 / 说明</th><th scope="col">mtval 解读边界</th></tr></thead><tbody id="interrupt-table"></tbody></table></div>
   </section>
   <section class="card" aria-labelledby="notes-heading">
     <h2 id="notes-heading">使用边界</h2>
@@ -167,19 +163,6 @@ const INTERRUPTS = [
   { code:13n, name:'本地计数器溢出中断', english:'Counter-overflow interrupt', scope:'Sscofpmf：本地计数器溢出；具体计数器需额外状态。' }
 ];
 
-const TVAL_REFERENCE = {
-  address:'若提供信息则为故障虚拟地址；也可为 0。拆分访问可指向实际失败的部分。',
-  instructionAddress:'若提供信息则为失败取指部分的虚拟地址；也可为 0，不一定等于 mepc。',
-  instructionBits:'可选地提供指令位，右对齐于 mtval 低位；0 不足以确定是否提供了指令。',
-  breakpoint:'可能为断点相关虚拟地址，也可能为 0；需结合断点 / 触发器类型。',
-  zero:'此类标准陷阱的 mtval 为 0，不作为故障地址。',
-  softwareCheck:'携带检查子原因，而不是通用地址：2 = landing pad fault，3 = shadow stack fault。',
-  hardwareError:'信息取决于适用的硬件错误规范与平台；不能通用地断言是地址或指令。',
-  doubleTrap:'需按原始陷阱解释 mtval；不能仅凭原因码 16 将其认定为地址或固定为 0。请结合 mtval2 中保存的原始原因码及 Ssdbltrp 状态。',
-  guestAddress:'非零时为相关 guest 虚拟地址；G-stage 信息需结合 mtval2 / mtinst，亦可为 0。',
-  interrupt:'标准中断的 mtval 为 0，不提供通用故障地址；来源 / 非标准信息需查询平台规范。'
-};
-
 function validateXlen(xlen) {
   if (xlen !== 32 && xlen !== 64) throw new RangeError('XLEN 必须为 32 或 64。');
   return xlen;
@@ -212,28 +195,28 @@ function lookupCause(interrupt, code) {
 }
 
 function interpretMtval(cause, interrupt, mtval) {
-  if (interrupt) return TVAL_REFERENCE.interrupt + (mtval !== 0n ? ' 当前值非零：请核对快照来源、适用规范及平台定义，不能当作故障地址。' : '');
-  if (!cause.known) return '未知 / 自定义原因码没有通用的 mtval 解释。保留原始值，不将其推断为地址或指令。';
-  const base = TVAL_REFERENCE[cause.tval];
-  if (cause.tval === 'instructionBits') {
-    return base + ' 若实现提供指令位，长度为实际指令长度、ILEN 与 XLEN 中的最小值，高位清零；可能不是完整指令，不能仅凭这些位确认 ISA 支持情况。' + (mtval === 0n ? ' 当前为 0：可能未提供信息，也可能提供的位全为 0。' : ' 当前非零：按该异常的标准语义可作为指令位候选，而非地址。');
-  }
+  if (interrupt) return '标准中断不通过 mtval 提供信息，架构值为 0。' + (mtval !== 0n ? ' 当前值非零：属实现定义，请查平台规范。' : '');
+  if (!cause.known) return '未知 / 自定义原因码：mtval 含义依实现而定，仅保留原值。';
+  if (cause.tval === 'instructionBits')
+    return '可选携带引发异常的指令位（右对齐、高位清零，长度为 ILEN 与 XLEN 的较小值）。' + (mtval === 0n ? '当前为 0：可能未提供。' : '当前非零：按指令位候选解读，不是地址。');
   if (cause.tval === 'softwareCheck') {
-    const subtype = mtval === 2n ? 'landing pad fault（Zicfilp）' : mtval === 3n ? 'shadow stack fault（Zicfiss）' : '未识别 / 保留子原因；请查适用扩展';
-    return base + ' 当前子原因：' + mtval.toString() + ' · ' + subtype + '。';
+    const subtype = mtval === 2n ? 'landing pad fault（Zicfilp）' : mtval === 3n ? 'shadow stack fault（Zicfiss）' : '未识别 / 保留子原因';
+    return '携带检查子原因：当前 ' + mtval.toString() + ' · ' + subtype + '。';
   }
-  if (cause.tval === 'zero') return base + (mtval !== 0n ? ' 当前输入非零，与此标准语义不符；请核对寄存器快照或实现文档。' : '');
-  if (cause.tval === 'hardwareError' || cause.tval === 'doubleTrap') return base;
-  return base + (mtval === 0n ? ' 当前值为 0，不能区分“未提供信息”和“相关地址恰好为 0”。' : ' 当前非零，但仅凭该值不能定位根因。') + (cause.tval === 'guestAddress' ? ' mtval2 在提供相关 guest 物理地址时按右移 2 位编码，仍需依据异常情形和其他状态解读。' : '');
+  if (cause.tval === 'zero')
+    return '此类异常的 mtval 标准值为 0，不是故障地址。' + (mtval !== 0n ? ' 当前非零，与标准语义不符，请核对快照。' : '');
+  if (cause.tval === 'hardwareError' || cause.tval === 'doubleTrap')
+    return '含义由适用规范决定（双重陷阱需结合 mtval2 与 Ssdbltrp 状态），不能直接当作地址或指令。';
+  return '若提供信息，则为故障虚拟地址；0 也可能表示未提供。' + (mtval !== 0n ? ' 当前非零，可结合权限 / 总线错误进一步定位。' : '') + (cause.tval === 'guestAddress' ? ' G-stage 信息需结合 mtval2 / mtinst。' : '');
 }
 
 function interpretMepc(cause, interrupt, mepc) {
   let text;
-  if (interrupt) text = '保存的是被中断的执行位置 / 恢复 PC；中断是异步的，不能将其标记为“故障指令地址”。';
-  else if (cause.ecall) text = '保存的是 ECALL 指令自身的 PC。若软件决定在调用后继续，通常将 mepc 加 4（ECALL 为 32 位）；不是硬件自动递增，也不是所有陷阱都应加 4。';
-  else if (cause.code === 16n) text = '双重陷阱的保存 PC 需结合原始陷阱及 Ssdbltrp 状态解释，不能据此断定某条指令就是根因。';
-  else text = '同步异常通常保存遇到异常的指令起始 PC。取指跨边界故障时，mtval 可指向后续失败部分；跳转目标未对齐时 mepc 指向跳转 / 分支而非目标。未知 / 扩展情形须核对对应规范。';
-  if ((mepc & 1n) !== 0n) text += ' 注意：输入 bit 0 = 1，与架构 mepc[0] 恒为 0 不符；本页保留原值，请核对快照。';
+  if (interrupt) text = '保存被中断处的恢复 PC；中断异步，不是“故障指令地址”。';
+  else if (cause.ecall) text = '保存 ECALL 自身的 PC；若继续执行，软件通常将其 +4（ECALL 为 32 位），硬件不自动加。';
+  else if (cause.code === 16n) text = '双重陷阱的 PC 需结合原始陷阱与 Ssdbltrp 状态解释，不能据此定位根因。';
+  else text = '保存遇到异常的指令 PC；跳转 / 分支目标未对齐时，指向该跳转 / 分支而非目标。';
+  if ((mepc & 1n) !== 0n) text += ' 注意：bit 0 = 1 与 mepc[0] 恒为 0 不符，请核对快照。';
   return text;
 }
 
@@ -254,25 +237,103 @@ function decodeTrap(mcauseInput, mepcInput, mtvalInput, xlen = 64) {
   };
 }
 
-function element(tag, text) {
+function element(tag, className, text) {
   const node = document.createElement(tag);
+  if (className) node.className = className;
   if (text !== undefined) node.textContent = text;
   return node;
 }
 
-function renderReference() {
-  const exceptionRows = EXCEPTIONS.map(entry => [entry.code.toString(), entry.name + ' / ' + entry.english, entry.scope, TVAL_REFERENCE[entry.tval]]);
-  exceptionRows.push(['14、17', '保留', '本参考快照未分配。', '不推断含义。'], ['24–31、48–63', '自定义用途', '需查目标实现文档。', '依实现定义。'], ['32–47、≥ 64', '保留 / 未知', '新版本或非标准编码需另查规范。', '不推断含义。']);
-  const interruptRows = INTERRUPTS.map(entry => [entry.code.toString(), entry.name + ' / ' + entry.english, entry.scope, TVAL_REFERENCE.interrupt]);
-  interruptRows.push(['0、4、8、14–15', '保留', '不按旧的用户级中断草案猜测含义。', '不作地址解释。'], ['≥ 16', '平台专用', '需结合平台中断控制器及实现文档。', '不作通用解释；查平台规范。']);
-  [[exceptionRows, 'exception-table'], [interruptRows, 'interrupt-table']].forEach(([rows, id]) => {
-    const body = document.getElementById(id);
-    body.replaceChildren();
-    rows.forEach(values => {
-      const row = element('tr');
-      values.forEach(text => row.append(element('td', text)));
-      body.append(row);
+function renderRegisterCards(result) {
+  const container = document.getElementById('reg-diagrams');
+  container.replaceChildren();
+  const xlen = result.xlen;
+  const interruptBit = (result.mcause >> BigInt(xlen - 1)) & 1n;
+  const measure = document.createElement('canvas').getContext('2d');
+  measure.font = '600 13px ui-monospace,monospace';
+  const defs = [
+    { id:'mcause', value:result.mcause, color:['f-int', 'f-code'],
+      fields:[
+        { name:'Interrupt', hi:xlen - 1, lo:xlen - 1, desc:'1=中断，0=异常',
+          meaning:interruptBit ? '中断' : '异常' },
+        { name:'Exception Code', hi:xlen - 2, lo:0, desc:result.cause.scope,
+          meaning:result.cause.known ? result.cause.name : '保留 / 未知原因码（未解码）' },
+      ] },
+    { id:'mepc', value:result.mepc, color:['f-pc'],
+      fields:[{ name:'PC', hi:xlen - 1, lo:0, desc:'保存的恢复 / 异常 PC', meaning:result.mepcText }] },
+    { id:'mtval', value:result.mtval, color:['f-val'],
+      fields:[{ name:'Value', hi:xlen - 1, lo:0, desc:'附加信息：地址 / 指令位 / 子原因', meaning:result.mtvalText }] },
+  ];
+  defs.forEach(def => {
+    const block = element('div', 'reg-block');
+    block.append(element('div', 'diag-name', def.id));
+    block.append(element('div', 'reg-hex', '0x' + def.value.toString(16).padStart(xlen / 4, '0') + ' · ' + def.value.toString() + '（十进制）'));
+    block.append(element('div', 'reg-binary', '二进制：' + def.value.toString(2).padStart(xlen, '0').match(/.{1,4}/g).join(' ')));
+    const scroll = element('div', 'scroll');
+    // 超过 32 位时拆成 hi/lo 两行，每行 32 位
+    const rows = xlen > 32 ? [[xlen - 1, 32], [31, 0]] : [[xlen - 1, 0]];
+    rows.forEach(([rh, rl]) => {
+      const labels = element('div', 'bit-labels');
+      labels.style.setProperty('--bits', rh - rl + 1);
+      labels.setAttribute('aria-hidden', 'true');
+      const toggles = element('div', 'bit-values');
+      toggles.style.setProperty('--bits', rh - rl + 1);
+      for (let bit = rh; bit >= rl; bit--) {
+        labels.append(element('span', '', String(bit)));
+        const toggle = element('button', 'bit-value');
+        toggle.type = 'button';
+        const on = (def.value >> BigInt(bit)) & 1n;
+        toggle.textContent = on ? '1' : '0';
+        toggle.setAttribute('aria-pressed', String(on === 1n));
+        toggle.setAttribute('aria-label', def.id + ' bit ' + bit + ' = ' + on + '，点击翻转');
+        toggle.addEventListener('click', () => {
+          const next = def.value ^ (1n << BigInt(bit));
+          document.getElementById(def.id).value = '0x' + next.toString(16).padStart(xlen / 4, '0');
+          renderDecode();
+        });
+        toggles.append(toggle);
+      }
+      const row = element('div', 'bit-row');
+      row.style.setProperty('--bits', rh - rl + 1);
+      def.fields.forEach((field, index) => {
+        const hi = Math.min(field.hi, rh), lo = Math.max(field.lo, rl);
+        if (hi < lo) return;
+        const width = hi - lo + 1;
+        const value = (def.value >> BigInt(lo)) & ((1n << BigInt(width)) - 1n);
+        const cell = element('div', 'cell ' + def.color[index] + (value !== 0n ? ' nonzero' : '') + (measure.measureText(field.name).width > width * 32 - 10 ? ' narrow' : ''));
+        cell.style.gridColumn = 'span ' + width;
+        cell.title = field.name + '：' + field.meaning;
+        cell.setAttribute('aria-label', cell.title);
+        cell.append(
+          element('span', 'cell-label', field.name + ' [' + hi + (hi !== lo ? ':' + lo : '') + ']'),
+          element('span', 'cell-value', '0x' + value.toString(16))
+        );
+        row.append(cell);
+      });
+      scroll.append(labels, toggles, row);
     });
+    block.append(scroll);
+    const table = element('table');
+    const headRow = element('tr');
+    ['位', '字段', '当前值', '当前值解释', '说明'].forEach(t => headRow.append(element('th', '', t)));
+    const thead = element('thead'); thead.append(headRow); table.append(thead);
+    const tbody = element('tbody');
+    def.fields.forEach(field => {
+      const width = field.hi - field.lo + 1;
+      const value = (def.value >> BigInt(field.lo)) & ((1n << BigInt(width)) - 1n);
+      const tr = element('tr');
+      tr.append(element('td', '', field.hi === field.lo ? String(field.hi) : field.hi + ':' + field.lo));
+      const nameTd = element('td'); nameTd.append(element('strong', '', field.name)); tr.append(nameTd);
+      const valTd = element('td'); valTd.append(element('code', '', '0x' + value.toString(16))); tr.append(valTd);
+      tr.append(element('td', '', field.meaning));
+      tr.append(element('td', '', field.desc));
+      tbody.append(tr);
+    });
+    table.append(tbody);
+    const tableWrap = element('div', 'scroll');
+    tableWrap.append(table);
+    block.append(tableWrap);
+    container.append(block);
   });
 }
 
@@ -291,22 +352,17 @@ function renderDecode() {
   const result = decodeTrap(get('mcause').value, get('mepc').value, get('mtval').value, xlen);
   const text = (id, value) => { get(id).textContent = value; };
   text('trap-kind', 'RV' + xlen + ' · ' + (result.interrupt ? '中断' : '同步异常'));
-  text('cause-name', '原因码 ' + result.code.toString() + '（0x' + result.code.toString(16) + '） · ' + result.cause.name + (result.cause.english ? ' / ' + result.cause.english : ''));
-  text('interrupt-label', 'bit ' + (xlen - 1));
-  text('interrupt-value', result.interrupt ? '1 · 中断' : '0 · 同步异常');
-  text('code-label', 'bits ' + (xlen - 2) + ':0');
-  text('code-value', result.codeBinary);
-  text('cause-raw', result.mcauseHex + ' · 无符号十进制 ' + result.mcause.toString());
-  text('cause-detail', result.cause.scope);
-  text('pc-raw', result.mepcHex);
-  text('pc-detail', result.mepcText);
-  text('tval-raw', result.mtvalHex);
-  text('tval-detail', result.mtvalText);
-  text('context-note', '仅按所选机器 XLEN 和原始值解码，不验证扩展是否实现，不识别具体设备，不推断根因。若寄存器并非同一次陷阱的快照，组合解释可能无效。');
+  const nameLine = get('cause-name');
+  nameLine.replaceChildren();
+  const strong = element('strong', '', result.cause.name);
+  nameLine.append(strong);
+  if (result.cause.english) nameLine.append(document.createTextNode(' · ' + result.cause.english));
+  nameLine.append(document.createTextNode(' · 原因码 ' + result.code.toString() + '（0x' + result.code.toString(16) + '）'));
+  renderRegisterCards(result);
+  text('context-note', '仅按所选 XLEN 与原始值解码；不验证扩展是否实现，不识别具体设备，不推断根因。三个值若非同一次陷阱的快照，组合解释无效。');
 }
 
 function init() {
-  renderReference();
   document.getElementById('trap-form').addEventListener('submit', event => { event.preventDefault(); renderDecode(); });
   ['mcause', 'mepc', 'mtval'].forEach(id => document.getElementById(id).addEventListener('input', renderDecode));
   document.getElementById('xlen').addEventListener('change', renderDecode);
