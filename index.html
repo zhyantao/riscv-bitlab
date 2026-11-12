@@ -21,7 +21,6 @@
         background: #f0f2f5;
         color: var(--text);
       }
-      h1 { font-size: 22px; margin: 8px 0 4px; }
       .subtitle { color: #666; font-size: 13px; margin: 0 0 16px; line-height: 1.7; }
       .control-panel {
         background: var(--card-bg);
@@ -60,7 +59,6 @@
       :focus-visible { outline: 2px solid #287d2c; outline-offset: 3px; }
       .tip { font-size: 12px; color: #666; margin: 8px 0 0; line-height: 1.7; }
       .error { color: var(--danger); font-size: 13px; margin: 8px 0 0; }
-      .examples { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
       button {
         border: 1px solid var(--border);
         border-radius: 6px;
@@ -71,7 +69,7 @@
         font-size: 12px;
       }
       button:hover { background: #edf7ee; border-color: var(--accent); }
-      #clear-btn { margin-left: auto; color: var(--danger); }
+      #clear-btn { min-height: 42px; flex-shrink: 0; color: var(--danger); }
       .bit-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 12px; }
       .bit-byte { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; }
       .bit-cell { min-width: 0; text-align: center; }
@@ -90,7 +88,6 @@
       @media (max-width: 540px) {
         body { padding: 12px; }
         .control-panel { padding: 16px 12px; }
-        .input-row { flex-direction: column; align-items: stretch; }
         .bit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         th, td { padding: 10px 6px; }
         th:first-child { width: 18%; }
@@ -98,7 +95,6 @@
     </style>
   </head>
   <body>
-    <h1>字节转换工具</h1>
     <p class="subtitle">十六进制 / 十进制输入 · 实时换算 · 本地计算，无需联网</p>
 
     <main class="control-panel">
@@ -112,20 +108,14 @@
         <h2><span class="step-badge">1</span> 输入数字</h2>
         <div class="input-row">
           <div class="input-field">
-            <label for="number-input">字节数</label>
-            <input id="number-input" type="text" value="0x40000000" placeholder="例如 0x40000000 或 1073741824"
+            <input id="number-input" type="text" aria-label="字节数" value="0x40000000" placeholder="例如 0x40000000 或 1073741824"
               autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="4096"
               aria-describedby="input-tip input-error" aria-invalid="false" />
           </div>
+          <button type="button" id="clear-btn">清空</button>
         </div>
         <p class="tip" id="input-tip">自动识别：0x 前缀或含 A–F 的整数按十六进制，纯数字按十进制。纯数字十六进制请加 0x。仅接受非负整数，最多 4096 个字符。</p>
         <p class="error" id="input-error" role="alert" hidden></p>
-        <div class="examples" aria-label="输入示例">
-          <button type="button" data-example="0x100000">0x100000 · 1 MiB</button>
-          <button type="button" data-example="1073741824">1073741824 · 1 GiB</button>
-          <button type="button" data-example="0x10000000000">0x10000000000 · 1 TiB</button>
-          <button type="button" id="clear-btn">清空</button>
-        </div>
       </section>
 
       <section class="section">
@@ -250,8 +240,8 @@
           button.setAttribute("aria-pressed", String(isSet));
           button.setAttribute("aria-label", `bit ${bit}：${enabled ? (isSet ? "1" : "0") : "不可用"}，点击翻转`);
         });
-        bitTip.textContent = "从高位 bit 63 到低位 bit 0，每 8 位一组；点击任意位翻转 0 / 1，并同步下方数值。"
-          + (currentBytes !== null && currentBytes >= (1n << 64n) ? " 当前数值超过 64 位，仅显示低 64 位，翻转时保留高位。" : "");
+        bitTip.hidden = currentBytes === null || currentBytes < (1n << 64n);
+        bitTip.textContent = bitTip.hidden ? "" : "当前数值超过 64 位，仅显示低 64 位，翻转时保留高位。";
         resultCells.forEach((cells, index) => {
           cells.forEach((cell, column) => {
             const divisor = (column === 0 ? 1000n : 1024n) ** BigInt(index);
@@ -261,12 +251,6 @@
       }
 
       input.addEventListener("input", updateResults);
-      document.querySelectorAll("[data-example]").forEach((button) => {
-        button.addEventListener("click", () => {
-          input.value = button.dataset.example;
-          updateResults();
-        });
-      });
       document.getElementById("clear-btn").addEventListener("click", () => {
         input.value = "";
         updateResults();
