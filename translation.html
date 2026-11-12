@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RISC-V 位域速查</title>
+<style>
+  :root { --bg:#f6f7f9; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; background:var(--bg); color:var(--fg); }
+  header { padding:16px 24px; background:#111827; color:white; display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
+  h1 { font-size:18px; margin:0; }
+  nav { display:flex; flex-wrap:wrap; gap:8px; }
+  nav a { color:#d1d5db; text-decoration:none; padding:6px 10px; border-radius:6px; font-size:14px; }
+  nav a[aria-current], nav a:hover { background:#374151; color:white; }
+  main { max-width:1200px; margin:auto; padding:20px; }
+  .intro, .card { background:white; border:1px solid var(--line); border-radius:8px; padding:20px; margin-bottom:20px; }
+  h2 { margin:0; font-size:20px; }
+  .heading { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+  .tag { font-size:12px; color:#3730a3; background:#e0e7ff; border-radius:10px; padding:3px 8px; }
+  .desc { color:var(--muted); font-size:14px; line-height:1.7; }
+  .controls { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; margin-top:16px; font-size:14px; }
+  .control { display:flex; flex-direction:column; gap:8px; }
+  .control.grow { flex:1 1 300px; }
+  select, input, button { padding:8px 12px; border:1px solid var(--line); border-radius:6px; background:white; color:var(--fg); font:inherit; }
+  input { width:100%; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
+  button { cursor:pointer; font-size:13px; }
+  button:hover { background:#eff6ff; border-color:var(--accent); }
+  a:focus-visible, select:focus-visible, input:focus-visible, button:focus-visible, .scroll:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  input[aria-invalid="true"] { border-color:#b91c1c; }
+  .examples { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:16px; font-size:13px; }
+  .error { color:#b91c1c; font-size:14px; line-height:1.7; overflow-wrap:anywhere; }
+  .error:empty { display:none; }
+  .scroll { overflow-x:auto; padding:4px 2px 8px; }
+  .bit-labels, .bit-row { display:grid; grid-template-columns:repeat(var(--bits),minmax(0,1fr)); min-width:1024px; }
+  .bit-labels span { font:11px ui-monospace,monospace; text-align:center; color:var(--muted); padding:5px 0; }
+  .field { min-width:0; min-height:112px; padding:12px 4px; border:1px solid #9ca3af; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
+  .field-name { font:600 13px/1.4 ui-monospace,monospace; }
+  .field small { font-size:11px; color:#4b5563; }
+  .field code { background:transparent; padding:0; font-size:12px; }
+  .extension { background:#e5e7eb; }
+  .vpn-even { background:#dbeafe; }
+  .vpn-odd { background:#ede9fe; }
+  .offset { background:#fef3c7; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:10px; }
+  caption { text-align:left; color:var(--muted); padding:6px 0; }
+  th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); line-height:1.5; }
+  th { background:#f9fafb; }
+  td code { white-space:nowrap; }
+  code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; background:#f3f4f6; padding:2px 5px; border-radius:4px; overflow-wrap:anywhere; }
+  .notes { background:#f8fafc; border-left:3px solid var(--accent); padding:12px 14px; margin-top:16px; font-size:13px; line-height:1.8; }
+  .notes p { margin:4px 0; }
+  .result { line-height:1.9; font-size:14px; overflow-wrap:anywhere; }
+  ol { padding-left:24px; font-size:14px; line-height:1.9; }
+  @media (max-width:600px) { header { padding:16px; } main { padding:12px; } .card, .intro { padding:14px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>RISC-V 位域速查</h1>
+  <nav aria-label="页面导航">
+    <a href="index.html">寄存器位域</a>
+    <a href="instructions.html">指令编码</a>
+    <a href="traps.html">异常与中断</a>
+    <a href="translation.html" aria-current="page">地址翻译</a>
+    <a href="bytes.html">字节换算</a>
+  </nav>
+</header>
+<main>
+  <section class="intro" aria-labelledby="calculator-title">
+    <div class="heading"><h2 id="calculator-title">虚拟地址拆解</h2><span class="tag">Sv32 / Sv39 / Sv48 / Sv57</span></div>
+    <p class="desc">拆出各级 VPN 索引与 12 位页内偏移；可选输入根页表 PPN，计算首次访问的 PTE 物理地址。仅凭 VA 无法确定最终物理地址，本页不会模拟或伪造页表遍历。</p>
+    <div class="controls">
+      <div class="control">
+        <label for="mode">分页模式</label>
+        <select id="mode"><option>Sv32</option><option selected>Sv39</option><option>Sv48</option><option>Sv57</option></select>
+      </div>
+      <div class="control grow">
+        <label for="va">虚拟地址 VA（无符号）</label>
+        <input id="va" type="text" value="0x000000123456789a" spellcheck="false" autocomplete="off" aria-describedby="input-help mode-help va-error">
+      </div>
+    </div>
+    <p id="input-help" class="desc">输入自动识别：0x 十六进制、0b 二进制、无前缀十进制（例如 4096）。只接受完整非负整数，允许首尾空白；不接受正负号、小数、指数、分隔符或裸十六进制。所有地址运算使用 BigInt，不截断溢出值。</p>
+    <p id="mode-help" class="desc"></p>
+    <div class="examples" aria-label="填入示例">
+      <span>示例：</span>
+      <button id="sample" type="button">VA + 根 PPN 示例</button>
+      <button id="upper" type="button">高半区起点</button>
+      <button id="maximum" type="button">最大合法地址</button>
+    </div>
+    <p id="va-error" class="error" role="alert"></p>
+  </section>
+  <section id="breakdown" class="card" aria-labelledby="breakdown-title" hidden>
+    <div class="heading"><h2 id="breakdown-title">VA 位域</h2><span id="mode-tag" class="tag"></span></div>
+    <p id="normalized" class="result"></p>
+    <p id="canonical" class="desc"></p>
+    <div class="scroll" tabindex="0" role="region" aria-label="虚拟地址位域图，可横向滚动">
+      <div id="bit-labels" class="bit-labels" aria-hidden="true"></div>
+      <div id="bit-row" class="bit-row"></div>
+    </div>
+    <div class="scroll" tabindex="0" role="region" aria-label="位域数值表，可横向滚动">
+      <table>
+        <caption>高位 → 低位；VPN 编号越大，遍历层级越高。</caption>
+        <thead><tr><th scope="col">字段</th><th scope="col">VA 位范围</th><th scope="col">宽度</th><th scope="col">十六进制</th><th scope="col">十进制</th><th scope="col">二进制</th></tr></thead>
+        <tbody id="fields"></tbody>
+      </table>
+    </div>
+  </section>
+  <section class="card" aria-labelledby="root-title">
+    <div class="heading"><h2 id="root-title">根页表：首次 PTE 地址</h2><span class="tag">可选计算</span></div>
+    <p class="desc">输入 satp.PPN 字段值，不是完整 satp，也不是页表基址。基址 = PPN &lt;&lt; 12；输入格式与 VA 相同。留空则只拆解 VA。</p>
+    <div class="control">
+      <label for="root-ppn">根页表 PPN</label>
+      <input id="root-ppn" type="text" placeholder="例如 0x80000 → 基址 0x80000000" spellcheck="false" autocomplete="off" aria-describedby="root-help root-error">
+    </div>
+    <p id="root-help" class="desc"></p>
+    <p id="root-error" class="error" role="alert"></p>
+    <div id="root-result" class="result" aria-live="polite"></div>
+  </section>
+  <section class="card" aria-labelledby="walk-title">
+    <h2 id="walk-title">如何继续遍历？</h2>
+    <ol>
+      <li>从根页表开始，以最高级 VPN 为索引。PTE 地址 = 页表基址 + VPN[i] × PTE 字节数；这个地址指向一个页表项，不是 VA 对应的数据地址。</li>
+      <li>实际读取内存中的 PTE，检查有效性、保留位、访问权限及其他架构规则。若是非叶子项，则使用其 PPN 作为下一级页表基址，i 减 1 后继续；没有可继续的层级或检查失败时产生相应异常。</li>
+      <li>找到合法叶子项后，才可结合 PTE 中的物理页号与 VA 偏移生成最终物理地址。较高层叶子可映射大页，需要相应对齐；其低位地址还包含较低级 VPN。</li>
+    </ol>
+    <div class="notes">
+      <p>图中的 offset 始终是 VA[11:0]（4 KiB 基础页内偏移）；不代表所有映射都只支持 4 KiB 页。</p>
+      <p>本页仅覆盖常规单阶段分页地址拆解及首个 PTE 地址算术，不读取内存，不解码 PTE，不验证映射、权限、PMP/PMA、A/D 位或具体实现的物理地址可达性；不处理两阶段翻译、地址屏蔽或扩展页表格式。</p>
+    </div>
+  </section>
+  <noscript>请启用支持 BigInt 的 JavaScript 以使用计算器。页面完全离线运行，无外部依赖。</noscript>
+</main>
+<script>
+'use strict';
+const MODES = Object.freeze({
+  Sv32: Object.freeze({ name:'Sv32', bits:32, vaBits:32, levels:2, vpnBits:10, ppnBits:22, pteBytes:4 }),
+  Sv39: Object.freeze({ name:'Sv39', bits:64, vaBits:39, levels:3, vpnBits:9, ppnBits:44, pteBytes:8 }),
+  Sv48: Object.freeze({ name:'Sv48', bits:64, vaBits:48, levels:4, vpnBits:9, ppnBits:44, pteBytes:8 }),
+  Sv57: Object.freeze({ name:'Sv57', bits:64, vaBits:57, levels:5, vpnBits:9, ppnBits:44, pteBytes:8 })
+});
+
+function getMode(name) {
+  if (!Object.prototype.hasOwnProperty.call(MODES, name)) throw new Error('未知分页模式。');
+  return MODES[name];
+}
+
+function mask(bits) {
+  return (1n << BigInt(bits)) - 1n;
+}
+
+function hex(value, digits = 0) {
+  return '0x' + value.toString(16).padStart(digits, '0');
+}
+
+function parseUnsigned(text, bits, label = '数值') {
+  const input = text.trim();
+  if (!input) throw new Error(label + ' 不能为空。');
+  if (!/^(?:0[xX][0-9a-fA-F]+|0[bB][01]+|[0-9]+)$/.test(input)) {
+    throw new Error(label + ' 格式错误：仅接受无符号十进制、0x 十六进制或 0b 二进制完整整数。');
+  }
+  const value = BigInt(input);
+  if (value > mask(bits)) throw new Error(label + ' 超出 ' + bits + ' 位无符号范围（最大 ' + hex(mask(bits)) + '）。');
+  return value;
+}
+
+function decodeVA(text, modeName) {
+  const mode = getMode(modeName);
+  const va = parseUnsigned(text, mode.bits, 'VA');
+  const fields = [];
+  if (mode.bits > mode.vaBits) {
+    const signBit = mode.vaBits - 1;
+    const sign = (va >> BigInt(signBit)) & 1n;
+    const high = va >> BigInt(mode.vaBits);
+    const expected = sign === 1n ? mask(mode.bits - mode.vaBits) : 0n;
+    if (high !== expected) {
+      throw new Error(mode.name + ' 非 canonical VA：VA[63:' + mode.vaBits + '] 必须全部等于 bit ' + signBit + '（当前为 ' + sign + '）。请输入完整的 64 位无符号符号扩展地址；不会自动修正。');
+    }
+    fields.push({ name:'符号扩展', hi:63, lo:mode.vaBits, value:high, color:'extension' });
+  }
+  const vpn = [];
+  for (let level = mode.levels - 1; level >= 0; level--) {
+    const lo = 12 + level * mode.vpnBits;
+    const value = (va >> BigInt(lo)) & mask(mode.vpnBits);
+    vpn[level] = value;
+    fields.push({ name:'VPN[' + level + ']', hi:lo + mode.vpnBits - 1, lo, value, color:level % 2 ? 'vpn-odd' : 'vpn-even' });
+  }
+  const offset = va & mask(12);
+  fields.push({ name:'offset', hi:11, lo:0, value:offset, color:'offset' });
+  return { mode, va, vpn, offset, fields };
+}
+
+function calculateRootPTE(text, decoded) {
+  const mode = decoded.mode;
+  const ppn = parseUnsigned(text, mode.ppnBits, '根 PPN');
+  const base = ppn << 12n;
+  const index = decoded.vpn[mode.levels - 1];
+  const displacement = index * BigInt(mode.pteBytes);
+  return { ppn, base, index, displacement, address:base + displacement };
+}
+
+function modeSamples(modeName) {
+  const mode = getMode(modeName);
+  return {
+    example:hex((1n << BigInt(12 + (mode.levels - 1) * mode.vpnBits)) | 0x2345678n, mode.bits / 4),
+    upper:mode.bits === 32 ? null : hex((1n << 64n) - (1n << BigInt(mode.vaBits - 1)), 16),
+    maximum:hex(mask(mode.bits), mode.bits / 4),
+    ppn:'0x80000'
+  };
+}
+
+function element(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = String(text);
+  return node;
+}
+
+function renderBreakdown(decoded) {
+  const { mode, va, fields } = decoded;
+  document.getElementById('mode-tag').textContent = mode.name + ' · ' + mode.levels + ' 级 · ' + mode.pteBytes + ' 字节 PTE';
+  document.getElementById('normalized').textContent = 'VA = ' + hex(va, mode.bits / 4) + ' = ' + va + '（十进制）';
+  document.getElementById('canonical').textContent = mode.bits === 32
+    ? '32 位范围检查通过；Sv32 没有额外的高位符号扩展字段。'
+    : 'Canonical 检查通过：VA[63:' + mode.vaBits + '] 全部等于 bit ' + (mode.vaBits - 1) + ' = ' + ((va >> BigInt(mode.vaBits - 1)) & 1n) + '。灰色高位仅用于符号扩展，不参与 VPN 索引。';
+  const labels = document.getElementById('bit-labels');
+  const diagram = document.getElementById('bit-row');
+  const body = document.getElementById('fields');
+  labels.replaceChildren();
+  diagram.replaceChildren();
+  body.replaceChildren();
+  labels.style.setProperty('--bits', mode.bits);
+  diagram.style.setProperty('--bits', mode.bits);
+  for (let bit = mode.bits - 1; bit >= 0; bit--) labels.append(element('span', '', bit));
+  fields.forEach(field => {
+    const width = field.hi - field.lo + 1;
+    const range = field.hi + ':' + field.lo;
+    const binary = field.value.toString(2).padStart(width, '0');
+    const box = element('div', 'field ' + field.color);
+    box.style.gridColumn = 'span ' + width;
+    box.append(element('span', 'field-name', field.name), element('small', '', '[' + range + '] · ' + width + ' 位'), element('code', '', hex(field.value)));
+    diagram.append(box);
+    const row = element('tr');
+    [field.name, range, width + ' 位', hex(field.value), field.value.toString(), binary].forEach((text, index) => {
+      const cell = element('td');
+      cell.append(element(index >= 3 ? 'code' : 'span', '', text));
+      row.append(cell);
+    });
+    body.append(row);
+  });
+  document.getElementById('breakdown').hidden = false;
+}
+
+function renderCalculator() {
+  const mode = getMode(document.getElementById('mode').value);
+  const vaInput = document.getElementById('va');
+  const ppnInput = document.getElementById('root-ppn');
+  const vaError = document.getElementById('va-error');
+  const rootError = document.getElementById('root-error');
+  const result = document.getElementById('root-result');
+  document.getElementById('mode-help').textContent = mode.bits === 32
+    ? 'Sv32：VA 限定 32 位，范围 0x00000000 … 0xffffffff；VPN[1:0] 各 10 位。'
+    : mode.name + '：以 64 位无符号整数输入；VA[63:' + mode.vaBits + '] 必须全部等于 bit ' + (mode.vaBits - 1) + '。各级 VPN 均为 9 位；高半区需显式补齐高位 1。';
+  document.getElementById('root-help').textContent = mode.name + '：PPN 为 ' + mode.ppnBits + ' 位（0 … ' + hex(mask(mode.ppnBits)) + '）；每个 PTE ' + mode.pteBytes + ' 字节。字段宽度上限不代表硬件实现支持全部物理地址。';
+  document.getElementById('upper').hidden = mode.bits === 32;
+  vaError.textContent = '';
+  rootError.textContent = '';
+  result.replaceChildren();
+  vaInput.setAttribute('aria-invalid', 'false');
+  ppnInput.setAttribute('aria-invalid', 'false');
+  document.getElementById('breakdown').hidden = true;
+  let decoded;
+  try {
+    decoded = decodeVA(vaInput.value, mode.name);
+    renderBreakdown(decoded);
+  } catch (error) {
+    vaError.textContent = error.message;
+    vaInput.setAttribute('aria-invalid', 'true');
+  }
+  if (!ppnInput.value.trim()) {
+    result.textContent = '未提供根 PPN：不计算 PTE 地址。';
+    return;
+  }
+  try {
+    parseUnsigned(ppnInput.value, mode.ppnBits, '根 PPN');
+    if (!decoded) {
+      result.textContent = '请先修正 VA；当前未计算 PTE 地址。';
+      return;
+    }
+    const pte = calculateRootPTE(ppnInput.value, decoded);
+    result.append(
+      element('p', '', '根页表基址 = (' + hex(pte.ppn) + ' << 12) = ' + hex(pte.base)),
+      element('p', '', '最高级 VPN[' + (mode.levels - 1) + '] = ' + pte.index + '；PTE 偏移 = ' + pte.index + ' × ' + mode.pteBytes + ' = ' + hex(pte.displacement)),
+      element('p', '', '首次 PTE 物理地址 = ' + hex(pte.base) + ' + ' + hex(pte.displacement) + ' = ' + hex(pte.address) + '（十进制 ' + pte.address + '）'),
+      element('p', 'notes', '这里只定位页表项。未读取 PTE 内容，不能据此判断映射是否存在，也不能给出最终物理地址。')
+    );
+  } catch (error) {
+    rootError.textContent = error.message;
+    ppnInput.setAttribute('aria-invalid', 'true');
+  }
+}
+
+function initCalculator() {
+  document.getElementById('mode').addEventListener('change', renderCalculator);
+  ['va', 'root-ppn'].forEach(id => document.getElementById(id).addEventListener('input', renderCalculator));
+  ['sample', 'upper', 'maximum'].forEach(id => {
+    document.getElementById(id).addEventListener('click', () => {
+      const samples = modeSamples(document.getElementById('mode').value);
+      document.getElementById('va').value = id === 'sample' ? samples.example : samples[id];
+      if (id === 'sample') document.getElementById('root-ppn').value = samples.ppn;
+      renderCalculator();
+    });
+  });
+  renderCalculator();
+}
+
+if (typeof document !== 'undefined') initCalculator();
+</script>
+</body>
+</html>
