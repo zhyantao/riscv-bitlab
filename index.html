@@ -72,6 +72,13 @@
       }
       button:hover { background: #edf7ee; border-color: var(--accent); }
       #clear-btn { margin-left: auto; color: var(--danger); }
+      .bit-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 12px; }
+      .bit-byte { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; }
+      .bit-cell { min-width: 0; text-align: center; }
+      .bit-index { display: block; margin-bottom: 5px; font-size: 10px; color: #777; }
+      .bit-button { width: 100%; padding: 9px 0; border-radius: 4px; font-family: "SF Mono", Menlo, monospace; font-size: 14px; }
+      .bit-button[aria-pressed="true"] { background: #287d2c; border-color: #287d2c; color: #fff; }
+      .bit-button:disabled { cursor: not-allowed; opacity: 0.5; }
       table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
       th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
       th { background: #f6f8fa; font-weight: 600; line-height: 1.6; }
@@ -84,6 +91,7 @@
         body { padding: 12px; }
         .control-panel { padding: 16px 12px; }
         .input-row { flex-direction: column; align-items: stretch; }
+        .bit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         th, td { padding: 10px 6px; }
         th:first-child { width: 18%; }
       }
@@ -94,6 +102,12 @@
     <p class="subtitle">十六进制 / 十进制输入 · 实时换算 · 本地计算，无需联网</p>
 
     <main class="control-panel">
+      <section class="section" aria-labelledby="binary-title">
+        <h2 id="binary-title">64 bit 二进制表示</h2>
+        <div id="bit-grid" class="bit-grid" role="group" aria-labelledby="binary-title" aria-describedby="bit-tip"></div>
+        <p class="tip" id="bit-tip"></p>
+      </section>
+
       <section class="section">
         <h2><span class="step-badge">1</span> 输入数字</h2>
         <div class="input-row">
@@ -130,6 +144,36 @@
     <script>
       const input = document.getElementById("number-input");
       const error = document.getElementById("input-error");
+      const bitGrid = document.getElementById("bit-grid");
+      const bitTip = document.getElementById("bit-tip");
+      let currentBytes = 0n;
+      const bitButtons = [];
+      for (let byte = 7; byte >= 0; byte--) {
+        const group = document.createElement("div");
+        group.className = "bit-byte";
+        for (let offset = 7; offset >= 0; offset--) {
+          const bit = byte * 8 + offset;
+          const cell = document.createElement("div");
+          cell.className = "bit-cell";
+          const index = document.createElement("span");
+          index.className = "bit-index";
+          index.textContent = bit.toString();
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "bit-button";
+          button.addEventListener("click", () => {
+            if (currentBytes === null) return;
+            const value = currentBytes ^ (1n << BigInt(bit));
+            const hexadecimal = /^0x/i.test(input.value.trim()) || /[a-f]/i.test(input.value);
+            input.value = hexadecimal ? "0x" + value.toString(16).toUpperCase() : value.toString();
+            updateResults();
+          });
+          bitButtons.push({ button, bit });
+          cell.append(index, button);
+          group.appendChild(cell);
+        }
+        bitGrid.appendChild(group);
+      }
       const units = [
         ["字节", "B", "B"],
         ["千字节", "KB", "KiB"],
@@ -197,6 +241,17 @@
           error.hidden = false;
           input.setAttribute("aria-invalid", "true");
         }
+        currentBytes = error.hidden ? (bytes ?? 0n) : null;
+        bitButtons.forEach(({ button, bit }) => {
+          const enabled = currentBytes !== null;
+          const isSet = enabled && (currentBytes & (1n << BigInt(bit))) !== 0n;
+          button.disabled = !enabled;
+          button.textContent = enabled ? (isSet ? "1" : "0") : "—";
+          button.setAttribute("aria-pressed", String(isSet));
+          button.setAttribute("aria-label", `bit ${bit}：${enabled ? (isSet ? "1" : "0") : "不可用"}，点击翻转`);
+        });
+        bitTip.textContent = "从高位 bit 63 到低位 bit 0，每 8 位一组；点击任意位翻转 0 / 1，并同步下方数值。"
+          + (currentBytes !== null && currentBytes >= (1n << 64n) ? " 当前数值超过 64 位，仅显示低 64 位，翻转时保留高位。" : "");
         resultCells.forEach((cells, index) => {
           cells.forEach((cell, column) => {
             const divisor = (column === 0 ? 1000n : 1024n) ** BigInt(index);
