@@ -47,7 +47,7 @@
       .input-row { display: flex; align-items: end; gap: 12px; }
       .input-field { flex: 1; min-width: 0; }
       label { display: block; font-size: 13px; margin-bottom: 6px; }
-      input, select {
+      input {
         padding: 10px;
         border: 1px solid var(--border);
         border-radius: 6px;
@@ -57,7 +57,6 @@
         min-height: 42px;
       }
       input { width: 100%; font-family: "SF Mono", Menlo, monospace; }
-      input[aria-invalid="true"] { border-color: var(--danger); }
       :focus-visible { outline: 2px solid #287d2c; outline-offset: 3px; }
       .tip { font-size: 12px; color: #666; margin: 8px 0 0; line-height: 1.7; }
       .error { color: var(--danger); font-size: 13px; margin: 8px 0 0; }
@@ -85,7 +84,6 @@
         body { padding: 12px; }
         .control-panel { padding: 16px 12px; }
         .input-row { flex-direction: column; align-items: stretch; }
-        select { width: 100%; }
         th, td { padding: 10px 6px; }
         th:first-child { width: 18%; }
       }
@@ -105,16 +103,8 @@
               autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="4096"
               aria-describedby="input-tip input-error" aria-invalid="false" />
           </div>
-          <div>
-            <label for="input-base">输入进制</label>
-            <select id="input-base">
-              <option value="auto">自动识别</option>
-              <option value="10">十进制（DEC）</option>
-              <option value="16">十六进制（HEX）</option>
-            </select>
-          </div>
         </div>
-        <p class="tip" id="input-tip" aria-live="polite"></p>
+        <p class="tip" id="input-tip">自动识别：0x 前缀或含 A–F 的整数按十六进制，纯数字按十进制。纯数字十六进制请加 0x。仅接受非负整数，最多 4096 个字符。</p>
         <p class="error" id="input-error" role="alert" hidden></p>
         <div class="examples" aria-label="输入示例">
           <button type="button" data-example="0x100000">0x100000 · 1 MiB</button>
@@ -139,14 +129,7 @@
 
     <script>
       const input = document.getElementById("number-input");
-      const baseSelect = document.getElementById("input-base");
       const error = document.getElementById("input-error");
-      const inputTip = document.getElementById("input-tip");
-      const inputTips = {
-        auto: "自动识别：0x 前缀或含 A–F 的整数按十六进制，其余按十进制。纯数字十六进制请加 0x 或选择 HEX。",
-        "10": "十进制：仅使用数字 0–9，例如 1073741824。不支持 0x 前缀、小数或分隔符。",
-        "16": "十六进制：使用数字 0–9 和字母 A–F，不区分大小写，0x 前缀可省略。例如 FF 或 0xFF；纯数字 10 表示十进制的 16。",
-      };
       const units = [
         ["字节", "B", "B"],
         ["千字节", "KB", "KiB"],
@@ -173,14 +156,11 @@
         return cells;
       });
 
-      function parseBytes(raw, mode) {
+      function parseBytes(raw) {
         const text = raw.trim();
         if (!text) return null;
         if (raw.length > 4096) throw new Error("输入不能超过 4096 个字符。");
-        const base = mode === "auto"
-          ? (/^0x/i.test(text) || /[a-f]/i.test(text) ? "16" : "10")
-          : mode;
-        if (base === "16") {
+        if (/^0x/i.test(text) || /[a-f]/i.test(text)) {
           if (!/^(?:0x)?[0-9a-f]+$/i.test(text)) {
             throw new Error("请输入有效的十六进制非负整数，例如 0xFF 或 FF。");
           }
@@ -206,13 +186,12 @@
       }
 
       function updateResults() {
-        inputTip.textContent = inputTips[baseSelect.value] + "仅接受非负整数，最多 4096 个字符。";
         let bytes = null;
         error.textContent = "";
         error.hidden = true;
         input.setAttribute("aria-invalid", "false");
         try {
-          bytes = parseBytes(input.value, baseSelect.value);
+          bytes = parseBytes(input.value);
         } catch (failure) {
           error.textContent = failure.message;
           error.hidden = false;
@@ -227,11 +206,9 @@
       }
 
       input.addEventListener("input", updateResults);
-      baseSelect.addEventListener("change", updateResults);
       document.querySelectorAll("[data-example]").forEach((button) => {
         button.addEventListener("click", () => {
           input.value = button.dataset.example;
-          baseSelect.value = "auto";
           updateResults();
         });
       });
