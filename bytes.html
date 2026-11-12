@@ -32,6 +32,7 @@
   button:hover { background:#eff6ff; border-color:var(--accent); }
   #clear-btn { flex-shrink:0; }
   :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  input:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
   .error { color:#b91c1c; font-size:13px; line-height:1.7; }
   .bit-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px 12px; }
   .bit-byte { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:3px; }
@@ -48,10 +49,12 @@
   td:first-child { font-family:inherit; color:var(--muted); }
   .unit-value { display:inline-block; min-width:22ch; text-align:right; }
   .unit { display:inline-block; width:3ch; text-align:left; margin-left:6px; color:var(--accent); font-size:12px; }
-  @media (max-width:600px) {
+  @media (max-width:700px) {
     header { padding-left:16px; padding-right:16px; } main { padding:12px; } .card { padding:14px; }
     .bit-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
     th, td { padding:10px 6px; } th:first-child { width:26%; }
+    .unit-value { min-width:0; }
+    .unit { margin-left:4px; }
   }
 </style>
 </head>

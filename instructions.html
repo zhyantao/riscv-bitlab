@@ -49,11 +49,12 @@
   .notes p:first-child { margin:0 0 6px; }
   .example { font-size:13px; line-height:1.9; margin-bottom:0; }
   a:focus-visible, select:focus-visible, .field:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }
-  .codec-controls { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:12px 0; }
+  select:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
+  .codec-controls { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:12px 0; font-size:14px; }
   .codec-form { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0; }
   .codec-form label { min-width:6em; font-size:14px; }
   .codec-input { flex:1; min-width:180px; font:14px ui-monospace,monospace; padding:9px; border:1px solid #9ca3af; border-radius:6px; }
-  .codec-button { padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; background:#f8fafc; color:var(--fg); cursor:pointer; }
+  .codec-button { padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; background:#f8fafc; color:var(--fg); cursor:pointer; font-size:14px; }
   .codec-error { color:#b91c1c; font-size:13px; line-height:1.6; }
   .codec-error:empty { display:none; }
   .codec-summary { font-size:14px; line-height:1.9; overflow-wrap:anywhere; }
@@ -61,12 +62,13 @@
   .codec-bits { display:grid; grid-template-columns:repeat(32,minmax(0,1fr)); min-width:1024px; }
   .codec-bit { border:1px solid #d6dae1; background:#f8fafc; padding:4px 0; font:13px ui-monospace,monospace; cursor:pointer; }
   .codec-bit[aria-pressed="true"] { background:#2563eb; color:white; }
-  .codec-field-input { width:15ch; padding:6px; border:1px solid #9ca3af; border-radius:4px; font:13px ui-monospace,monospace; }
+  .codec-field-input { width:8ch; padding:8px 4px; border:1px solid #9ca3af; border-radius:4px; font:13px ui-monospace,monospace; }
   .codec-field-value { font:12px ui-monospace,monospace; max-width:100%; overflow-wrap:anywhere; }
   .field.narrow .codec-field-value { writing-mode:vertical-rl; white-space:nowrap; }
   .codec-input[aria-invalid="true"], .codec-field-input[aria-invalid="true"] { border-color:#b91c1c; }
   .codec-field-error { display:block; color:#b91c1c; font-size:12px; }
-  input:focus-visible, button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  input:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
   @media (max-width:600px) { header { padding-left:16px; padding-right:16px; } main { padding:12px; } .card, .intro { padding:14px; } }
 </style>
 </head>
@@ -110,7 +112,7 @@
       <p id="codec-bytes" class="desc"></p>
       <p class="desc">位号下方的 0/1 可点击翻转；表格字段为原始无符号编码，按 Enter 或移开焦点提交。修改固定字段可能变成其他指令或无法识别的编码。</p>
       <div id="codec-diagram" class="scroll"></div>
-      <div class="scroll"><table><thead><tr><th>位</th><th>字段</th><th>原始值（可编辑）</th><th>说明</th></tr></thead><tbody id="codec-fields"></tbody></table></div>
+      <div class="scroll"><table><thead><tr><th>位</th><th>字段</th><th>原始值</th><th>说明</th></tr></thead><tbody id="codec-fields"></tbody></table></div>
     </div>
   </section>
   <section class="intro" aria-label="指令编码说明">
