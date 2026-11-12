@@ -1,259 +1,546 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>字节转换工具</title>
-    <style>
-      :root {
-        --card-bg: #fff;
-        --border: #e2e2e2;
-        --accent: #4caf50;
-        --danger: #c62828;
-        --text: #333;
-      }
-      * { box-sizing: border-box; }
-      body {
-        font-family: -apple-system, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
-        max-width: 860px;
-        margin: 0 auto;
-        padding: 20px;
-        background: #f0f2f5;
-        color: var(--text);
-      }
-      .control-panel {
-        background: var(--card-bg);
-        padding: 20px 24px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      }
-      .section { margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid #eee; }
-      .section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-      h2 { font-size: 14px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
-      .step-badge {
-        background: var(--accent);
-        color: #fff;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        flex-shrink: 0;
-      }
-      .input-row { display: flex; align-items: end; gap: 12px; }
-      .input-field { flex: 1; min-width: 0; }
-      label { display: block; font-size: 13px; margin-bottom: 6px; }
-      input {
-        padding: 10px;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        background: #fff;
-        color: var(--text);
-        font-size: 14px;
-        min-height: 42px;
-      }
-      input { width: 100%; font-family: "SF Mono", Menlo, monospace; }
-      :focus-visible { outline: 2px solid #287d2c; outline-offset: 3px; }
-      .tip { font-size: 12px; color: #666; margin: 8px 0 0; line-height: 1.7; }
-      .error { color: var(--danger); font-size: 13px; margin: 8px 0 0; }
-      button {
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        padding: 7px 12px;
-        background: #fafafa;
-        color: var(--text);
-        cursor: pointer;
-        font-size: 12px;
-      }
-      button:hover { background: #edf7ee; border-color: var(--accent); }
-      #clear-btn { min-height: 42px; flex-shrink: 0; color: var(--danger); }
-      .bit-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 12px; }
-      .bit-byte { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; }
-      .bit-cell { min-width: 0; text-align: center; }
-      .bit-index { display: block; margin-bottom: 5px; font-size: 10px; color: #777; }
-      .bit-button { width: 100%; padding: 9px 0; border-radius: 4px; font-family: "SF Mono", Menlo, monospace; font-size: 14px; }
-      .bit-button[aria-pressed="true"] { background: #287d2c; border-color: #287d2c; color: #fff; }
-      .bit-button:disabled { cursor: not-allowed; opacity: 0.5; }
-      table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
-      th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
-      th { background: #f6f8fa; font-weight: 600; line-height: 1.6; }
-      th:first-child { width: 15%; }
-      td { font-family: "SF Mono", Menlo, "Courier New", monospace; overflow-wrap: anywhere; line-height: 1.7; }
-      td:first-child { font-family: inherit; color: #666; }
-      tbody tr:last-child td { border-bottom: none; }
-      .unit { display: block; color: #287d2c; font-size: 12px; }
-      @media (max-width: 540px) {
-        body { padding: 12px; }
-        .control-panel { padding: 16px 12px; }
-        .bit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        th, td { padding: 10px 6px; }
-        th:first-child { width: 18%; }
-      }
-    </style>
-  </head>
-  <body>
-    <main class="control-panel">
-      <section class="section" aria-labelledby="binary-title">
-        <h2 id="binary-title">64 bit 二进制表示</h2>
-        <div id="bit-grid" class="bit-grid" role="group" aria-labelledby="binary-title" aria-describedby="bit-tip"></div>
-        <p class="tip" id="bit-tip"></p>
-      </section>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RISC-V 位域速查</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; background:var(--bg); color:var(--fg); }
+  header { padding:16px 24px; background:#111827; color:#fff; display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
+  header h1 { font-size:18px; margin:0; }
+  nav { display:flex; flex-wrap:wrap; gap:8px; }
+  nav a { color:#d1d5db; text-decoration:none; padding:6px 10px; border-radius:6px; font-size:14px; }
+  nav a[aria-current], nav a:hover { background:#374151; color:#fff; }
+  nav a:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }
+  header select, header input { padding:6px 10px; border-radius:6px; border:1px solid #374151; background:#1f2937; color:#fff; font-size:14px; }
+  main { max-width:1200px; margin:0 auto; padding:20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:20px; }
+  .card h2 { margin:0 0 4px; font-size:18px; }
+  .desc { color:var(--muted); font-size:13px; margin-bottom:12px; }
+  .bits-wrap { overflow-x:auto; padding:4px 2px 8px; }
+  .bit-labels, .row { display:grid; grid-template-columns:repeat(var(--bits),minmax(0,1fr)); min-width:calc(var(--bits) * 32px); }
+  .bit-labels span { font:11px ui-monospace,monospace; text-align:center; color:var(--muted); padding:5px 0; }
+  .row { margin-bottom:12px; }
+  .cell { min-width:0; min-height:102px; padding:12px 4px; border:1px solid #9ca3af; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; position:relative; }
+  .cell-label { font:600 13px/1.4 ui-monospace,monospace; white-space:nowrap; flex-shrink:0; }
+  .cell small { font-size:11px; color:#4b5563; }
+  .cell.narrow .cell-label { writing-mode:vertical-rl; font-size:12px; }
+  .cell.narrow small { display:none; }
+  .cell.rsv { background:repeating-linear-gradient(45deg,#f3f4f6,#f3f4f6 4px,#e5e7eb 4px,#e5e7eb 8px); color:var(--muted); }
+  .cell.hover, .cell:hover { outline:2px solid var(--accent); outline-offset:-2px; z-index:1; }
+  .c0 { background:#dbeafe; } .c1 { background:#dcfce7; } .c2 { background:#fef3c7; } .c3 { background:#fce7f3; } .c4 { background:#ede9fe; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  th, td { border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+  th { background:#f9fafb; }
+  tr.hover { background:#eff6ff; }
+  code { background:#f3f4f6; padding:1px 4px; border-radius:3px; font-size:12px; }
+  .tag { font-size:11px; padding:1px 6px; border-radius:10px; background:#e0e7ff; color:#3730a3; }
+  .hidden { display:none; }
+  .value-panel { background:#f8fafc; border:1px solid var(--line); border-radius:6px; padding:12px; margin:12px 0; }
+  .value-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .value-input, .field-input { font:14px ui-monospace,monospace; padding:7px 8px; border:1px solid #9ca3af; border-radius:4px; max-width:100%; }
+  .value-input { width:25ch; }
+  .field-input { width:20ch; }
+  .value-error { color:#b91c1c; font-size:12px; min-height:1.4em; margin-top:4px; }
+  input[aria-invalid="true"] { border-color:#b91c1c; }
+  .value-help { color:var(--muted); font-size:12px; line-height:1.6; margin:8px 0 0; }
+  .binary-value { display:block; overflow-wrap:anywhere; font:12px/1.8 ui-monospace,monospace; margin-top:8px; }
+  .bit-values { display:grid; grid-template-columns:repeat(var(--bits),minmax(0,1fr)); min-width:calc(var(--bits) * 32px); }
+  .bit-value { border:1px solid #d6dae1; background:#f8fafc; color:#6b7280; padding:6px 0; font:13px ui-monospace,monospace; cursor:pointer; }
+  .bit-value[aria-pressed="true"] { background:#2563eb; color:#fff; }
+  .cell[role="button"] { cursor:pointer; }
+  .cell.nonzero { box-shadow:inset 0 -3px #2563eb; }
+  .cell-value { font:600 12px ui-monospace,monospace; overflow-wrap:anywhere; max-width:100%; text-align:center; }
+  .cell.narrow .cell-value { writing-mode:vertical-rl; white-space:nowrap; }
+  .field-meaning { display:block; color:#3730a3; font-size:12px; margin-top:4px; }
+  button:focus-visible, input:focus-visible, .cell:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .table-wrap { overflow-x:auto; }
+  .value-reset { padding:7px 12px; border:1px solid #9ca3af; border-radius:4px; background:white; cursor:pointer; }
+</style>
+</head>
+<body>
+<header>
+  <h1>RISC-V 位域速查</h1>
+  <nav aria-label="页面导航">
+    <a href="index.html" aria-current="page">寄存器位域</a>
+    <a href="instructions.html">指令编码</a>
+    <a href="traps.html">异常与中断</a>
+    <a href="translation.html">地址翻译</a>
+    <a href="bytes.html">字节换算</a>
+  </nav>
+  <select id="sel"></select>
+  <select id="xlen">
+    <option value="64">RV64</option>
+    <option value="32">RV32</option>
+  </select>
+  <input id="q" placeholder="全局搜索，如 MPP / SUM" aria-label="搜索寄存器或字段名" title="输入时搜索全部寄存器；多个关键词用斜杠、逗号或空格分隔，匹配任意一个">
+</header>
+<section class="value-panel" style="max-width:1160px; margin:20px auto 0" aria-label="CSR 赋值解析">
+  <form id="assignment-form" class="value-controls">
+    <label for="assignment">粘贴 CSR 赋值</label>
+    <input id="assignment" class="value-input" style="width:34ch" placeholder="mstatus = 0x1800" maxlength="100" spellcheck="false" aria-describedby="assignment-error assignment-help">
+    <button class="value-reset" type="submit">解析并定位</button>
+  </form>
+  <div id="assignment-error" class="value-error" role="status"></div>
+  <p id="assignment-help" class="value-help">按顶部 RV32 / RV64 解析；支持本页卡片名，如 mstatus、sstatus、misa、mie、mtvec、mcause、satp、fcsr、vtype、hstatus。解析后可继续编辑位域；不模拟硬件或不同 CSR 间的状态同步。</p>
+</section>
+<main id="main"></main>
 
-      <section class="section">
-        <h2><span class="step-badge">1</span> 输入数字</h2>
-        <div class="input-row">
-          <div class="input-field">
-            <input id="number-input" type="text" aria-label="字节数" value="0x40000000" placeholder="例如 0x40000000 或 1073741824"
-              autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="4096"
-              aria-describedby="input-tip input-error" aria-invalid="false" />
-          </div>
-          <button type="button" id="clear-btn">清空</button>
-        </div>
-        <p class="tip" id="input-tip">自动识别：0x 前缀或含 A–F 的整数按十六进制，纯数字按十进制。纯数字十六进制请加 0x。仅接受非负整数，最多 4096 个字符。</p>
-        <p class="error" id="input-error" role="alert" hidden></p>
-      </section>
+<script>
+// fields: [name, hi, lo, desc]  ；xl: 'both'(默认) | 64 (仅RV64) | 32 (仅RV32)
+const REGS = [
+{
+  id:"mstatus", name:"mstatus", width:"XLEN", priv:"M", addr:"0x300",
+  desc:"机器模式状态寄存器。RV32 中 SD 位于 bit31，高位部分通过 mstatush 访问；RV64 为单个 64 位寄存器。",
+  fields:[
+    ["SD",63,63,"状态脏汇总位，FS/VS/XS 任一为 Dirty 时为 1（RV32 为 bit31）", 64],
+    ["WPRI",62,43,"保留", 64, true],
+    ["WPRI",40,40,"保留", 64, true],
+    ["MDT",42,42,"M 模式 double trap（Smdbltrp）", 64],
+    ["MPELP",41,41,"M 模式 landing pad 期望（Zicfilp）", 64],
+    ["MPV",39,39,"进入 M 前的虚拟化模式（H 扩展）", 64],
+    ["GVA",38,38,"陷入时 mtval 是否为 guest 虚拟地址", 64],
+    ["MBE",37,37,"M 模式数据访问大端", 64],
+    ["SBE",36,36,"S 模式数据访问大端", 64],
+    ["SXL",35,34,"S 模式 XLEN（1=32, 2=64）", 64],
+    ["UXL",33,32,"U 模式 XLEN（1=32, 2=64）", 64],
+    ["SD",31,31,"状态脏汇总位", 32],
+    ["WPRI",31,25,"保留", 64, true],
+    ["WPRI",30,25,"保留", 32, true],
+    ["SDT",24,24,"S 模式 double trap（Ssdbltrp）", 'both'],
+    ["SPELP",23,23,"S 模式 landing pad 期望", 'both'],
+    ["TSR",22,22,"陷入 S 模式 SRET", 'both'],
+    ["TW",21,21,"超时等待：WFI 在低特权级超时即陷入 M", 'both'],
+    ["TVM",20,20,"陷入虚拟内存操作（satp / SFENCE.VMA）", 'both'],
+    ["MXR",19,19,"可执行页可读（Make eXecutable Readable）", 'both'],
+    ["SUM",18,18,"S 模式可访问 U 页（permit Supervisor User Memory）", 'both'],
+    ["MPRV",17,17,"load/store 使用 MPP 的特权级与翻译", 'both'],
+    ["XS",16,15,"用户扩展状态（0 Off,1 Initial,2 Clean,3 Dirty）", 'both'],
+    ["FS",14,13,"浮点状态（0 Off,1 Initial,2 Clean,3 Dirty）", 'both'],
+    ["MPP",12,11,"陷入 M 前的特权级（0 U, 1 S, 3 M）", 'both'],
+    ["VS",10,9,"向量状态（0 Off,1 Initial,2 Clean,3 Dirty）", 'both'],
+    ["SPP",8,8,"陷入 S 前的特权级（0 U, 1 S）", 'both'],
+    ["MPIE",7,7,"陷入 M 前的 MIE", 'both'],
+    ["UBE",6,6,"U 模式数据访问大端", 'both'],
+    ["SPIE",5,5,"陷入 S 前的 SIE", 'both'],
+    ["WPRI",4,4,"保留", 'both', true],
+    ["MIE",3,3,"M 模式全局中断使能", 'both'],
+    ["WPRI",2,2,"保留", 'both', true],
+    ["SIE",1,1,"S 模式全局中断使能", 'both'],
+    ["WPRI",0,0,"保留", 'both', true],
+  ]
+},
+{
+  id:"sstatus", name:"sstatus", width:"XLEN", priv:"S", addr:"0x100",
+  desc:"mstatus 的受限视图（S 模式可见的子集）。",
+  fields:[
+    ["SD",63,63,"状态脏汇总位", 64],
+    ["UXL",33,32,"U 模式 XLEN", 64],
+    ["SD",31,31,"状态脏汇总位", 32],
+    ["MXR",19,19,"可执行页可读", 'both'],
+    ["SUM",18,18,"S 模式可访问 U 页", 'both'],
+    ["XS",16,15,"用户扩展状态", 'both'],
+    ["FS",14,13,"浮点状态", 'both'],
+    ["VS",10,9,"向量状态", 'both'],
+    ["SPP",8,8,"陷入 S 前的特权级", 'both'],
+    ["UBE",6,6,"U 模式数据大端", 'both'],
+    ["SPIE",5,5,"陷入 S 前的 SIE", 'both'],
+    ["SIE",1,1,"S 模式全局中断使能", 'both'],
+  ]
+},
+{
+  id:"misa", name:"misa", width:"XLEN", priv:"M", addr:"0x301",
+  desc:"ISA 与扩展。低 26 位每位对应字母 A–Z 扩展，最高 2 位为 MXL。",
+  fields:[
+    ["MXL",63,62,"机器 XLEN（1=32, 2=64, 3=128）；RV32 位于 [31:30]", 64],
+    ["MXL",31,30,"机器 XLEN", 32],
+    ["Extensions",25,0,"bit0=A 原子, 2=C 压缩, 3=D 双精度, 5=F 单精度, 7=H 虚拟化, 8=I(RV32I/64I), 12=M 乘除, 18=S 监管模式, 20=U 用户模式, 21=V 向量", 'both'],
+  ]
+},
+{
+  id:"mie", name:"mie / mip", width:"XLEN", priv:"M", addr:"mie 0x304 / mip 0x344",
+  desc:"中断使能（mie）与中断挂起（mip）位布局一致。S/VS 级位在设置委托后可见。",
+  fields:[
+    ["LCOFIE/LCOFIP",13,13,"本地计数器溢出中断（Sscofpmf）", 'both'],
+    ["MEIE/MEIP",11,11,"M 外部中断", 'both'],
+    ["SEIE/SEIP",9,9,"S 外部中断", 'both'],
+    ["MTIE/MTIP",7,7,"M 定时器中断", 'both'],
+    ["STIE/STIP",5,5,"S 定时器中断", 'both'],
+    ["MSIE/MSIP",3,3,"M 软件中断", 'both'],
+    ["SSIE/SSIP",1,1,"S 软件中断", 'both'],
+  ]
+},
+{
+  id:"mtvec", name:"mtvec / stvec", width:"XLEN", priv:"M", addr:"mtvec 0x305 / stvec 0x105",
+  desc:"陷入向量基址与模式。",
+  fields:[
+    ["BASE",63,2,"向量基址（4 字节对齐）；RV32 为 [31:2]", 'both'],
+    ["MODE",1,0,"0 Direct；1 Vectored（异常 pc=BASE，中断 pc=BASE+4*cause）", 'both'],
+  ]
+},
+{
+  id:"mcause", name:"mcause / scause", width:"XLEN", priv:"M", addr:"mcause 0x342 / scause 0x142",
+  desc:"陷入原因。Interrupt=1 为中断，=0 为异常。常见异常码：0 指令地址未对齐，1 指令访问错误，2 非法指令，3 断点，4 load 地址未对齐，5 load 访问错误，6 store 未对齐，7 store 访问错误，8 U-ecall，9 S-ecall，11 M-ecall，12 指令缺页，13 load 缺页，15 store 缺页。常见中断码：1 SSI，3 MSI，5 STI，7 MTI，9 SEI，11 MEI。",
+  fields:[
+    ["Interrupt",63,63,"1=中断，0=异常（RV32 为 bit31）", 64],
+    ["Exception Code",62,0,"原因编码", 64],
+    ["Interrupt",31,31,"1=中断，0=异常", 32],
+    ["Exception Code",30,0,"原因编码", 32],
+  ]
+},
+{
+  id:"satp", name:"satp", width:"XLEN", priv:"S", addr:"0x180",
+  desc:"S 模式地址翻译与保护。",
+  fields:[
+    ["MODE",63,60,"0 Bare, 8 Sv39, 9 Sv48, 10 Sv57；其他编码保留", 64],
+    ["ASID",59,44,"地址空间 ID（最多 16 位）", 64],
+    ["PPN",43,0,"根页表物理页号", 64],
+    ["MODE",31,31,"0 Bare, 1 Sv32", 32],
+    ["ASID",30,22,"地址空间 ID（9 位）", 32],
+    ["PPN",21,0,"根页表物理页号", 32],
+  ]
+},
+{
+  id:"pte", name:"页表项 PTE (Sv39/48/57)", width:"64", priv:"S", addr:"—",
+  desc:"R/W/X 全为 0 表示指向下一级页表；否则为叶子。",
+  fields:[
+    ["N",63,63,"NAPOT（Svnapot）", 64],
+    ["PBMT",62,61,"页内存类型（Svpbmt）", 64],
+    ["Reserved",60,54,"保留", 64, true],
+    ["PPN",53,10,"物理页号", 64],
+    ["RSW",9,8,"软件保留", 64],
+    ["D",7,7,"Dirty", 64],
+    ["A",6,6,"Accessed", 64],
+    ["G",5,5,"Global", 64],
+    ["U",4,4,"用户可访问", 64],
+    ["X",3,3,"可执行", 64],
+    ["W",2,2,"可写", 64],
+    ["R",1,1,"可读", 64],
+    ["V",0,0,"有效", 64],
+  ]
+},
+{
+  id:"pmpcfg", name:"pmpcfgN（单个 PMP 配置字节）", width:"8", priv:"M", addr:"pmpcfg0–15",
+  desc:"每个 pmpcfg 寄存器包含多个 8 位配置项（RV64 每个 8 项，RV32 每个 4 项），地址在 pmpaddrN 中（物理地址 >> 2）。",
+  fields:[
+    ["L",7,7,"锁定，M 模式也受限", 'both'],
+    ["WPRI",6,5,"保留", 'both', true],
+    ["A",4,3,"地址匹配：0 OFF, 1 TOR, 2 NA4, 3 NAPOT", 'both'],
+    ["X",2,2,"可执行", 'both'],
+    ["W",1,1,"可写", 'both'],
+    ["R",0,0,"可读", 'both'],
+  ]
+},
+{
+  id:"fcsr", name:"fcsr / fflags / frm", width:"32", priv:"U", addr:"fflags 0x001 / frm 0x002 / fcsr 0x003",
+  desc:"浮点控制状态。fflags=fcsr[4:0]，frm=fcsr[7:5]。",
+  fields:[
+    ["frm",7,5,"舍入模式：0 RNE, 1 RTZ, 2 RDN, 3 RUP, 4 RMM；5–7 保留（DYN=7 用于指令 rm 字段）", 'both'],
+    ["NV",4,4,"无效操作", 'both'],
+    ["DZ",3,3,"除零", 'both'],
+    ["OF",2,2,"上溢", 'both'],
+    ["UF",1,1,"下溢", 'both'],
+    ["NX",0,0,"不精确", 'both'],
+  ]
+},
+{
+  id:"vtype", name:"vtype", width:"XLEN", priv:"U", addr:"0xC21",
+  desc:"向量扩展类型寄存器。",
+  fields:[
+    ["vill",63,63,"非法配置（RV32 为 bit31）", 64],
+    ["vill",31,31,"非法配置", 32],
+    ["vma",7,7,"mask 不关注策略（1=agnostic）", 'both'],
+    ["vta",6,6,"tail 不关注策略（1=agnostic）", 'both'],
+    ["vsew",5,3,"SEW：0=8, 1=16, 2=32, 3=64", 'both'],
+    ["vlmul",2,0,"LMUL：5=1/8, 6=1/4, 7=1/2, 0=1, 1=2, 2=4, 3=8", 'both'],
+  ]
+},
+{
+  id:"hstatus", name:"hstatus", width:"XLEN", priv:"HS", addr:"0x600",
+  desc:"H 扩展：hypervisor 状态寄存器。",
+  fields:[
+    ["VSXL",33,32,"VS 模式 XLEN", 64],
+    ["VTSR",22,22,"陷入 VS 的 SRET", 'both'],
+    ["VTW",21,21,"陷入 VS 的 WFI", 'both'],
+    ["VTVM",20,20,"陷入 VS 的虚拟内存操作", 'both'],
+    ["VGEIN",17,12,"虚拟 guest 外部中断号选择", 'both'],
+    ["HU",9,9,"VU 模式可使用 hypervisor load/store 指令", 'both'],
+    ["SPVP",8,8,"HS 陷入前 VS 的特权级", 'both'],
+    ["SPV",7,7,"陷入 HS 前的虚拟化模式", 'both'],
+    ["GVA",6,6,"mtval/stval 是否为 guest 虚拟地址", 'both'],
+    ["VSBE",5,5,"VS 模式数据大端", 'both'],
+  ]
+},
+];
 
-      <section class="section">
-        <h2><span class="step-badge">2</span> 单位换算</h2>
-        <table aria-label="字节单位换算结果">
-          <thead>
-            <tr><th scope="col">量级</th><th scope="col">十进制单位<br />每级 1000 字节倍数</th><th scope="col">二进制单位<br />每级 1024 字节倍数</th></tr>
-          </thead>
-          <tbody id="results"></tbody>
-        </table>
-        <p class="tip">1 B = 1 字节；1 MB = 1,000,000 B，1 MiB = 1,048,576 B。内存容量常用 1024 进制，标准单位为 KiB / MiB / GiB / TiB。</p>
-        <p class="tip">使用 BigInt 精确计算，完整显示有限小数，不进行浮点近似或四舍五入。</p>
-      </section>
-    </main>
+const sel = document.getElementById('sel');
+const xlenSel = document.getElementById('xlen');
+const q = document.getElementById('q');
+const main = document.getElementById('main');
 
-    <script>
-      const input = document.getElementById("number-input");
-      const error = document.getElementById("input-error");
-      const bitGrid = document.getElementById("bit-grid");
-      const bitTip = document.getElementById("bit-tip");
-      let currentBytes = 0n;
-      const bitButtons = [];
-      for (let byte = 7; byte >= 0; byte--) {
-        const group = document.createElement("div");
-        group.className = "bit-byte";
-        for (let offset = 7; offset >= 0; offset--) {
-          const bit = byte * 8 + offset;
-          const cell = document.createElement("div");
-          cell.className = "bit-cell";
-          const index = document.createElement("span");
-          index.className = "bit-index";
-          index.textContent = bit.toString();
-          const button = document.createElement("button");
-          button.type = "button";
-          button.className = "bit-button";
-          button.addEventListener("click", () => {
-            if (currentBytes === null) return;
-            const value = currentBytes ^ (1n << BigInt(bit));
-            const hexadecimal = /^0x/i.test(input.value.trim()) || /[a-f]/i.test(input.value);
-            input.value = hexadecimal ? "0x" + value.toString(16).toUpperCase() : value.toString();
-            updateResults();
-          });
-          bitButtons.push({ button, bit });
-          cell.append(index, button);
-          group.appendChild(cell);
-        }
-        bitGrid.appendChild(group);
-      }
-      const units = [
-        ["字节", "B", "B"],
-        ["千字节", "KB", "KiB"],
-        ["兆字节", "MB", "MiB"],
-        ["吉字节", "GB", "GiB"],
-        ["太字节", "TB", "TiB"],
-      ];
-      const resultCells = units.map(([label, decimalUnit, binaryUnit]) => {
-        const row = document.createElement("tr");
-        const name = document.createElement("td");
-        name.textContent = label;
-        row.appendChild(name);
-        const cells = [decimalUnit, binaryUnit].map((unit) => {
-          const cell = document.createElement("td");
-          const value = document.createElement("span");
-          const suffix = document.createElement("span");
-          suffix.className = "unit";
-          suffix.textContent = unit;
-          cell.append(value, suffix);
-          row.appendChild(cell);
-          return value;
+REGS.forEach(r => { const o = document.createElement('option'); o.value = r.id; o.textContent = r.name; sel.appendChild(o); });
+const all = document.createElement('option'); all.value = 'all'; all.textContent = '全部寄存器'; sel.insertBefore(all, sel.firstChild);
+sel.value = 'all';
+
+function esc(s){ return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function fieldsFor(reg, xlen) {
+  const width = regTop(reg, xlen);
+  const mode = reg.width === 'XLEN' ? xlen : width;
+  return reg.fields.filter(f => f[4] === 'both' || f[4] === mode)
+    .filter(f => f[2] < width)
+    .map(f => [f[0], Math.min(f[1], width - 1), ...f.slice(2)])
+    .sort((a,b) => b[1]-a[1]);
+}
+
+function regTop(reg, xlen) {
+  if (reg.width === 'XLEN') return xlen;
+  return parseInt(reg.width);
+}
+
+const registerValues = new Map();
+function bitMask(width) { return (1n << BigInt(width)) - 1n; }
+function readField(value, hi, lo) { return (value >> BigInt(lo)) & bitMask(hi - lo + 1); }
+function writeField(value, hi, lo, next) {
+  const mask = bitMask(hi - lo + 1) << BigInt(lo);
+  return (value & ~mask) | ((next << BigInt(lo)) & mask);
+}
+function parseValue(text, width) {
+  const input = text.trim();
+  if (!/^(?:0x[0-9a-f]+|0b[01]+|[0-9]+)$/i.test(input)) {
+    throw new Error('请输入 0x 十六进制、0b 二进制或无前缀十进制非负整数。');
+  }
+  if (input.length > 66) throw new Error('输入过长，最多支持 64 位数值。');
+  const value = BigInt(input);
+  if (value > bitMask(width)) throw new Error(`数值超出 ${width} 位范围（最大 0x${bitMask(width).toString(16)}）。`);
+  return value;
+}
+function parseAssignment(text, xlen) {
+  const match = /^\s*([a-z][a-z0-9]*)\s*=\s*(.*?)\s*$/i.exec(text);
+  if (!match) throw new Error('请使用 寄存器名 = 数值 格式，例如 mstatus = 0x1800。');
+  const reg = REGS.find(item => item.id === match[1].toLowerCase());
+  if (!reg) throw new Error('暂不支持该寄存器名，请使用本页卡片名；别名寄存器不自动映射。');
+  const width = regTop(reg, xlen);
+  return { reg, width, value: parseValue(match[2], width) };
+}
+function fieldMeaning(reg, field, value, width) {
+  const name = field[0];
+  let choices;
+  if (['FS','VS','XS'].includes(name)) choices = ['Off','Initial','Clean','Dirty'];
+  if (name === 'MPP') choices = {0:'U 模式',1:'S 模式',2:'保留',3:'M 模式'};
+  if (name === 'SPP') choices = ['U 模式','S 模式'];
+  if (['MXL','SXL','UXL','VSXL'].includes(name)) choices = {1:'32 位',2:'64 位',3:'128 位 / 需核对实现'};
+  if (reg.id === 'satp' && name === 'MODE') choices = width === 32 ? {0:'Bare',1:'Sv32'} : {0:'Bare',8:'Sv39',9:'Sv48',10:'Sv57'};
+  if (reg.id === 'mtvec' && name === 'MODE') choices = ['Direct','Vectored'];
+  if (reg.id === 'pmpcfg' && name === 'A') choices = ['OFF','TOR','NA4','NAPOT'];
+  if (name === 'frm') choices = ['RNE','RTZ','RDN','RUP','RMM'];
+  if (name === 'Interrupt') choices = ['异常','中断'];
+  if (choices) return choices[value.toString()] ?? '保留 / 未定义编码';
+  return '';
+}
+
+function render() {
+  const xlen = parseInt(xlenSel.value);
+  const keys = q.value.toLowerCase().split(/[\s/／,，、]+/u).filter(Boolean);
+  const matches = text => keys.some(key => text.toLowerCase().includes(key));
+  main.innerHTML = '';
+  REGS.forEach(reg => {
+    if (sel.value !== 'all' && sel.value !== reg.id) return;
+    const fs = fieldsFor(reg, xlen);
+    if (keys.length && !fs.some(f => matches(f[0])) && !matches(reg.name)) return;
+    const top = regTop(reg, xlen) - 1;
+    const card = document.createElement('div'); card.className = 'card';
+    card.innerHTML = `<h2>${esc(reg.name)} <span class="tag">${reg.priv}</span> <span class="tag">CSR ${esc(reg.addr)}</span></h2><div class="desc">${esc(reg.desc)}</div>`;
+    const width = top + 1;
+    const stateKey = `${reg.id}:${width}`;
+    let value = registerValues.get(stateKey) ?? 0n;
+    const bindings = [];
+    const editors = new Map();
+    const panel = document.createElement('div'); panel.className = 'value-panel';
+    const controls = document.createElement('div'); controls.className = 'value-controls';
+    const label = document.createElement('label'); label.textContent = `${width} 位原始值`;
+    const input = document.createElement('input'); input.className = 'value-input';
+    input.id = `${reg.id}-value`; input.type = 'text'; input.spellcheck = false;
+    input.maxLength = 66; label.htmlFor = input.id;
+    const reset = document.createElement('button'); reset.className = 'value-reset';
+    reset.type = 'button'; reset.textContent = '清零';
+    const error = document.createElement('div'); error.className = 'value-error';
+    error.id = `${reg.id}-error`; error.setAttribute('aria-live', 'polite');
+    input.setAttribute('aria-describedby', error.id);
+    const binary = document.createElement('output'); binary.className = 'binary-value';
+    const help = document.createElement('p'); help.className = 'value-help';
+    help.textContent = '输入 0x 十六进制、0b 二进制或十进制，实时联动。点击位值翻转 0/1；点击多位字段定位下方编辑框。按寄存器卡片和位宽分别暂存，切换、筛选不会丢失，刷新页面清空。仅解析原始编码，不模拟只读、WARL、SD 派生规则或寄存器间别名关系；保留位也可通过原始值修改。组合标题共用一份布局演示值，fcsr 按完整 fcsr 布局解释。';
+    controls.append(label, input, reset);
+    panel.append(controls, error, binary, help);
+    card.appendChild(panel);
+    function refresh(origin) {
+      registerValues.set(stateKey, value);
+      if (origin !== input) input.value = '0x' + value.toString(16).padStart(Math.ceil(width / 4), '0');
+      input.setAttribute('aria-invalid', 'false'); error.textContent = '';
+      binary.textContent = '二进制：' + value.toString(2).padStart(width, '0').match(/.{1,4}/g).join(' ');
+      bindings.forEach(update => update(origin));
+    }
+    input.addEventListener('input', () => {
+      try { value = parseValue(input.value, width); refresh(input); }
+      catch (e) { error.textContent = e.message; input.setAttribute('aria-invalid', 'true'); }
+    });
+    reset.addEventListener('click', () => { value = 0n; refresh(); });
+
+    // 按位宽绘制，补齐空洞为未定义；超过 32 位时拆成 hi/lo 两行
+    const cells = [];
+    let cur = top;
+    fs.forEach(f => {
+      if (f[1] > cur) return;
+      if (f[1] < cur) cells.push({gap:true, hi:cur, lo:f[1]+1});
+      cells.push({f, hi:f[1], lo:f[2]});
+      cur = f[2]-1;
+    });
+    if (cur >= 0) cells.push({gap:true, hi:cur, lo:0});
+
+    const rows = top >= 32 ? [[63,32],[31,0]].filter(r => r[0] <= top || r[1] <= top).map(r => [Math.min(r[0],top), r[1]]) : [[top,0]];
+    const wrap = document.createElement('div'); wrap.className = 'bits-wrap';
+    const measure = document.createElement('canvas').getContext('2d');
+    measure.font = '600 13px ui-monospace,monospace';
+    rows.forEach(([rh, rl]) => {
+      const labels = document.createElement('div'); labels.className = 'bit-labels';
+      labels.style.setProperty('--bits', rh - rl + 1);
+      labels.setAttribute('aria-hidden', 'true');
+      const bitValues = document.createElement('div'); bitValues.className = 'bit-values';
+      bitValues.style.setProperty('--bits', rh - rl + 1);
+      for (let bit = rh; bit >= rl; bit--) {
+        const label = document.createElement('span'); label.textContent = bit;
+        labels.appendChild(label);
+        const toggle = document.createElement('button'); toggle.className = 'bit-value';
+        toggle.type = 'button';
+        toggle.addEventListener('click', () => { value ^= 1n << BigInt(bit); refresh(); });
+        bindings.push(() => {
+          const on = readField(value, bit, bit) === 1n;
+          toggle.textContent = on ? '1' : '0';
+          toggle.setAttribute('aria-pressed', String(on));
+          toggle.setAttribute('aria-label', `${reg.name} bit ${bit} = ${on ? 1 : 0}，点击翻转`);
         });
-        document.getElementById("results").appendChild(row);
-        return cells;
-      });
-
-      function parseBytes(raw) {
-        const text = raw.trim();
-        if (!text) return null;
-        if (raw.length > 4096) throw new Error("输入不能超过 4096 个字符。");
-        if (/^0x/i.test(text) || /[a-f]/i.test(text)) {
-          if (!/^(?:0x)?[0-9a-f]+$/i.test(text)) {
-            throw new Error("请输入有效的十六进制非负整数，例如 0xFF 或 FF。");
+        bitValues.appendChild(toggle);
+      }
+      const row = document.createElement('div'); row.className = 'row';
+      row.style.setProperty('--bits', rh - rl + 1);
+      cells.forEach((c, i) => {
+        const hi = Math.min(c.hi, rh), lo = Math.max(c.lo, rl);
+        if (hi < lo) return;
+        const d = document.createElement('div');
+        const width = hi - lo + 1;
+        const isRsv = c.gap || c.f[5];
+        const narrow = !c.gap && measure.measureText(c.f[0]).width > width * 32 - 10;
+        d.className = 'cell ' + (isRsv ? 'rsv' : 'c' + (i % 5)) + (narrow ? ' narrow' : '');
+        d.style.gridColumn = `span ${width}`;
+        d.innerHTML = c.gap ? '' : `<span class="cell-label">${esc(c.f[0])}</span><small>${width} bits</small>`;
+        if (!c.gap) {
+          d.dataset.k = c.f[0] + '_' + c.f[1];
+          d.title = `${c.f[0]}[${hi}${hi!==lo?':'+lo:''}] ${c.f[3]}`;
+          d.setAttribute('aria-label', d.title);
+          if (!isRsv) {
+            const output = document.createElement('span'); output.className = 'cell-value';
+            d.appendChild(output);
+            d.tabIndex = 0; d.setAttribute('role', 'button');
+            const activate = () => {
+              if (c.f[1] === c.f[2]) { value ^= 1n << BigInt(c.f[2]); refresh(); }
+              else editors.get(d.dataset.k).focus();
+            };
+            d.addEventListener('click', activate);
+            d.addEventListener('keydown', event => {
+              if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(); }
+            });
+            bindings.push(() => {
+              const fieldValue = readField(value, c.f[1], c.f[2]);
+              output.textContent = c.f[1] === c.f[2] ? fieldValue.toString() : '0x' + fieldValue.toString(16);
+              d.classList.toggle('nonzero', fieldValue !== 0n);
+              d.setAttribute('aria-label', `${d.title}；完整字段值 ${output.textContent}`);
+              if (c.f[1] === c.f[2]) d.setAttribute('aria-pressed', String(fieldValue === 1n));
+            });
           }
-          return BigInt("0x" + text.replace(/^0x/i, ""));
         }
-        if (!/^[0-9]+$/.test(text)) {
-          throw new Error("请输入有效的十进制非负整数，不支持小数、负数或分隔符。");
-        }
-        return BigInt(text);
-      }
-
-      function formatRatio(bytes, divisor) {
-        const integer = bytes / divisor;
-        let remainder = bytes % divisor;
-        let fraction = "";
-        // 1000 和 1024 的幂仅包含因子 2、5，因此小数展开一定终止。
-        while (remainder !== 0n) {
-          remainder *= 10n;
-          fraction += (remainder / divisor).toString();
-          remainder %= divisor;
-        }
-        return integer.toString() + (fraction ? "." + fraction : "");
-      }
-
-      function updateResults() {
-        let bytes = null;
-        error.textContent = "";
-        error.hidden = true;
-        input.setAttribute("aria-invalid", "false");
-        try {
-          bytes = parseBytes(input.value);
-        } catch (failure) {
-          error.textContent = failure.message;
-          error.hidden = false;
-          input.setAttribute("aria-invalid", "true");
-        }
-        currentBytes = error.hidden ? (bytes ?? 0n) : null;
-        bitButtons.forEach(({ button, bit }) => {
-          const enabled = currentBytes !== null;
-          const isSet = enabled && (currentBytes & (1n << BigInt(bit))) !== 0n;
-          button.disabled = !enabled;
-          button.textContent = enabled ? (isSet ? "1" : "0") : "—";
-          button.setAttribute("aria-pressed", String(isSet));
-          button.setAttribute("aria-label", `bit ${bit}：${enabled ? (isSet ? "1" : "0") : "不可用"}，点击翻转`);
-        });
-        bitTip.hidden = currentBytes === null || currentBytes < (1n << 64n);
-        bitTip.textContent = bitTip.hidden ? "" : "当前数值超过 64 位，仅显示低 64 位，翻转时保留高位。";
-        resultCells.forEach((cells, index) => {
-          cells.forEach((cell, column) => {
-            const divisor = (column === 0 ? 1000n : 1024n) ** BigInt(index);
-            cell.textContent = bytes === null ? "—" : formatRatio(bytes, divisor);
-          });
-        });
-      }
-
-      input.addEventListener("input", updateResults);
-      document.getElementById("clear-btn").addEventListener("click", () => {
-        input.value = "";
-        updateResults();
-        input.focus();
+        row.appendChild(d);
       });
-      updateResults();
-    </script>
-  </body>
+      wrap.appendChild(labels);
+      wrap.appendChild(bitValues);
+      wrap.appendChild(row);
+    });
+    card.appendChild(wrap);
+
+    const tb = document.createElement('table');
+    tb.innerHTML = '<tr><th>位</th><th>字段</th><th>当前值（可编辑）</th><th>说明</th></tr>';
+    fs.forEach(f => {
+      if (f[5]) return;
+      const tr = document.createElement('tr');
+      tr.dataset.k = f[0] + '_' + f[1];
+      const bits = f[1] === f[2] ? `${f[1]}` : `${f[1]}:${f[2]}`;
+      tr.innerHTML = `<td><code>${bits}</code></td><td><b>${esc(f[0])}</b></td>`;
+      const valueCell = document.createElement('td');
+      const editor = document.createElement('input'); editor.className = 'field-input';
+      editor.type = 'text'; editor.spellcheck = false; editor.maxLength = 66;
+      editor.setAttribute('aria-label', `${reg.name} ${f[0]} [${bits}] 字段值`);
+      editors.set(tr.dataset.k, editor);
+      const meaning = document.createElement('span'); meaning.className = 'field-meaning';
+      const fieldError = document.createElement('div'); fieldError.className = 'value-error';
+      fieldError.id = `${reg.id}-field-${f[1]}-error`;
+      fieldError.setAttribute('aria-live', 'polite');
+      editor.setAttribute('aria-describedby', fieldError.id);
+      editor.addEventListener('input', () => {
+        try {
+          const next = parseValue(editor.value, f[1] - f[2] + 1);
+          value = writeField(value, f[1], f[2], next); refresh(editor);
+        } catch (e) { fieldError.textContent = e.message; editor.setAttribute('aria-invalid', 'true'); }
+      });
+      bindings.push(origin => {
+        const fieldValue = readField(value, f[1], f[2]);
+        if (origin !== editor) editor.value = f[1] - f[2] < 4 ? fieldValue.toString() : '0x' + fieldValue.toString(16);
+        editor.setAttribute('aria-invalid', 'false'); fieldError.textContent = '';
+        meaning.textContent = fieldMeaning(reg, f, fieldValue, width);
+      });
+      valueCell.append(editor, meaning, fieldError);
+      const description = document.createElement('td'); description.textContent = f[3];
+      tr.append(valueCell, description);
+      if (matches(f[0])) tr.style.background = '#fef9c3';
+      tb.appendChild(tr);
+    });
+    const tableWrap = document.createElement('div'); tableWrap.className = 'table-wrap';
+    tableWrap.appendChild(tb);
+    card.appendChild(tableWrap);
+    refresh();
+    main.appendChild(card);
+
+    card.querySelectorAll('[data-k]').forEach(el => {
+      el.addEventListener('mouseenter', () => card.querySelectorAll(`[data-k="${el.dataset.k}"]`).forEach(e => e.classList.add('hover')));
+      el.addEventListener('mouseleave', () => card.querySelectorAll('.hover').forEach(e => e.classList.remove('hover')));
+    });
+  });
+  if (!main.children.length) main.innerHTML = '<div class="card">没有匹配结果</div>';
+}
+
+document.getElementById('assignment-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const input = document.getElementById('assignment');
+  const status = document.getElementById('assignment-error');
+  try {
+    const parsed = parseAssignment(input.value, Number(xlenSel.value));
+    registerValues.set(`${parsed.reg.id}:${parsed.width}`, parsed.value);
+    sel.value = parsed.reg.id;
+    q.value = '';
+    render();
+    input.setAttribute('aria-invalid', 'false');
+    status.textContent = `已解析 ${parsed.reg.id}（${parsed.width} 位），结果见下方。`;
+  } catch (error) {
+    input.setAttribute('aria-invalid', 'true');
+    status.textContent = error.message;
+  }
+});
+[sel, xlenSel].forEach(e => e.addEventListener('change', render));
+q.addEventListener('input', () => {
+  sel.value = 'all';
+  render();
+});
+render();
+</script>
+</body>
 </html>
