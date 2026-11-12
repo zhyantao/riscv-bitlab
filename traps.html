@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RISC-V 位域速查</title>
+<style>
+  :root { --bg:#f6f7f9; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; background:var(--bg); color:var(--fg); }
+  header { padding:16px 24px; background:#111827; color:white; display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
+  h1 { font-size:18px; margin:0; }
+  nav { display:flex; flex-wrap:wrap; gap:8px; }
+  nav a { color:#d1d5db; text-decoration:none; padding:6px 10px; border-radius:6px; font-size:14px; }
+  nav a[aria-current], nav a:hover { background:#374151; color:white; }
+  main { max-width:1200px; margin:auto; padding:20px; }
+  .intro, .card { background:white; border:1px solid var(--line); border-radius:8px; padding:20px; margin-bottom:20px; }
+  p, li { line-height:1.7; font-size:14px; }
+  .intro > p, .desc { color:var(--muted); }
+  .intro > p:first-child { margin-top:0; }
+  h2 { margin:0 0 12px; font-size:20px; }
+  h3 { font-size:16px; margin:20px 0 8px; }
+  .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:end; }
+  .input-group { display:flex; flex:1 1 240px; flex-direction:column; gap:6px; font-size:14px; min-width:0; }
+  .width-group { flex:0 1 130px; }
+  input, select, button { padding:9px 12px; border:1px solid var(--line); border-radius:6px; background:white; color:var(--fg); font:inherit; }
+  input { min-width:0; width:100%; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
+  button { cursor:pointer; background:var(--accent); color:white; }
+  .help { font-size:13px; color:var(--muted); }
+  .notes { background:#f8fafc; border-left:3px solid var(--accent); padding:12px 14px; margin-top:16px; font-size:13px; line-height:1.8; }
+  .notes p { margin:4px 0; }
+  .warning { background:#fffbeb; border-left-color:#d97706; }
+  .error { color:#b91c1c; overflow-wrap:anywhere; }
+  .error:empty { display:none; }
+  .heading { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .heading h2 { margin:0; }
+  .tag { font-size:12px; color:#3730a3; background:#e0e7ff; border-radius:10px; padding:3px 8px; }
+  .bit-row { display:grid; grid-template-columns:minmax(130px,1fr) minmax(280px,5fr); min-width:450px; margin-top:16px; }
+  .field { padding:14px; border:1px solid #9ca3af; text-align:center; min-width:0; }
+  .field:first-child { background:#fce7f3; }
+  .field:last-child { background:#dbeafe; }
+  .field strong, .field small { display:block; margin-bottom:8px; }
+  .field small { color:#4b5563; }
+  .binary { font:13px/1.8 ui-monospace,monospace; overflow-wrap:anywhere; }
+  .scroll { overflow-x:auto; padding:4px 2px 8px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:10px; }
+  caption { text-align:left; font-weight:600; padding:6px 0; }
+  th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); line-height:1.6; vertical-align:top; }
+  th { background:#f9fafb; }
+  .reference { min-width:720px; }
+  .reference td:first-child { white-space:nowrap; }
+  code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; background:#f3f4f6; padding:2px 5px; border-radius:4px; overflow-wrap:anywhere; }
+  dl { display:grid; grid-template-columns:90px minmax(0,1fr); gap:12px; font-size:14px; line-height:1.7; }
+  dt { font-weight:600; }
+  dd { margin:0; overflow-wrap:anywhere; }
+  dd p { margin:6px 0 0; }
+  a:focus-visible, input:focus-visible, select:focus-visible, button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  [hidden] { display:none !important; }
+  @media (max-width:600px) { header { padding:16px; } main { padding:12px; } .card, .intro { padding:14px; } dl { grid-template-columns:1fr; gap:6px; } dd { margin-bottom:10px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>RISC-V 位域速查</h1>
+  <nav aria-label="页面导航">
+    <a href="index.html">寄存器位域</a>
+    <a href="instructions.html">指令编码</a>
+    <a href="traps.html" aria-current="page">异常与中断</a>
+    <a href="translation.html">地址翻译</a>
+    <a href="bytes.html">字节换算</a>
+  </nav>
+</header>
+<main>
+  <section class="intro" aria-labelledby="page-heading">
+    <h2 id="page-heading">异常与中断</h2>
+    <p>解读陷入 M 模式时的 mcause、mepc、mtval 快照。XLEN 在这里指机器模式寄存器宽度；最高位区分中断 / 同步异常，其余位全部用于原因码，不截成低 4 位或低 8 位。</p>
+    <form id="trap-form" novalidate>
+      <div class="controls">
+        <div class="input-group width-group">
+          <label for="xlen">寄存器宽度</label>
+          <select id="xlen"><option value="32">RV32</option><option value="64" selected>RV64</option></select>
+        </div>
+        <div class="input-group"><label for="mcause">mcause</label><input id="mcause" type="text" value="0x2" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
+        <div class="input-group"><label for="mepc">mepc</label><input id="mepc" type="text" value="0x80000000" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
+        <div class="input-group"><label for="mtval">mtval</label><input id="mtval" type="text" value="0x0" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
+        <button type="submit">解读</button>
+      </div>
+      <p class="help" id="input-help">自动更新。三个值均必填；支持十进制、0x 十六进制、0b 二进制、0o 八进制，忽略首尾空白。只接受 0 … 2^XLEN − 1；不接受正负号、小数、指数、分隔符或尾随字符。切换位宽不截断输入。</p>
+      <p id="input-error" class="error" role="alert"></p>
+    </form>
+    <div class="notes warning"><strong>这是编码速查，不是根因诊断。</strong> 相同原因码可能对应不同硬件、软件或权限问题。还需结合指令、特权状态、页表、平台文档及其他 CSR；三个值不能确认根因。默认值仅为演示。</div>
+  </section>
+  <section id="result" class="card" aria-labelledby="result-heading" aria-live="polite" aria-atomic="true" hidden>
+    <div class="heading"><h2 id="result-heading">解读结果</h2><span class="tag" id="trap-kind"></span></div>
+    <p id="cause-name"></p>
+    <div class="scroll">
+      <div class="bit-row" aria-label="mcause 位域">
+        <div class="field"><strong id="interrupt-label"></strong><small>Interrupt · 最高位</small><span class="binary" id="interrupt-value"></span></div>
+        <div class="field"><strong id="code-label"></strong><small>Exception Code · 中断 / 异常原因码</small><span class="binary" id="code-value"></span></div>
+      </div>
+    </div>
+    <dl>
+      <dt>mcause</dt><dd><code id="cause-raw"></code><p id="cause-detail"></p></dd>
+      <dt>mepc</dt><dd><code id="pc-raw"></code><p id="pc-detail"></p></dd>
+      <dt>mtval</dt><dd><code id="tval-raw"></code><p id="tval-detail"></p></dd>
+    </dl>
+    <div class="notes" id="context-note"></div>
+  </section>
+  <section class="card" aria-labelledby="reference-heading">
+    <h2 id="reference-heading">原因码参考</h2>
+    <p class="desc">下表按 Interrupt 位分别查找，编号均为十进制。覆盖这里列出的标准分配和其余编码范围；“保留”不表示输入无效。扩展相关编号只有在对应扩展 / 模式受支持时才有相应含义，编号本身不能证明扩展已实现。</p>
+    <div class="scroll"><table class="reference"><caption>同步异常 · Interrupt = 0</caption><thead><tr><th scope="col">原因码</th><th scope="col">名称</th><th scope="col">适用 / 说明</th><th scope="col">mtval 解读边界</th></tr></thead><tbody id="exception-table"></tbody></table></div>
+    <div class="scroll"><table class="reference"><caption>中断 · Interrupt = 1</caption><thead><tr><th scope="col">原因码</th><th scope="col">名称</th><th scope="col">适用 / 说明</th><th scope="col">mtval 解读边界</th></tr></thead><tbody id="interrupt-table"></tbody></table></div>
+  </section>
+  <section class="card" aria-labelledby="notes-heading">
+    <h2 id="notes-heading">使用边界</h2>
+    <ul>
+      <li>mepc 是保存的 PC，不是 mtvec 处理程序入口，也不自动等于 mtval。中断是异步事件，保存的 PC 不是“引发中断的故障指令”。</li>
+      <li>mepc[0] 在架构上为 0；IALIGN=32 时读取 mepc 的 bit 1 也被屏蔽为 0。本页不假定 IALIGN，不修改输入，也不做虚拟地址合法性判断。</li>
+      <li>ECALL 保存 ECALL 自身的地址。若处理程序决定返回到其后继续执行，通常将保存的 PC 加 4，因为 ECALL 是 32 位指令；硬件不会自动加 4，MRET 使用当前 mepc。不可把这条软件策略套用于所有异常或中断。</li>
+      <li>mtval 可以为 0；对地址类异常，0 既可能表示未提供信息，也可能恰好是地址 0。不能仅凭 0 断定无故障。</li>
+      <li>H 扩展的 guest-page fault 需结合 mtval2、mtinst 及虚拟化状态；mtval 不是可直接拿来用的 guest 物理地址。虚拟中断编号也不保证作为 mcause 原样可见，路由与委托取决于模式和扩展。</li>
+      <li>平台中断源、NMI / RNMI、调试入口与中断控制器专用编码需查对应规范；本页不模拟中断优先级、委托、使能或根因分析。</li>
+    </ul>
+  </section>
+  <noscript><div class="card">请启用 JavaScript 以使用本地解码和原因码表。页面无需联网。</div></noscript>
+</main>
+<script>
+'use strict';
+
+const EXCEPTIONS = [
+  { code:0n, name:'指令地址未对齐', english:'Instruction address misaligned', scope:'取指目标不满足 IALIGN；跳转 / 分支导致时 mepc 指向该跳转 / 分支。', tval:'address' },
+  { code:1n, name:'指令访问故障', english:'Instruction access fault', scope:'取指访问故障；不能仅凭此码区分访问保护或存储系统原因。', tval:'instructionAddress' },
+  { code:2n, name:'非法指令', english:'Illegal instruction', scope:'指令在当前 ISA / 特权状态下非法；不等同于已确定的“不支持某扩展”。', tval:'instructionBits' },
+  { code:3n, name:'断点', english:'Breakpoint', scope:'例如 EBREAK / C.EBREAK 或配置为异常的触发器；需查触发机制。', tval:'breakpoint' },
+  { code:4n, name:'加载地址未对齐', english:'Load address misaligned', scope:'加载地址未对齐；是否支持非对齐访问依执行环境而定。', tval:'address' },
+  { code:5n, name:'加载访问故障', english:'Load access fault', scope:'加载访问故障；需结合保护、总线与平台信息。', tval:'address' },
+  { code:6n, name:'存储 / AMO 地址未对齐', english:'Store/AMO address misaligned', scope:'存储或原子内存操作地址未对齐。', tval:'address' },
+  { code:7n, name:'存储 / AMO 访问故障', english:'Store/AMO access fault', scope:'存储或原子内存操作访问故障。', tval:'address' },
+  { code:8n, name:'来自 U 模式的环境调用', english:'Environment call from U-mode', scope:'U 模式 ECALL；H 扩展下也包括 VU 模式。', tval:'zero', ecall:true },
+  { code:9n, name:'来自 S 模式的环境调用', english:'Environment call from S-mode', scope:'S 模式 ECALL；H 扩展下指 HS 模式，VS 使用编号 10。', tval:'zero', ecall:true },
+  { code:10n, name:'来自 VS 模式的环境调用', english:'Environment call from VS-mode', scope:'H 扩展：VS 模式 ECALL。', tval:'zero', ecall:true },
+  { code:11n, name:'来自 M 模式的环境调用', english:'Environment call from M-mode', scope:'M 模式 ECALL。', tval:'zero', ecall:true },
+  { code:12n, name:'指令页故障', english:'Instruction page fault', scope:'取指地址翻译 / 页权限相关异常；本页不检查页表。', tval:'instructionAddress' },
+  { code:13n, name:'加载页故障', english:'Load page fault', scope:'加载地址翻译 / 页权限相关异常。', tval:'address' },
+  { code:15n, name:'存储 / AMO 页故障', english:'Store/AMO page fault', scope:'存储 / 原子操作地址翻译或页权限相关异常。', tval:'address' },
+  { code:16n, name:'双重陷阱', english:'Double trap', scope:'Ssdbltrp：S 模式双重陷阱转交 M 模式；需结合原始陷阱状态及 mtval2。', tval:'doubleTrap' },
+  { code:18n, name:'软件检查异常', english:'Software check', scope:'例如 Zicfilp / Zicfiss 控制流完整性检查；mtval 可携带子原因。', tval:'softwareCheck' },
+  { code:19n, name:'硬件错误异常', english:'Hardware error', scope:'Ssccptr 等规范涉及的硬件错误；单凭编号不能确定错误部件或可恢复性。', tval:'hardwareError' },
+  { code:20n, name:'指令客户机页故障', english:'Instruction guest-page fault', scope:'H 扩展：取指相关 G-stage 地址翻译 / 权限异常。', tval:'guestAddress' },
+  { code:21n, name:'加载客户机页故障', english:'Load guest-page fault', scope:'H 扩展：加载相关 G-stage 异常，也可能涉及隐式页表访问。', tval:'guestAddress' },
+  { code:22n, name:'虚拟指令', english:'Virtual instruction', scope:'H 扩展：虚拟执行环境中的特定指令陷入；不等同于普通非法指令。', tval:'instructionBits' },
+  { code:23n, name:'存储 / AMO 客户机页故障', english:'Store/AMO guest-page fault', scope:'H 扩展：存储 / 原子操作相关 G-stage 异常。', tval:'guestAddress' }
+];
+
+const INTERRUPTS = [
+  { code:1n, name:'监管级软件中断', english:'Supervisor software interrupt', scope:'S 模式软件中断。' },
+  { code:2n, name:'虚拟监管级软件中断', english:'Virtual supervisor software interrupt', scope:'H 扩展：VS 软件中断；递送 VS 时原因码转换为 1。' },
+  { code:3n, name:'机器级软件中断', english:'Machine software interrupt', scope:'M 模式软件中断。' },
+  { code:5n, name:'监管级定时器中断', english:'Supervisor timer interrupt', scope:'S 模式定时器中断。' },
+  { code:6n, name:'虚拟监管级定时器中断', english:'Virtual supervisor timer interrupt', scope:'H 扩展：VS 定时器中断；递送 VS 时原因码转换为 5。' },
+  { code:7n, name:'机器级定时器中断', english:'Machine timer interrupt', scope:'M 模式定时器中断。' },
+  { code:9n, name:'监管级外部中断', english:'Supervisor external interrupt', scope:'S 模式外部中断；具体设备需查询中断控制器。' },
+  { code:10n, name:'虚拟监管级外部中断', english:'Virtual supervisor external interrupt', scope:'H 扩展：VS 外部中断；递送 VS 时原因码转换为 9。' },
+  { code:11n, name:'机器级外部中断', english:'Machine external interrupt', scope:'M 模式外部中断；具体设备需查询中断控制器。' },
+  { code:12n, name:'监管级客户机外部中断', english:'Supervisor guest external interrupt', scope:'H 扩展：客户机外部中断汇总；需结合 hgeip / hgeie 等状态。' },
+  { code:13n, name:'本地计数器溢出中断', english:'Counter-overflow interrupt', scope:'Sscofpmf：本地计数器溢出；具体计数器需额外状态。' }
+];
+
+const TVAL_REFERENCE = {
+  address:'若提供信息则为故障虚拟地址；也可为 0。拆分访问可指向实际失败的部分。',
+  instructionAddress:'若提供信息则为失败取指部分的虚拟地址；也可为 0，不一定等于 mepc。',
+  instructionBits:'可选地提供指令位，右对齐于 mtval 低位；0 不足以确定是否提供了指令。',
+  breakpoint:'可能为断点相关虚拟地址，也可能为 0；需结合断点 / 触发器类型。',
+  zero:'此类标准陷阱的 mtval 为 0，不作为故障地址。',
+  softwareCheck:'携带检查子原因，而不是通用地址：2 = landing pad fault，3 = shadow stack fault。',
+  hardwareError:'信息取决于适用的硬件错误规范与平台；不能通用地断言是地址或指令。',
+  doubleTrap:'需按原始陷阱解释 mtval；不能仅凭原因码 16 将其认定为地址或固定为 0。请结合 mtval2 中保存的原始原因码及 Ssdbltrp 状态。',
+  guestAddress:'非零时为相关 guest 虚拟地址；G-stage 信息需结合 mtval2 / mtinst，亦可为 0。',
+  interrupt:'标准中断的 mtval 为 0，不提供通用故障地址；来源 / 非标准信息需查询平台规范。'
+};
+
+function validateXlen(xlen) {
+  if (xlen !== 32 && xlen !== 64) throw new RangeError('XLEN 必须为 32 或 64。');
+  return xlen;
+}
+
+function parseUnsigned(text, xlen, label = '输入') {
+  validateXlen(xlen);
+  if (typeof text !== 'string') throw new TypeError(label + ' 必须以字符串输入，以免丢失精度。');
+  const valueText = text.trim();
+  if (!/^(?:[0-9]+|0[xX][0-9a-fA-F]+|0[bB][01]+|0[oO][0-7]+)$/.test(valueText)) {
+    throw new SyntaxError(label + '：请输入完整的非负整数（十进制 / 0x / 0b / 0o），不允许符号、分隔符或尾随字符。');
+  }
+  const value = BigInt(valueText);
+  if (value >= (1n << BigInt(xlen))) throw new RangeError(label + '：超出 RV' + xlen + ' 无符号范围 0 … ' + ((1n << BigInt(xlen)) - 1n).toString() + '。');
+  return value;
+}
+
+function formatHex(value, xlen) {
+  return '0x' + value.toString(16).padStart(xlen / 4, '0');
+}
+
+function lookupCause(interrupt, code) {
+  const known = (interrupt ? INTERRUPTS : EXCEPTIONS).find(entry => entry.code === code);
+  if (known) return { ...known, known:true };
+  if (interrupt && code >= 16n) return { known:false, name:'平台专用中断（未解码）', scope:'编号 ≥ 16 的平台专用范围；仅凭编号不猜测设备或中断类型。' };
+  if (!interrupt && ((code >= 24n && code <= 31n) || (code >= 48n && code <= 63n))) {
+    return { known:false, name:'自定义异常（未解码）', scope:'标准留给自定义用途的范围；需查实现文档，不猜测含义。' };
+  }
+  return { known:false, name:'保留 / 未知原因码（未解码）', scope:'本参考快照未定义该编码；可能涉及新版本或非标准实现，请核对目标规范，不猜测含义。' };
+}
+
+function interpretMtval(cause, interrupt, mtval) {
+  if (interrupt) return TVAL_REFERENCE.interrupt + (mtval !== 0n ? ' 当前值非零：请核对快照来源、适用规范及平台定义，不能当作故障地址。' : '');
+  if (!cause.known) return '未知 / 自定义原因码没有通用的 mtval 解释。保留原始值，不将其推断为地址或指令。';
+  const base = TVAL_REFERENCE[cause.tval];
+  if (cause.tval === 'instructionBits') {
+    return base + ' 若实现提供指令位，长度为实际指令长度、ILEN 与 XLEN 中的最小值，高位清零；可能不是完整指令，不能仅凭这些位确认 ISA 支持情况。' + (mtval === 0n ? ' 当前为 0：可能未提供信息，也可能提供的位全为 0。' : ' 当前非零：按该异常的标准语义可作为指令位候选，而非地址。');
+  }
+  if (cause.tval === 'softwareCheck') {
+    const subtype = mtval === 2n ? 'landing pad fault（Zicfilp）' : mtval === 3n ? 'shadow stack fault（Zicfiss）' : '未识别 / 保留子原因；请查适用扩展';
+    return base + ' 当前子原因：' + mtval.toString() + ' · ' + subtype + '。';
+  }
+  if (cause.tval === 'zero') return base + (mtval !== 0n ? ' 当前输入非零，与此标准语义不符；请核对寄存器快照或实现文档。' : '');
+  if (cause.tval === 'hardwareError' || cause.tval === 'doubleTrap') return base;
+  return base + (mtval === 0n ? ' 当前值为 0，不能区分“未提供信息”和“相关地址恰好为 0”。' : ' 当前非零，但仅凭该值不能定位根因。') + (cause.tval === 'guestAddress' ? ' mtval2 在提供相关 guest 物理地址时按右移 2 位编码，仍需依据异常情形和其他状态解读。' : '');
+}
+
+function interpretMepc(cause, interrupt, mepc) {
+  let text;
+  if (interrupt) text = '保存的是被中断的执行位置 / 恢复 PC；中断是异步的，不能将其标记为“故障指令地址”。';
+  else if (cause.ecall) text = '保存的是 ECALL 指令自身的 PC。若软件决定在调用后继续，通常将 mepc 加 4（ECALL 为 32 位）；不是硬件自动递增，也不是所有陷阱都应加 4。';
+  else if (cause.code === 16n) text = '双重陷阱的保存 PC 需结合原始陷阱及 Ssdbltrp 状态解释，不能据此断定某条指令就是根因。';
+  else text = '同步异常通常保存遇到异常的指令起始 PC。取指跨边界故障时，mtval 可指向后续失败部分；跳转目标未对齐时 mepc 指向跳转 / 分支而非目标。未知 / 扩展情形须核对对应规范。';
+  if ((mepc & 1n) !== 0n) text += ' 注意：输入 bit 0 = 1，与架构 mepc[0] 恒为 0 不符；本页保留原值，请核对快照。';
+  return text;
+}
+
+function decodeTrap(mcauseInput, mepcInput, mtvalInput, xlen = 64) {
+  validateXlen(xlen);
+  const mcause = parseUnsigned(mcauseInput, xlen, 'mcause');
+  const mepc = parseUnsigned(mepcInput, xlen, 'mepc');
+  const mtval = parseUnsigned(mtvalInput, xlen, 'mtval');
+  const interruptMask = 1n << BigInt(xlen - 1);
+  const interrupt = (mcause & interruptMask) !== 0n;
+  const code = mcause & (interruptMask - 1n);
+  const cause = lookupCause(interrupt, code);
+  return {
+    xlen, mcause, mepc, mtval, interrupt, code, cause,
+    mcauseHex:formatHex(mcause, xlen), mepcHex:formatHex(mepc, xlen), mtvalHex:formatHex(mtval, xlen),
+    codeBinary:code.toString(2).padStart(xlen - 1, '0'),
+    mepcText:interpretMepc(cause, interrupt, mepc), mtvalText:interpretMtval(cause, interrupt, mtval)
+  };
+}
+
+function element(tag, text) {
+  const node = document.createElement(tag);
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function renderReference() {
+  const exceptionRows = EXCEPTIONS.map(entry => [entry.code.toString(), entry.name + ' / ' + entry.english, entry.scope, TVAL_REFERENCE[entry.tval]]);
+  exceptionRows.push(['14、17', '保留', '本参考快照未分配。', '不推断含义。'], ['24–31、48–63', '自定义用途', '需查目标实现文档。', '依实现定义。'], ['32–47、≥ 64', '保留 / 未知', '新版本或非标准编码需另查规范。', '不推断含义。']);
+  const interruptRows = INTERRUPTS.map(entry => [entry.code.toString(), entry.name + ' / ' + entry.english, entry.scope, TVAL_REFERENCE.interrupt]);
+  interruptRows.push(['0、4、8、14–15', '保留', '不按旧的用户级中断草案猜测含义。', '不作地址解释。'], ['≥ 16', '平台专用', '需结合平台中断控制器及实现文档。', '不作通用解释；查平台规范。']);
+  [[exceptionRows, 'exception-table'], [interruptRows, 'interrupt-table']].forEach(([rows, id]) => {
+    const body = document.getElementById(id);
+    body.replaceChildren();
+    rows.forEach(values => {
+      const row = element('tr');
+      values.forEach(text => row.append(element('td', text)));
+      body.append(row);
+    });
+  });
+}
+
+function renderDecode() {
+  const get = id => document.getElementById(id);
+  const inputs = ['mcause', 'mepc', 'mtval'];
+  const xlen = Number(get('xlen').value);
+  const errors = [];
+  inputs.forEach(id => {
+    try { parseUnsigned(get(id).value, xlen, id); get(id).removeAttribute('aria-invalid'); }
+    catch (error) { errors.push(error.message); get(id).setAttribute('aria-invalid', 'true'); }
+  });
+  get('input-error').textContent = errors.join(' ');
+  get('result').hidden = errors.length > 0;
+  if (errors.length) return;
+  const result = decodeTrap(get('mcause').value, get('mepc').value, get('mtval').value, xlen);
+  const text = (id, value) => { get(id).textContent = value; };
+  text('trap-kind', 'RV' + xlen + ' · ' + (result.interrupt ? '中断' : '同步异常'));
+  text('cause-name', '原因码 ' + result.code.toString() + '（0x' + result.code.toString(16) + '） · ' + result.cause.name + (result.cause.english ? ' / ' + result.cause.english : ''));
+  text('interrupt-label', 'bit ' + (xlen - 1));
+  text('interrupt-value', result.interrupt ? '1 · 中断' : '0 · 同步异常');
+  text('code-label', 'bits ' + (xlen - 2) + ':0');
+  text('code-value', result.codeBinary);
+  text('cause-raw', result.mcauseHex + ' · 无符号十进制 ' + result.mcause.toString());
+  text('cause-detail', result.cause.scope);
+  text('pc-raw', result.mepcHex);
+  text('pc-detail', result.mepcText);
+  text('tval-raw', result.mtvalHex);
+  text('tval-detail', result.mtvalText);
+  text('context-note', '仅按所选机器 XLEN 和原始值解码，不验证扩展是否实现，不识别具体设备，不推断根因。若寄存器并非同一次陷阱的快照，组合解释可能无效。');
+}
+
+function init() {
+  renderReference();
+  document.getElementById('trap-form').addEventListener('submit', event => { event.preventDefault(); renderDecode(); });
+  ['mcause', 'mepc', 'mtval'].forEach(id => document.getElementById(id).addEventListener('input', renderDecode));
+  document.getElementById('xlen').addEventListener('change', renderDecode);
+  renderDecode();
+}
+
+if (typeof document !== 'undefined') init();
+</script>
+</body>
+</html>
