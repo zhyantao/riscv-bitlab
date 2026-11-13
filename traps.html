@@ -7,6 +7,7 @@
 <style>
   :root { --bg:#f6f7f9; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
   * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
   body { margin:0; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; background:var(--bg); color:var(--fg); }
   header { position:sticky; top:0; z-index:100; padding:10px max(24px, calc((100% - 1160px) / 2)); background:#111827; color:white; display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,0.25); }
   h1 { font-size:17px; margin:0; font-weight:700; display:flex; align-items:center; gap:8px; }
@@ -26,6 +27,7 @@
   .input-group :is(input, select) { flex:1; }
   .input-group { display:flex; flex:1 1 240px; flex-direction:column; gap:6px; font-size:14px; min-width:0; }
   .width-group { flex:0 1 130px; }
+  .optional { font-size:12px; font-weight:400; color:var(--muted); }
   input, select, button { padding:9px 12px; border:1px solid var(--line); border-radius:6px; background:white; color:var(--fg); font:inherit; }
   select { -webkit-appearance:none; appearance:none; padding-right:30px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
   input { min-width:0; width:100%; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
@@ -51,9 +53,13 @@
   .f-int { background:#fce7f3; } .f-code { background:#dbeafe; } .f-pc { background:#ede9fe; } .f-val { background:#fef3c7; }
   .reg-hex { font:600 14px ui-monospace,monospace; overflow-wrap:anywhere; margin:8px 0 0; }
   .reg-binary { font:12px/1.8 ui-monospace,monospace; color:var(--muted); overflow-wrap:anywhere; margin:2px 0 10px; }
-  .reg-block { margin-top:14px; }
-  .reg-block:first-child { margin-top:0; }
-  .diag-name { font:600 13px ui-monospace,monospace; color:var(--muted); margin-bottom:6px; }
+  .reg-note { background:#f8fafc; border-left:3px solid var(--accent); padding:10px 14px; margin-top:12px; font-size:13px; line-height:1.8; }
+  .reg-note p { margin:4px 0; }
+  .reg-block { margin-top:18px; padding:14px 16px 16px; border:1px solid #e5e7eb; border-radius:8px; background:#fcfcfd; }
+  .reg-block:first-child { margin-top:6px; }
+  .reg-head { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:2px; }
+  .reg-name { font:700 16px/1.3 ui-monospace,monospace; color:var(--fg); }
+  .reg-role { font-size:12px; color:#3730a3; background:#e0e7ff; border-radius:10px; padding:2px 8px; }
   .binary { font:13px/1.8 ui-monospace,monospace; overflow-wrap:anywhere; }
   .result-title { font-size:16px; font-weight:600; margin:12px 0 0; }
   .scroll { overflow-x:auto; padding:4px 2px 8px; }
@@ -86,8 +92,8 @@
 <main>
   <section class="intro" aria-labelledby="page-heading">
     <h2 id="page-heading">异常与中断</h2>
-    <p>解读陷入 M 模式时的 mcause、mepc、mtval 快照。XLEN 在这里指机器模式寄存器宽度；最高位区分中断 / 同步异常，其余位全部用于原因码，不截成低 4 位或低 8 位。</p>
-    <form id="trap-form" novalidate>
+    <p>解读陷入 M 模式时的 mcause、mepc、mtval 快照；发生 guest-page fault 时还会读取 mtval2。XLEN 在这里指机器模式寄存器宽度；最高位区分中断 / 同步异常，其余位全部用于原因码，不截成低 4 位或低 8 位。</p>
+    <div class="trap-panel">
       <div class="controls">
         <div class="input-group width-group">
           <label for="xlen">寄存器宽度</label>
@@ -96,29 +102,18 @@
         <div class="input-group"><label for="mcause">mcause</label><input id="mcause" type="text" value="0x2" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
         <div class="input-group"><label for="mepc">mepc</label><input id="mepc" type="text" value="0x80000000" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
         <div class="input-group"><label for="mtval">mtval</label><input id="mtval" type="text" value="0x0" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
-        <button type="submit">解读</button>
+        <div class="input-group" id="mtval2-group" hidden><label for="mtval2">mtval2 <span class="optional">仅 guest-page fault</span></label><input id="mtval2" type="text" value="0x0" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
       </div>
-      <p class="help" id="input-help">三个值均必填；支持十进制、0x 十六进制、0b 二进制、0o 八进制，忽略首尾空白。只接受 <code>0 … 2<sup>XLEN</sup> − 1</code>；不接受正负号、小数、指数、分隔符或尾随字符。切换位宽不截断输入。</p>
+      <p class="help" id="input-help">任一项改动都会实时重新解读。mcause、mepc、mtval 必填；mtval2 只在 guest-page fault（原因码 20 / 21 / 23）时出现，此时必填。支持十进制、0x 十六进制、0b 二进制、0o 八进制，忽略首尾空白。只接受 <code>0 … 2<sup>XLEN</sup> − 1</code>；不接受正负号、小数、指数、分隔符或尾随字符。切换位宽不截断输入。</p>
       <p id="input-error" class="error" role="alert"></p>
-    </form>
-    <div class="notes warning"><strong>这是编码速查，不是根因诊断。</strong> 相同原因码可能对应不同硬件、软件或权限问题。还需结合指令、特权状态、页表、平台文档及其他 CSR；三个值不能确认根因。默认值仅为演示。</div>
+    </div>
+    <div class="notes warning"><strong>这是编码速查，不是根因诊断。</strong> 相同原因码可能对应不同硬件、软件或权限问题。还需结合指令、特权状态、页表、平台文档及其他 CSR；这些值不能确认根因。默认值仅为演示。</div>
   </section>
   <section id="result" class="card" aria-labelledby="result-heading" aria-live="polite" aria-atomic="true" hidden>
     <div class="heading"><h2 id="result-heading">解读结果</h2><span class="tag" id="trap-kind"></span></div>
     <p id="cause-name" class="result-title"></p>
+    <p id="context-note" class="desc"></p>
     <div id="reg-diagrams"></div>
-    <div class="notes" id="context-note"></div>
-  </section>
-  <section class="card" aria-labelledby="notes-heading">
-    <h2 id="notes-heading">使用边界</h2>
-    <ul>
-      <li>mepc 是保存的 PC，不是 mtvec 处理程序入口，也不自动等于 mtval。中断是异步事件，保存的 PC 不是“引发中断的故障指令”。</li>
-      <li>mepc[0] 在架构上为 0；IALIGN=32 时读取 mepc 的 bit 1 也被屏蔽为 0。本页不假定 IALIGN，不修改输入，也不做虚拟地址合法性判断。</li>
-      <li>ECALL 保存 ECALL 自身的地址。若处理程序决定返回到其后继续执行，通常将保存的 PC 加 4，因为 ECALL 是 32 位指令；硬件不会自动加 4，MRET 使用当前 mepc。不可把这条软件策略套用于所有异常或中断。</li>
-      <li>mtval 可以为 0；对地址类异常，0 既可能表示未提供信息，也可能恰好是地址 0。不能仅凭 0 断定无故障。</li>
-      <li>H 扩展的 guest-page fault 需结合 mtval2、mtinst 及虚拟化状态；mtval 不是可直接拿来用的 guest 物理地址。虚拟中断编号也不保证作为 mcause 原样可见，路由与委托取决于模式和扩展。</li>
-      <li>平台中断源、NMI / RNMI、调试入口与中断控制器专用编码需查对应规范；本页不模拟中断优先级、委托、使能或根因分析。</li>
-    </ul>
   </section>
   <noscript><div class="card">请启用 JavaScript 以使用本地解码和原因码表。页面无需联网。</div></noscript>
 </main>
@@ -211,6 +206,11 @@ function interpretMtval(cause, interrupt, mtval) {
   return '若提供信息，则为故障虚拟地址；0 也可能表示未提供。' + (mtval !== 0n ? ' 当前非零，可结合权限 / 总线错误进一步定位。' : '') + (cause.tval === 'guestAddress' ? ' G-stage 信息需结合 mtval2 / mtinst。' : '');
 }
 
+function interpretMtval2(mtval2) {
+  if (mtval2 !== 0n) return '非零：通常为触发故障的 guest 物理地址（GPA），多见于 VS-stage 页表遍历的隐式访问失败；具体含义依故障环节而定。';
+  return '为 0：可能由显式访问引发、实现未提供 GPA，或相关地址恰为 0，不能据此断定无信息。';
+}
+
 function interpretMepc(cause, interrupt, mepc) {
   let text;
   if (interrupt) text = '保存被中断处的恢复 PC；中断异步，不是“故障指令地址”。';
@@ -253,21 +253,44 @@ function renderRegisterCards(result) {
   const measure = document.createElement('canvas').getContext('2d');
   measure.font = '600 13px ui-monospace,monospace';
   const defs = [
-    { id:'mcause', value:result.mcause, color:['f-int', 'f-code'],
+    { id:'mcause', role:'陷阱原因', value:result.mcause, color:['f-int', 'f-code'],
       fields:[
         { name:'Interrupt', hi:xlen - 1, lo:xlen - 1, desc:'1=中断，0=异常',
           meaning:interruptBit ? '中断' : '异常' },
         { name:'Exception Code', hi:xlen - 2, lo:0, desc:result.cause.scope,
           meaning:result.cause.known ? result.cause.name : '保留 / 未知原因码（未解码）' },
+      ],
+      notes:[
+        '虚拟中断编号不保证按原样出现在 mcause；路由与委托取决于当前模式及所实现的扩展。',
+        '平台中断源、NMI / RNMI、调试入口与中断控制器专用编码需查对应规范；本页不模拟优先级、委托或使能。'
       ] },
-    { id:'mepc', value:result.mepc, color:['f-pc'],
-      fields:[{ name:'PC', hi:xlen - 1, lo:0, desc:'保存的恢复 / 异常 PC', meaning:result.mepcText }] },
-    { id:'mtval', value:result.mtval, color:['f-val'],
-      fields:[{ name:'Value', hi:xlen - 1, lo:0, desc:'附加信息：地址 / 指令位 / 子原因', meaning:result.mtvalText }] },
+    { id:'mepc', role:'保存的 PC', value:result.mepc, color:['f-pc'],
+      fields:[{ name:'PC', hi:xlen - 1, lo:0, desc:'保存的恢复 / 异常 PC', meaning:result.mepcText }],
+      notes:[
+        'mepc 是保存的 PC，不是 mtvec 的处理程序入口，也不等于 mtval；中断是异步事件，保存的 PC 不是「引发中断的故障指令」。',
+        'mepc[0] 在架构上为 0；IALIGN=32 时读回 bit 1 也被屏蔽为 0。本页不假定 IALIGN，也不修改输入。',
+        'ECALL 保存 ECALL 自身的地址；若要返回到其后继续执行，通常由软件加 4（ECALL 为 32 位指令），硬件不会自动递增，MRET 也只使用当前 mepc。该策略不可套用于所有异常或中断。'
+      ] },
+    { id:'mtval', role:'附加信息', value:result.mtval, color:['f-val'],
+      fields:[{ name:'Value', hi:xlen - 1, lo:0, desc:'附加信息：地址 / 指令位 / 子原因', meaning:result.mtvalText }],
+      notes:[
+        'mtval 可以为 0：对地址类异常，0 既可能表示未提供信息，也可能真的是地址 0，不能仅凭 0 断定无故障。',
+        'H 扩展的 guest-page fault 需结合 mtval2、mtinst 与虚拟化状态；mtval 不是可直接拿来用的 guest 物理地址。'
+      ] },
   ];
+  if (result.guestFault) {
+    defs.push({ id:'mtval2', role:'G-stage 附加信息', value:result.mtval2, color:['f-val'],
+      fields:[{ name:'Value', hi:xlen - 1, lo:0, desc:'guest-page fault 的附加信息（通常为 GPA）', meaning:interpretMtval2(result.mtval2) }],
+      notes:[
+        'mtval2 只在 guest-page fault（20 / 21 / 23）时有架构定义；其他陷阱写入 0，因此本页仅在这种情况下显示它。',
+        'HS 模式下对应寄存器是 htval；完整的 G-stage 信息还需 mtinst 与两阶段翻译状态，本页只保留原始值，不解码 G-stage。'
+      ] });
+  }
   defs.forEach(def => {
     const block = element('div', 'reg-block');
-    block.append(element('div', 'diag-name', def.id));
+    const head = element('div', 'reg-head');
+    head.append(element('span', 'reg-name', def.id), element('span', 'reg-role', def.role));
+    block.append(head);
     block.append(element('div', 'reg-hex', '0x' + def.value.toString(16).padStart(xlen / 4, '0') + ' · ' + def.value.toString() + '（十进制）'));
     block.append(element('div', 'reg-binary', '二进制：' + def.value.toString(2).padStart(xlen, '0').match(/.{1,4}/g).join(' ')));
     const scroll = element('div', 'scroll');
@@ -338,6 +361,11 @@ function renderRegisterCards(result) {
     const tableWrap = element('div', 'scroll');
     tableWrap.append(table);
     block.append(tableWrap);
+    if (def.notes && def.notes.length) {
+      const note = element('div', 'reg-note');
+      def.notes.forEach(line => note.append(element('p', '', line)));
+      block.append(note);
+    }
     container.append(block);
   });
 }
@@ -351,10 +379,26 @@ function renderDecode() {
     try { parseUnsigned(get(id).value, xlen, id); get(id).removeAttribute('aria-invalid'); }
     catch (error) { errors.push(error.message); get(id).setAttribute('aria-invalid', 'true'); }
   });
+  // mtval2 只在 guest-page fault 时有架构定义，其余情况下隐藏且不参与校验
+  let guestFault = false;
+  try {
+    const raw = parseUnsigned(get('mcause').value, xlen, 'mcause');
+    const mask = 1n << BigInt(xlen - 1);
+    guestFault = (raw & mask) === 0n && [20n, 21n, 23n].includes(raw & (mask - 1n));
+  } catch (ignored) { /* mcause 的错误已收集 */ }
+  get('mtval2-group').hidden = !guestFault;
+  if (guestFault) {
+    try { parseUnsigned(get('mtval2').value, xlen, 'mtval2'); get('mtval2').removeAttribute('aria-invalid'); }
+    catch (error) { errors.push(error.message); get('mtval2').setAttribute('aria-invalid', 'true'); }
+  } else {
+    get('mtval2').removeAttribute('aria-invalid');
+  }
   get('input-error').textContent = errors.join(' ');
   get('result').hidden = errors.length > 0;
   if (errors.length) return;
   const result = decodeTrap(get('mcause').value, get('mepc').value, get('mtval').value, xlen);
+  result.guestFault = guestFault;
+  result.mtval2 = guestFault ? parseUnsigned(get('mtval2').value, xlen, 'mtval2') : null;
   const text = (id, value) => { get(id).textContent = value; };
   text('trap-kind', 'RV' + xlen + ' · ' + (result.interrupt ? '中断' : '同步异常'));
   const nameLine = get('cause-name');
@@ -364,11 +408,10 @@ function renderDecode() {
   if (result.cause.english) nameLine.append(document.createTextNode(' · ' + result.cause.english));
   nameLine.append(document.createTextNode(' · 原因码 ' + result.code.toString() + '（0x' + result.code.toString(16) + '）'));
   renderRegisterCards(result);
-  text('context-note', '仅按所选 XLEN 与原始值解码；不验证扩展是否实现，不识别具体设备，不推断根因。三个值若非同一次陷阱的快照，组合解释无效。');
+  text('context-note', '仅按所选 XLEN 与原始值解码；不验证扩展是否实现，不识别具体设备，不推断根因。这些值若非同一次陷阱的快照，组合解释无效。');
 }
 
 function init() {
-  document.getElementById('trap-form').addEventListener('submit', event => { event.preventDefault(); renderDecode(); });
   ['mcause', 'mepc', 'mtval'].forEach(id => document.getElementById(id).addEventListener('input', renderDecode));
   document.getElementById('xlen').addEventListener('change', renderDecode);
   renderDecode();

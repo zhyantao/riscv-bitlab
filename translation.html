@@ -56,6 +56,8 @@
   code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; background:#f3f4f6; padding:2px 5px; border-radius:4px; overflow-wrap:anywhere; }
   .notes { background:#f8fafc; border-left:3px solid var(--accent); padding:12px 14px; margin-top:16px; font-size:13px; line-height:1.8; }
   .notes p { margin:4px 0; }
+  .sub-title { font-size:15px; font-weight:600; margin:24px 0 6px; }
+  .walk svg { display:block; width:100%; height:auto; min-width:900px; }
   .result { line-height:1.9; font-size:14px; overflow-wrap:anywhere; }
   ol { padding-left:24px; font-size:14px; line-height:1.9; }
   @media (max-width:600px) { header { padding-left:16px; padding-right:16px; } main { padding:12px; } .card, .intro { padding:14px; } }
@@ -124,15 +126,24 @@
     <div id="root-result" class="result" aria-live="polite"></div>
   </section>
   <section class="card" aria-labelledby="walk-title">
-    <h2 id="walk-title">如何继续遍历？</h2>
-    <ol>
-      <li>从根页表开始，以最高级 VPN 为索引。PTE 地址 = 页表基址 + VPN[i] × PTE 字节数；这个地址指向一个页表项，不是 VA 对应的数据地址。</li>
-      <li>实际读取内存中的 PTE，检查有效性、保留位、访问权限及其他架构规则。若是非叶子项，则使用其 PPN 作为下一级页表基址，i 减 1 后继续；没有可继续的层级或检查失败时产生相应异常。</li>
-      <li>找到合法叶子项后，才可结合 PTE 中的物理页号与 VA 偏移生成最终物理地址。较高层叶子可映射大页，需要相应对齐；其低位地址还包含较低级 VPN。</li>
-    </ol>
+    <div class="heading"><h2 id="walk-title">页表遍历</h2><span id="walk-tag" class="tag"></span></div>
+    <p class="desc">从根页表开始，用最高级 VPN 索引 PTE。读到 PTE 后看 V 与 R/W/X：任一非 0 即为叶子，遍历结束；全 0 则为非叶子，用其 PPN 作为下一级页表基址，层级减 1 继续。</p>
+    <div class="scroll walk" tabindex="0" role="region" aria-label="页表遍历示意图，可横向滚动">
+      <div id="walk-diagram"></div>
+    </div>
+    <h3 class="sub-title">大页（超级页）对照</h3>
+    <p class="desc">叶子项出现在第 i 级即为大页，不需要额外标志位；页大小随层级指数增长，要求 PTE.PPN 的低位为 0，VA 中较低级的 VPN 变为页内偏移。</p>
+    <div class="scroll" tabindex="0" role="region" aria-label="大页对照表，可横向滚动">
+      <table>
+        <caption>按当前分页模式生成；Sv32 为 10 位 VPN、4 字节 PTE，其余为 9 位 VPN、8 字节 PTE。</caption>
+        <thead><tr><th scope="col">叶子层级</th><th scope="col">页大小</th><th scope="col">对齐要求（PTE 侧）</th><th scope="col">页内偏移（VA 侧）</th></tr></thead>
+        <tbody id="superpage-rows"></tbody>
+      </table>
+    </div>
     <div class="notes">
-      <p>图中的 offset 始终是 VA[11:0]（4 KiB 基础页内偏移）；不代表所有映射都只支持 4 KiB 页。</p>
-      <p>本页仅覆盖常规单阶段分页地址拆解及首个 PTE 地址算术，不读取内存，不解码 PTE，不验证映射、权限、PMP/PMA、A/D 位或具体实现的物理地址可达性；不处理两阶段翻译、地址屏蔽或扩展页表格式。</p>
+      <p>PTE 地址 = 页表基址 + VPN[i] × PTE 字节数。它指向页表项本身，不是 VA 对应的数据地址。</p>
+      <p>V = 0、保留位置位、权限非法、A/D 位不满足，或已到末级仍需下探时，产生对应的页错误，而不是继续遍历。</p>
+      <p>图中的 offset 始终是 VA[11:0]；大页的低位偏移则包含较低级 VPN。本页只做地址拆解与首个 PTE 地址算术，不读内存、不解码 PTE、不模拟完整遍历。</p>
     </div>
   </section>
   <noscript>请启用支持 BigInt 的 JavaScript 以使用计算器。页面完全离线运行，无外部依赖。</noscript>
@@ -218,6 +229,114 @@ function modeSamples(modeName) {
   };
 }
 
+const PAGE_UNITS = Object.freeze([[50n, 'PiB'], [40n, 'TiB'], [30n, 'GiB'], [20n, 'MiB'], [10n, 'KiB']]);
+
+function pageSize(level, mode) {
+  const exp = 12 + level * mode.vpnBits;
+  const bytes = 1n << BigInt(exp);
+  const [shift, unit] = PAGE_UNITS.find(entry => BigInt(exp) >= entry[0]);
+  return (bytes >> shift).toString() + ' ' + unit;
+}
+
+function svgText(x, y, text, options = {}) {
+  const { size = 13, weight = 400, fill = '#1f2430', anchor = 'start', mono = false } = options;
+  const family = mono
+    ? 'ui-monospace,SFMono-Regular,Consolas,monospace'
+    : '-apple-system,Segoe UI,PingFang SC,sans-serif';
+  return '<text x="' + x + '" y="' + y + '" font-size="' + size + '" font-weight="' + weight +
+    '" fill="' + fill + '" text-anchor="' + anchor + '" font-family="' + family + '">' + text + '</text>';
+}
+
+function renderWalk(decoded, pte) {
+  const { mode, vpn } = decoded;
+  const W = 1040, top = 34, rowH = 108, boxH = 68;
+  const labelX = 148, boxX = 166, boxW = 268, branchX = 546, branchW = 480;
+  const H = top + mode.levels * rowH + 10;
+  const digits = Math.ceil(mode.vpnBits / 4);
+  const svg = [
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="' +
+      mode.name + ' 页表遍历示意：' + mode.levels + ' 级页表逐级索引，每级都可能遇到大页叶子项">',
+    '<defs><marker id="walk-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">' +
+      '<path d="M0 0 L10 5 L0 10 Z" fill="#6b7280"/></marker></defs>',
+    svgText(boxX, 20, '页表（逐级索引）', { size: 12, weight: 600, fill: '#6b7280' }),
+    svgText(branchX, 20, '叶子项 = 遍历终点', { size: 12, weight: 600, fill: '#6b7280' })
+  ];
+  for (let step = 0; step < mode.levels; step++) {
+    const level = mode.levels - 1 - step;
+    const y = top + step * rowH;
+    const boxY = y + 14;
+    const cy = boxY + boxH / 2;
+    const isRoot = level === mode.levels - 1;
+    const fill = isRoot ? '#e0e7ff' : (level % 2 ? '#ede9fe' : '#dbeafe');
+    svg.push('<rect x="' + boxX + '" y="' + boxY + '" width="' + boxW + '" height="' + boxH +
+      '" rx="6" fill="' + fill + '" stroke="#9ca3af"/>');
+    svg.push(svgText(labelX, boxY + 20, 'LEVEL ' + level, { size: 11, weight: 600, fill: '#6b7280', anchor: 'end' }));
+    svg.push(svgText(labelX, boxY + 40, 'VPN[' + level + '] = ' + vpn[level], { size: 13, weight: 600, anchor: 'end', mono: true }));
+    svg.push(svgText(labelX, boxY + 56, '0x' + vpn[level].toString(16).padStart(digits, '0'), { size: 11, anchor: 'end', fill: '#6b7280', mono: true }));
+
+    const title = isRoot ? '根页表（第 ' + level + ' 级）' : '第 ' + level + ' 级页表';
+    let baseLine;
+    if (isRoot) baseLine = pte ? '基址 ' + hex(pte.base) : '基址 = (satp.PPN << 12)';
+    else baseLine = '基址 = 上一级 PTE.PPN << 12';
+    const pteLine = isRoot && pte
+      ? 'PTE 地址 ' + hex(pte.address)
+      : 'PTE 地址 = 基址 + VPN[' + level + '] × ' + mode.pteBytes;
+    svg.push(svgText(boxX + 14, boxY + 25, title, { size: 13, weight: 600 }));
+    svg.push(svgText(boxX + 14, boxY + 44, baseLine, { size: 11, fill: '#4b5563', mono: true }));
+    svg.push(svgText(boxX + 14, boxY + 60, pteLine, { size: 11, fill: '#4b5563', mono: true }));
+
+    svg.push('<rect x="' + branchX + '" y="' + boxY + '" width="' + branchW + '" height="' + boxH +
+      '" rx="6" fill="#fef3c7" stroke="#d1d5db"/>');
+    if (level === 0) {
+      svg.push(svgText(branchX + 14, boxY + 25, '叶子 → 4 KiB 基础页', { size: 13, weight: 600 }));
+      svg.push(svgText(branchX + 14, boxY + 44, 'PA = (PTE.PPN << 12) | VA[11:0]', { size: 11, mono: true, fill: '#4b5563' }));
+      svg.push(svgText(branchX + 14, boxY + 60, '无对齐要求；VA 低 12 位直接作为页内偏移', { size: 11, fill: '#6b7280' }));
+    } else {
+      svg.push(svgText(branchX + 14, boxY + 25, '叶子 → 大页 ' + pageSize(level, mode), { size: 13, weight: 600 }));
+      svg.push(svgText(branchX + 14, boxY + 44, '需 PTE.PPN[' + (level - 1) + ':0] = 0（低 ' + level * mode.vpnBits + ' 位为 0）', { size: 11, mono: true, fill: '#4b5563' }));
+      svg.push(svgText(branchX + 14, boxY + 60, '页内偏移 = VA[' + (12 + level * mode.vpnBits - 1) + ':0]，含 VPN[' + (level - 1) + ':0]', { size: 11, fill: '#6b7280' }));
+    }
+    svg.push('<line x1="' + (boxX + boxW) + '" y1="' + cy + '" x2="' + (branchX - 8) + '" y2="' + cy +
+      '" stroke="#6b7280" marker-end="url(#walk-arrow)"/>');
+    if (step < mode.levels - 1) {
+      const bottom = boxY + boxH;
+      const nextTop = y + rowH + 14;
+      svg.push('<line x1="' + (boxX + boxW / 2) + '" y1="' + bottom + '" x2="' + (boxX + boxW / 2) + '" y2="' + (nextTop - 7) +
+        '" stroke="#6b7280" marker-end="url(#walk-arrow)"/>');
+      svg.push(svgText(boxX + boxW / 2 + 8, (bottom + nextTop) / 2 + 4, '非叶子', { size: 10, fill: '#6b7280' }));
+    }
+  }
+  svg.push('</svg>');
+  document.getElementById('walk-diagram').innerHTML = svg.join('');
+}
+
+function renderWalkEmpty() {
+  const target = document.getElementById('walk-diagram');
+  target.replaceChildren(element('p', 'desc', '修正 VA 后显示遍历路径。'));
+}
+
+function renderSuperpages(mode) {
+  document.getElementById('walk-tag').textContent = mode.name + ' · ' + mode.levels + ' 级 · ' + mode.pteBytes + ' 字节 PTE';
+  const body = document.getElementById('superpage-rows');
+  body.replaceChildren();
+  for (let level = mode.levels - 1; level >= 0; level--) {
+    const row = document.createElement('tr');
+    const cells = [
+      'LEVEL ' + level + (level === 0 ? '（末级）' : level === mode.levels - 1 ? '（根）' : ''),
+      pageSize(level, mode),
+      level === 0 ? '无（PPN 任意）' : 'PTE.PPN[' + (level - 1) + ':0] = 0，即低 ' + level * mode.vpnBits + ' 位为 0',
+      'VA[' + (12 + level * mode.vpnBits - 1) + ':0]' + (level === 0 ? '（12 位 offset）' : '（含 VPN[' + (level - 1) + ':0]）')
+    ];
+    cells.forEach((text, index) => {
+      const cell = document.createElement('td');
+      if (index === 1) cell.append(element('code', '', text));
+      else cell.textContent = text;
+      row.append(cell);
+    });
+    body.append(row);
+  }
+}
+
 function element(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -280,6 +399,7 @@ function renderCalculator() {
   vaInput.setAttribute('aria-invalid', 'false');
   ppnInput.setAttribute('aria-invalid', 'false');
   document.getElementById('breakdown').hidden = true;
+  renderSuperpages(mode);
   let decoded;
   try {
     decoded = decodeVA(vaInput.value, mode.name);
@@ -288,6 +408,8 @@ function renderCalculator() {
     vaError.textContent = error.message;
     vaInput.setAttribute('aria-invalid', 'true');
   }
+  if (decoded) renderWalk(decoded, null);
+  else renderWalkEmpty();
   if (!ppnInput.value.trim()) {
     result.textContent = '未提供根 PPN：不计算 PTE 地址。';
     return;
@@ -299,6 +421,7 @@ function renderCalculator() {
       return;
     }
     const pte = calculateRootPTE(ppnInput.value, decoded);
+    renderWalk(decoded, pte);
     result.append(
       element('p', '', '根页表基址 = (' + hex(pte.ppn) + ' << 12) = ' + hex(pte.base)),
       element('p', '', '最高级 VPN[' + (mode.levels - 1) + '] = ' + pte.index + '；PTE 偏移 = ' + pte.index + ' × ' + mode.pteBytes + ' = ' + hex(pte.displacement)),
