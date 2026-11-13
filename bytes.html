@@ -34,8 +34,10 @@
   :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   input:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
   .error { color:#b91c1c; font-size:13px; line-height:1.7; }
-  .bit-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px 12px; }
-  .bit-byte { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:3px; }
+  .bit-grid { display:grid; grid-template-columns:1fr; gap:20px; }
+  .bit-group { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:20px; }
+  .bit-byte { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+  .bit-nibble { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:2px; }
   .bit-cell { min-width:0; text-align:center; }
   .bit-index { display:block; margin-bottom:3px; font-size:11px; color:var(--muted); }
   .bit-button { width:100%; padding:5px 0; border-radius:4px; font:14px ui-monospace,monospace; }
@@ -51,7 +53,9 @@
   .unit { display:inline-block; width:3ch; text-align:left; margin-left:6px; color:var(--accent); font-size:12px; }
   @media (max-width:700px) {
     header { padding-left:16px; padding-right:16px; } main { padding:12px; } .card { padding:14px; }
-    .bit-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .bit-grid { grid-template-columns:1fr; gap:12px; }
+    .bit-group { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .bit-byte { gap:12px; }
     th, td { padding:10px 6px; } th:first-child { width:26%; }
     .unit-value { min-width:0; }
     .unit { margin-left:4px; }
@@ -106,21 +110,33 @@ const bitGrid = document.getElementById('bit-grid');
 const bitTip = document.getElementById('bit-tip');
 let currentBytes = 0n;
 const bitButtons = [];
-for (let byte = 7; byte >= 0; byte--) {
-  const group = document.createElement('div'); group.className = 'bit-byte';
-  for (let offset = 7; offset >= 0; offset--) {
-    const bit = byte * 8 + offset;
-    const cell = document.createElement('div'); cell.className = 'bit-cell';
-    const index = document.createElement('span'); index.className = 'bit-index'; index.textContent = bit.toString();
-    const button = document.createElement('button'); button.type = 'button'; button.className = 'bit-button';
-    button.addEventListener('click', () => {
-      if (currentBytes === null) return;
-      const value = currentBytes ^ (1n << BigInt(bit));
-      const hexadecimal = /^0x/i.test(input.value.trim()) || /[a-f]/i.test(input.value);
-      input.value = hexadecimal ? '0x' + value.toString(16).toUpperCase() : value.toString();
-      updateResults();
-    });
-    bitButtons.push({button, bit}); cell.append(index, button); group.appendChild(cell);
+for (let groupIndex = 0; groupIndex < 2; groupIndex++) {
+  const firstByte = 7 - groupIndex * 4;
+  const group = document.createElement('div'); group.className = 'bit-group';
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', `第 ${firstByte} 至 ${firstByte - 3} 字节`);
+  for (let byte = firstByte; byte > firstByte - 4; byte--) {
+    const byteGroup = document.createElement('div'); byteGroup.className = 'bit-byte';
+    // 每 4 位（半个字节）一组，组内紧凑、组间留白
+    for (let nibble = 1; nibble >= 0; nibble--) {
+      const nibbleGroup = document.createElement('div'); nibbleGroup.className = 'bit-nibble';
+      for (let offset = 3; offset >= 0; offset--) {
+        const bit = byte * 8 + nibble * 4 + offset;
+        const cell = document.createElement('div'); cell.className = 'bit-cell';
+        const index = document.createElement('span'); index.className = 'bit-index'; index.textContent = bit.toString();
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'bit-button';
+        button.addEventListener('click', () => {
+          if (currentBytes === null) return;
+          const value = currentBytes ^ (1n << BigInt(bit));
+          const hexadecimal = /^0x/i.test(input.value.trim()) || /[a-f]/i.test(input.value);
+          input.value = hexadecimal ? '0x' + value.toString(16).toUpperCase() : value.toString();
+          updateResults();
+        });
+        bitButtons.push({button, bit}); cell.append(index, button); nibbleGroup.appendChild(cell);
+      }
+      byteGroup.appendChild(nibbleGroup);
+    }
+    group.appendChild(byteGroup);
   }
   bitGrid.appendChild(group);
 }
