@@ -1,0 +1,14 @@
+*.test.cjs
+*.log
+*.log.*
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+node_modules/
+coverage/
+playwright-report/
+test-results/
+/repro-qemu*
