@@ -39,6 +39,10 @@
   .field-details { margin-top:8px; }
   .field-details > summary { cursor:pointer; padding:5px 0; font-size:13px; color:var(--muted); }
   .value-reset { height:34px; padding:0 14px; }
+  @media (max-width:640px) {
+    .value-controls form .value-input { flex:1 1 12ch; min-width:10ch; }
+    .value-divider { display:none; }
+  }
 </style>
 </head>
 <body>
@@ -137,25 +141,26 @@ const REGS = [
   ]
 },
 {
+  id:"mstatush", name:"mstatush", width:"32", priv:"M", addr:"0x310",
+  desc:"RV32 专用：存放 mstatus 高 32 位中的部分字段。RV64 不存在该寄存器。",
+  fields:[
+    ["MDT",10,10,"M 模式 double trap 已推迟（Smdbltrp）", 32],
+    ["MPELP",9,9,"M 模式 landing pad 期望（Zicfilp）", 32],
+    ["WPRI",8,8,"保留", 32, true],
+    ["MPV",7,7,"陷入 M 前的虚拟化模式（H 扩展）", 32],
+    ["GVA",6,6,"mtval 是否为 guest 虚拟地址", 32],
+    ["MBE",5,5,"M 模式数据访问大端", 32],
+    ["SBE",4,4,"S 模式数据访问大端", 32],
+    ["WPRI",3,0,"保留", 32, true],
+  ]
+},
+{
   id:"misa", name:"misa", width:"XLEN", priv:"M", addr:"0x301",
   desc:"ISA 与扩展。低 26 位每位对应字母 A–Z 扩展，最高 2 位为 MXL。",
   fields:[
     ["MXL",63,62,"机器 XLEN（1=32, 2=64, 3=128）；RV32 位于 [31:30]", 64],
     ["MXL",31,30,"机器 XLEN", 32],
     ["Extensions",25,0,"bit0=A 原子, 2=C 压缩, 3=D 双精度, 5=F 单精度, 7=H 虚拟化, 8=I(RV32I/64I), 12=M 乘除, 18=S 监管模式, 20=U 用户模式, 21=V 向量", 'both'],
-  ]
-},
-{
-  id:"mie", name:"mie / mip", width:"XLEN", priv:"M", addr:"mie 0x304 / mip 0x344",
-  desc:"中断使能（mie）与中断挂起（mip）位布局一致。S/VS 级位在设置委托后可见。",
-  fields:[
-    ["LCOFIE/LCOFIP",13,13,"本地计数器溢出中断（Sscofpmf）", 'both'],
-    ["MEIE/MEIP",11,11,"M 外部中断", 'both'],
-    ["SEIE/SEIP",9,9,"S 外部中断", 'both'],
-    ["MTIE/MTIP",7,7,"M 定时器中断", 'both'],
-    ["STIE/STIP",5,5,"S 定时器中断", 'both'],
-    ["MSIE/MSIP",3,3,"M 软件中断", 'both'],
-    ["SSIE/SSIP",1,1,"S 软件中断", 'both'],
   ]
 },
 {
@@ -198,6 +203,19 @@ const REGS = [
   ]
 },
 {
+  id:"mie", name:"mie / mip", width:"XLEN", priv:"M", addr:"mie 0x304 / mip 0x344",
+  desc:"中断使能（mie）与中断挂起（mip）位布局一致。S/VS 级位在设置委托后可见。",
+  fields:[
+    ["LCOFIE/LCOFIP",13,13,"本地计数器溢出中断（Sscofpmf）", 'both'],
+    ["MEIE/MEIP",11,11,"M 外部中断", 'both'],
+    ["SEIE/SEIP",9,9,"S 外部中断", 'both'],
+    ["MTIE/MTIP",7,7,"M 定时器中断", 'both'],
+    ["STIE/STIP",5,5,"S 定时器中断", 'both'],
+    ["MSIE/MSIP",3,3,"M 软件中断", 'both'],
+    ["SSIE/SSIP",1,1,"S 软件中断", 'both'],
+  ]
+},
+{
   id:"medeleg", name:"medeleg", width:"16", priv:"M", addr:"0x302",
   desc:"异常委托位图：bit N=1 表示异常码 N 交给 S 模式处理。bit10/14 保留；bit11（M-ecall）只读 0；bit16（double trap）不可委托；高位为 0。",
   fields:[
@@ -230,6 +248,90 @@ const REGS = [
     ["STI",5,5,"S 定时器中断", 'both'],
     ["MSI",3,3,"M 软件中断（M 级，不应委托）", 'both'],
     ["SSI",1,1,"S 软件中断", 'both'],
+  ]
+},
+{
+  id:"satp", name:"satp", width:"XLEN", priv:"S", addr:"0x180",
+  desc:"S 模式地址翻译与保护。",
+  fields:[
+    ["MODE",63,60,"0 Bare, 8 Sv39, 9 Sv48, 10 Sv57；其他编码保留", 64],
+    ["ASID",59,44,"地址空间 ID（最多 16 位）", 64],
+    ["PPN",43,0,"根页表物理页号", 64],
+    ["MODE",31,31,"0 Bare, 1 Sv32", 32],
+    ["ASID",30,22,"地址空间 ID（9 位）", 32],
+    ["PPN",21,0,"根页表物理页号", 32],
+  ]
+},
+{
+  id:"hgatp", name:"hgatp", width:"XLEN", priv:"HS", addr:"0x680",
+  desc:"Hypervisor guest 地址翻译与保护（G-stage）。结构与 satp 类似：MODE 选择 Sv32x4 / Sv39x4 / Sv48x4 / Sv57x4，VMID 用于按虚拟机刷新 TLB。",
+  fields:[
+    ["MODE",63,60,"0 Bare, 8 Sv39x4, 9 Sv48x4, 10 Sv57x4", 64],
+    ["WPRI",59,58,"保留", 64, true],
+    ["VMID",57,44,"虚拟机标识", 64],
+    ["PPN",43,0,"guest 根页表物理页号", 64],
+    ["MODE",31,31,"0 Bare, 1 Sv32x4", 32],
+    ["VMID",30,22,"虚拟机标识（9 位）", 32],
+    ["PPN",21,0,"guest 根页表物理页号", 32],
+  ]
+},
+{
+  id:"pte", name:"页表项 PTE (Sv39/48/57)", width:"64", priv:"S", addr:"—",
+  desc:"R/W/X 全为 0 表示指向下一级页表；否则为叶子。",
+  fields:[
+    ["N",63,63,"NAPOT（Svnapot）", 64],
+    ["PBMT",62,61,"页内存类型（Svpbmt）", 64],
+    ["Reserved",60,54,"保留", 64, true],
+    ["PPN",53,10,"物理页号", 64],
+    ["RSW",9,8,"软件保留", 64],
+    ["D",7,7,"Dirty", 64],
+    ["A",6,6,"Accessed", 64],
+    ["G",5,5,"Global", 64],
+    ["U",4,4,"用户可访问", 64],
+    ["X",3,3,"可执行", 64],
+    ["W",2,2,"可写", 64],
+    ["R",1,1,"可读", 64],
+    ["V",0,0,"有效", 64],
+  ]
+},
+{
+  id:"fcsr", name:"fcsr / fflags / frm", width:"32", priv:"U", addr:"fflags 0x001 / frm 0x002 / fcsr 0x003",
+  desc:"浮点控制状态。fflags=fcsr[4:0]，frm=fcsr[7:5]。",
+  fields:[
+    ["frm",7,5,"舍入模式：0 RNE, 1 RTZ, 2 RDN, 3 RUP, 4 RMM；5–7 保留（DYN=7 用于指令 rm 字段）", 'both'],
+    ["NV",4,4,"无效操作", 'both'],
+    ["DZ",3,3,"除零", 'both'],
+    ["OF",2,2,"上溢", 'both'],
+    ["UF",1,1,"下溢", 'both'],
+    ["NX",0,0,"不精确", 'both'],
+  ]
+},
+{
+  id:"vtype", name:"vtype", width:"XLEN", priv:"U", addr:"0xC21",
+  desc:"向量扩展类型寄存器。",
+  fields:[
+    ["vill",63,63,"非法配置（RV32 为 bit31）", 64],
+    ["vill",31,31,"非法配置", 32],
+    ["vma",7,7,"mask 不关注策略（1=agnostic）", 'both'],
+    ["vta",6,6,"tail 不关注策略（1=agnostic）", 'both'],
+    ["vsew",5,3,"SEW：0=8, 1=16, 2=32, 3=64", 'both'],
+    ["vlmul",2,0,"LMUL：5=1/8, 6=1/4, 7=1/2, 0=1, 1=2, 2=4, 3=8", 'both'],
+  ]
+},
+{
+  id:"hstatus", name:"hstatus", width:"XLEN", priv:"HS", addr:"0x600",
+  desc:"H 扩展：hypervisor 状态寄存器。",
+  fields:[
+    ["VSXL",33,32,"VS 模式 XLEN", 64],
+    ["VTSR",22,22,"陷入 VS 的 SRET", 'both'],
+    ["VTW",21,21,"陷入 VS 的 WFI", 'both'],
+    ["VTVM",20,20,"陷入 VS 的虚拟内存操作", 'both'],
+    ["VGEIN",17,12,"虚拟 guest 外部中断号选择", 'both'],
+    ["HU",9,9,"VU 模式可使用 hypervisor load/store 指令", 'both'],
+    ["SPVP",8,8,"HS 陷入前 VS 的特权级", 'both'],
+    ["SPV",7,7,"陷入 HS 前的虚拟化模式", 'both'],
+    ["GVA",6,6,"mtval/stval 是否为 guest 虚拟地址", 'both'],
+    ["VSBE",5,5,"VS 模式数据大端", 'both'],
   ]
 },
 {
@@ -293,38 +395,6 @@ const REGS = [
   ]
 },
 {
-  id:"mscratch", name:"mscratch / sscratch", width:"XLEN", priv:"M", addr:"mscratch 0x340 / sscratch 0x140",
-  desc:"特权模式专用临时寄存器，硬件不赋予语义，常用来保存陷入时的栈指针或上下文指针。",
-  fields:[
-    ["SCRATCH",63,0,"软件专用值", 'both'],
-  ]
-},
-{
-  id:"satp", name:"satp", width:"XLEN", priv:"S", addr:"0x180",
-  desc:"S 模式地址翻译与保护。",
-  fields:[
-    ["MODE",63,60,"0 Bare, 8 Sv39, 9 Sv48, 10 Sv57；其他编码保留", 64],
-    ["ASID",59,44,"地址空间 ID（最多 16 位）", 64],
-    ["PPN",43,0,"根页表物理页号", 64],
-    ["MODE",31,31,"0 Bare, 1 Sv32", 32],
-    ["ASID",30,22,"地址空间 ID（9 位）", 32],
-    ["PPN",21,0,"根页表物理页号", 32],
-  ]
-},
-{
-  id:"hgatp", name:"hgatp", width:"XLEN", priv:"HS", addr:"0x680",
-  desc:"Hypervisor guest 地址翻译与保护（G-stage）。结构与 satp 类似：MODE 选择 Sv32x4 / Sv39x4 / Sv48x4 / Sv57x4，VMID 用于按虚拟机刷新 TLB。",
-  fields:[
-    ["MODE",63,60,"0 Bare, 8 Sv39x4, 9 Sv48x4, 10 Sv57x4", 64],
-    ["WPRI",59,58,"保留", 64, true],
-    ["VMID",57,44,"虚拟机标识", 64],
-    ["PPN",43,0,"guest 根页表物理页号", 64],
-    ["MODE",31,31,"0 Bare, 1 Sv32x4", 32],
-    ["VMID",30,22,"虚拟机标识（9 位）", 32],
-    ["PPN",21,0,"guest 根页表物理页号", 32],
-  ]
-},
-{
   id:"htimedelta", name:"htimedelta", width:"XLEN", priv:"HS", addr:"0x605 / htimedeltah 0x615",
   desc:"有符号 64 位时间偏移，加到 time 上形成 VS 模式看到的虚拟时间（htimedelta + time）。RV32 高 32 位经 htimedeltah 访问。",
   fields:[
@@ -332,22 +402,72 @@ const REGS = [
   ]
 },
 {
-  id:"pte", name:"页表项 PTE (Sv39/48/57)", width:"64", priv:"S", addr:"—",
-  desc:"R/W/X 全为 0 表示指向下一级页表；否则为叶子。",
+  id:"vstimecmp", name:"vstimecmp", width:"XLEN", priv:"HS", addr:"vstimecmp 0x24D / vstimecmph 0x25D",
+  desc:"Sstc + H：VS 模式定时器比较值，64 位精度。time + htimedelta >= vstimecmp 时 VSTIP 置位；RV32 高 32 位经 vstimecmph 访问。",
   fields:[
-    ["N",63,63,"NAPOT（Svnapot）", 64],
-    ["PBMT",62,61,"页内存类型（Svpbmt）", 64],
-    ["Reserved",60,54,"保留", 64, true],
-    ["PPN",53,10,"物理页号", 64],
-    ["RSW",9,8,"软件保留", 64],
-    ["D",7,7,"Dirty", 64],
-    ["A",6,6,"Accessed", 64],
-    ["G",5,5,"Global", 64],
-    ["U",4,4,"用户可访问", 64],
-    ["X",3,3,"可执行", 64],
-    ["W",2,2,"可写", 64],
-    ["R",1,1,"可读", 64],
-    ["V",0,0,"有效", 64],
+    ["TIME",63,0,"VS 定时器比较值", 'both'],
+  ]
+},
+{
+  id:"stimecmp", name:"stimecmp", width:"XLEN", priv:"S", addr:"stimecmp 0x14D / stimecmph 0x15D",
+  desc:"Sstc：S 模式定时器比较值，64 位精度。time >= stimecmp 时 STIP 置位；需 menvcfg.STCE=1。RV32 高 32 位经 stimecmph 访问。",
+  fields:[
+    ["TIME",63,0,"定时器比较值", 'both'],
+  ]
+},
+{
+  id:"mcounteren", name:"mcounteren / scounteren", width:"32", priv:"M", addr:"mcounteren 0x306 / scounteren 0x106",
+  desc:"计数器访问控制。mcounteren 控制 S/U 模式能否读取 cycle、time、instret 和 HPM 计数器；scounteren 进一步控制 U 模式。",
+  fields:[
+    ["HPM",31,3,"HPM3–HPM31 各自的使能位", 'both'],
+    ["IR",2,2,"允许读取 instret", 'both'],
+    ["TM",1,1,"允许读取 time", 'both'],
+    ["CY",0,0,"允许读取 cycle", 'both'],
+  ]
+},
+{
+  id:"mcountinhibit", name:"mcountinhibit", width:"32", priv:"M", addr:"0x320",
+  desc:"计数器抑制：置 1 的计数器停止递增（不影响可读性）。bit1 保留；time 不受该寄存器控制。",
+  fields:[
+    ["HPM",31,3,"HPM3–HPM31 各自的停止位", 'both'],
+    ["IR",2,2,"停止 minstret 递增", 'both'],
+    ["WPRI",1,1,"保留", 'both', true],
+    ["CY",0,0,"停止 mcycle 递增", 'both'],
+  ]
+},
+{
+  id:"mcycle", name:"mcycle / minstret", width:"XLEN", priv:"M", addr:"mcycle 0xB00 / minstret 0xB02（高半 0xB80 / 0xB82）",
+  desc:"64 位周期计数与退休指令计数；RV32 高 32 位分别在 mcycleh / minstreth。可用 mcountinhibit 停止递增。",
+  fields:[
+    ["COUNT",63,0,"计数器当前值", 'both'],
+  ]
+},
+{
+  id:"cycle", name:"cycle / time / instret", width:"XLEN", priv:"U", addr:"0xC00 / 0xC01 / 0xC02（高半 0xC80–0xC82）",
+  desc:"U 模式只读影子计数器：cycle（周期）、time（平台定时器）、instret（退休指令）。RV32 高 32 位在 cycleh / timeh / instreth；访问受 mcounteren / scounteren 控制。",
+  fields:[
+    ["COUNT",63,0,"计数器当前值", 'both'],
+  ]
+},
+{
+  id:"mhpmcounter", name:"mhpmcounterN", width:"XLEN", priv:"M", addr:"0xB03–0xB1F（RV32 高半 0xB83–0xB9F）",
+  desc:"HPM 事件计数器 3–31，64 位精度；RV32 高 32 位在 mhpmcounterhN。计数事件由 mhpmeventN 选择。",
+  fields:[
+    ["COUNT",63,0,"计数器当前值", 'both'],
+  ]
+},
+{
+  id:"mhpmevent", name:"mhpmeventN", width:"XLEN", priv:"M", addr:"0x323–0x33F（RV32 高半 0x723–0x73F）",
+  desc:"HPM 事件选择器 3–31，64 位 WARL；低 56 位事件编码由平台定义，0 表示不计数。Sscofpmf 定义 OF 与各特权级的计数抑制位。",
+  fields:[
+    ["OF",63,63,"计数溢出状态（置位后不再产生溢出中断）", 64],
+    ["MINH",62,62,"禁止在 M 模式计数", 64],
+    ["SINH",61,61,"禁止在 S/HS 模式计数", 64],
+    ["UINH",60,60,"禁止在 U 模式计数", 64],
+    ["VSINH",59,59,"禁止在 VS 模式计数", 64],
+    ["VUINH",58,58,"禁止在 VU 模式计数", 64],
+    ["WPRI",57,56,"保留", 64, true],
+    ["EVENT",55,0,"事件选择编码（平台定义）", 'both'],
   ]
 },
 {
@@ -468,126 +588,10 @@ const REGS = [
   ]
 },
 {
-  id:"mcounteren", name:"mcounteren / scounteren", width:"32", priv:"M", addr:"mcounteren 0x306 / scounteren 0x106",
-  desc:"计数器访问控制。mcounteren 控制 S/U 模式能否读取 cycle、time、instret 和 HPM 计数器；scounteren 进一步控制 U 模式。",
+  id:"mscratch", name:"mscratch / sscratch", width:"XLEN", priv:"M", addr:"mscratch 0x340 / sscratch 0x140",
+  desc:"特权模式专用临时寄存器，硬件不赋予语义，常用来保存陷入时的栈指针或上下文指针。",
   fields:[
-    ["HPM",31,3,"HPM3–HPM31 各自的使能位", 'both'],
-    ["IR",2,2,"允许读取 instret", 'both'],
-    ["TM",1,1,"允许读取 time", 'both'],
-    ["CY",0,0,"允许读取 cycle", 'both'],
-  ]
-},
-{
-  id:"mcountinhibit", name:"mcountinhibit", width:"32", priv:"M", addr:"0x320",
-  desc:"计数器抑制：置 1 的计数器停止递增（不影响可读性）。bit1 保留；time 不受该寄存器控制。",
-  fields:[
-    ["HPM",31,3,"HPM3–HPM31 各自的停止位", 'both'],
-    ["IR",2,2,"停止 minstret 递增", 'both'],
-    ["WPRI",1,1,"保留", 'both', true],
-    ["CY",0,0,"停止 mcycle 递增", 'both'],
-  ]
-},
-{
-  id:"mcycle", name:"mcycle / minstret", width:"XLEN", priv:"M", addr:"mcycle 0xB00 / minstret 0xB02（高半 0xB80 / 0xB82）",
-  desc:"64 位周期计数与退休指令计数；RV32 高 32 位分别在 mcycleh / minstreth。可用 mcountinhibit 停止递增。",
-  fields:[
-    ["COUNT",63,0,"计数器当前值", 'both'],
-  ]
-},
-{
-  id:"cycle", name:"cycle / time / instret", width:"XLEN", priv:"U", addr:"0xC00 / 0xC01 / 0xC02（高半 0xC80–0xC82）",
-  desc:"U 模式只读影子计数器：cycle（周期）、time（平台定时器）、instret（退休指令）。RV32 高 32 位在 cycleh / timeh / instreth；访问受 mcounteren / scounteren 控制。",
-  fields:[
-    ["COUNT",63,0,"计数器当前值", 'both'],
-  ]
-},
-{
-  id:"mhpmcounter", name:"mhpmcounterN", width:"XLEN", priv:"M", addr:"0xB03–0xB1F（RV32 高半 0xB83–0xB9F）",
-  desc:"HPM 事件计数器 3–31，64 位精度；RV32 高 32 位在 mhpmcounterhN。计数事件由 mhpmeventN 选择。",
-  fields:[
-    ["COUNT",63,0,"计数器当前值", 'both'],
-  ]
-},
-{
-  id:"mhpmevent", name:"mhpmeventN", width:"XLEN", priv:"M", addr:"0x323–0x33F（RV32 高半 0x723–0x73F）",
-  desc:"HPM 事件选择器 3–31，64 位 WARL；低 56 位事件编码由平台定义，0 表示不计数。Sscofpmf 定义 OF 与各特权级的计数抑制位。",
-  fields:[
-    ["OF",63,63,"计数溢出状态（置位后不再产生溢出中断）", 64],
-    ["MINH",62,62,"禁止在 M 模式计数", 64],
-    ["SINH",61,61,"禁止在 S/HS 模式计数", 64],
-    ["UINH",60,60,"禁止在 U 模式计数", 64],
-    ["VSINH",59,59,"禁止在 VS 模式计数", 64],
-    ["VUINH",58,58,"禁止在 VU 模式计数", 64],
-    ["WPRI",57,56,"保留", 64, true],
-    ["EVENT",55,0,"事件选择编码（平台定义）", 'both'],
-  ]
-},
-{
-  id:"stimecmp", name:"stimecmp", width:"XLEN", priv:"S", addr:"stimecmp 0x14D / stimecmph 0x15D",
-  desc:"Sstc：S 模式定时器比较值，64 位精度。time >= stimecmp 时 STIP 置位；需 menvcfg.STCE=1。RV32 高 32 位经 stimecmph 访问。",
-  fields:[
-    ["TIME",63,0,"定时器比较值", 'both'],
-  ]
-},
-{
-  id:"vstimecmp", name:"vstimecmp", width:"XLEN", priv:"HS", addr:"vstimecmp 0x24D / vstimecmph 0x25D",
-  desc:"Sstc + H：VS 模式定时器比较值，64 位精度。time + htimedelta >= vstimecmp 时 VSTIP 置位；RV32 高 32 位经 vstimecmph 访问。",
-  fields:[
-    ["TIME",63,0,"VS 定时器比较值", 'both'],
-  ]
-},
-{
-  id:"mstatush", name:"mstatush", width:"32", priv:"M", addr:"0x310",
-  desc:"RV32 专用：存放 mstatus 高 32 位中的部分字段。RV64 不存在该寄存器。",
-  fields:[
-    ["MDT",10,10,"M 模式 double trap 已推迟（Smdbltrp）", 32],
-    ["MPELP",9,9,"M 模式 landing pad 期望（Zicfilp）", 32],
-    ["WPRI",8,8,"保留", 32, true],
-    ["MPV",7,7,"陷入 M 前的虚拟化模式（H 扩展）", 32],
-    ["GVA",6,6,"mtval 是否为 guest 虚拟地址", 32],
-    ["MBE",5,5,"M 模式数据访问大端", 32],
-    ["SBE",4,4,"S 模式数据访问大端", 32],
-    ["WPRI",3,0,"保留", 32, true],
-  ]
-},
-{
-  id:"fcsr", name:"fcsr / fflags / frm", width:"32", priv:"U", addr:"fflags 0x001 / frm 0x002 / fcsr 0x003",
-  desc:"浮点控制状态。fflags=fcsr[4:0]，frm=fcsr[7:5]。",
-  fields:[
-    ["frm",7,5,"舍入模式：0 RNE, 1 RTZ, 2 RDN, 3 RUP, 4 RMM；5–7 保留（DYN=7 用于指令 rm 字段）", 'both'],
-    ["NV",4,4,"无效操作", 'both'],
-    ["DZ",3,3,"除零", 'both'],
-    ["OF",2,2,"上溢", 'both'],
-    ["UF",1,1,"下溢", 'both'],
-    ["NX",0,0,"不精确", 'both'],
-  ]
-},
-{
-  id:"vtype", name:"vtype", width:"XLEN", priv:"U", addr:"0xC21",
-  desc:"向量扩展类型寄存器。",
-  fields:[
-    ["vill",63,63,"非法配置（RV32 为 bit31）", 64],
-    ["vill",31,31,"非法配置", 32],
-    ["vma",7,7,"mask 不关注策略（1=agnostic）", 'both'],
-    ["vta",6,6,"tail 不关注策略（1=agnostic）", 'both'],
-    ["vsew",5,3,"SEW：0=8, 1=16, 2=32, 3=64", 'both'],
-    ["vlmul",2,0,"LMUL：5=1/8, 6=1/4, 7=1/2, 0=1, 1=2, 2=4, 3=8", 'both'],
-  ]
-},
-{
-  id:"hstatus", name:"hstatus", width:"XLEN", priv:"HS", addr:"0x600",
-  desc:"H 扩展：hypervisor 状态寄存器。",
-  fields:[
-    ["VSXL",33,32,"VS 模式 XLEN", 64],
-    ["VTSR",22,22,"陷入 VS 的 SRET", 'both'],
-    ["VTW",21,21,"陷入 VS 的 WFI", 'both'],
-    ["VTVM",20,20,"陷入 VS 的虚拟内存操作", 'both'],
-    ["VGEIN",17,12,"虚拟 guest 外部中断号选择", 'both'],
-    ["HU",9,9,"VU 模式可使用 hypervisor load/store 指令", 'both'],
-    ["SPVP",8,8,"HS 陷入前 VS 的特权级", 'both'],
-    ["SPV",7,7,"陷入 HS 前的虚拟化模式", 'both'],
-    ["GVA",6,6,"mtval/stval 是否为 guest 虚拟地址", 'both'],
-    ["VSBE",5,5,"VS 模式数据大端", 'both'],
+    ["SCRATCH",63,0,"软件专用值", 'both'],
   ]
 },
 {
@@ -606,6 +610,13 @@ const REGS = [
   ]
 },
 {
+  id:"marchid", name:"marchid / mimpid / mhartid", width:"XLEN", priv:"M", addr:"marchid 0xF12 / mimpid 0xF13 / mhartid 0xF14",
+  desc:"只读标识寄存器。marchid：微架构 ID；mimpid：实现版本；mhartid：hart 编号（多 hart 系统中必须唯一且至少一个为 0）。",
+  fields:[
+    ["ID",63,0,"架构 / 实现 / hart 编号", 'both'],
+  ]
+},
+{
   id:"seed", name:"seed", width:"32", priv:"U", addr:"0x015",
   desc:"Zkr 熵源寄存器（只读）。返回 16 位随机熵并报告 BIST 状态；访问受 mseccfg.USEED / SSEED 与 mstateen0 控制。",
   fields:[
@@ -614,13 +625,6 @@ const REGS = [
     ["WPRI",27,24,"保留", 'both', true],
     ["CUSTOM",23,16,"自定义熵位", 'both'],
     ["ENTROPY",15,0,"16 位随机熵", 'both'],
-  ]
-},
-{
-  id:"marchid", name:"marchid / mimpid / mhartid", width:"XLEN", priv:"M", addr:"marchid 0xF12 / mimpid 0xF13 / mhartid 0xF14",
-  desc:"只读标识寄存器。marchid：微架构 ID；mimpid：实现版本；mhartid：hart 编号（多 hart 系统中必须唯一且至少一个为 0）。",
-  fields:[
-    ["ID",63,0,"架构 / 实现 / hart 编号", 'both'],
   ]
 },
 {
@@ -656,7 +660,7 @@ const REGS = [
     ["MNPV",7,7,"被中断的虚拟化模式（H 扩展）", 'both'],
     ["NMIE",3,3,"RNMI 使能；为 0 时所有中断被屏蔽", 'both'],
   ]
-},
+}
 ];
 
 TrapRegisters.forEach(reg => {

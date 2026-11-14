@@ -305,7 +305,7 @@ footer.site-footer hr.slender {
   border: 0;
   height: 1px;
   margin: 1.4rem 0;
-  background-image: linear-gradient(left, rgba(0,0,0,0), rgba(0,0,0,0.45), rgba(0,0,0,0));
+  background-image: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,0.45), rgba(0,0,0,0));
 }
 footer.site-footer .credits {
   text-align: center;
