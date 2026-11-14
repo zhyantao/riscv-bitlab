@@ -5,1193 +5,482 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RISC-V 速查工具箱</title>
 <style>
-  :root { --bg:#f6f7f9; --card:#fff; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
-  * { box-sizing: border-box; }
+  :root { --bg:#f6f7f9; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
+  * { box-sizing:border-box; }
   body { margin:0; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; background:var(--bg); color:var(--fg); }
-  header { position:sticky; top:0; z-index:100; padding:10px max(24px, calc((100% - 1160px) / 2)); background:#111827; color:#fff; display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,0.25); }
-  header h1 { font-size:17px; margin:0; font-weight:700; display:flex; align-items:center; gap:8px; }
-  header h1::before { content:''; width:10px; height:10px; border-radius:3px; background:linear-gradient(135deg,#2563eb,#7c3aed); flex-shrink:0; }
+  header { position:sticky; top:0; z-index:100; padding:10px max(24px, calc((100% - 1160px) / 2)); background:#111827; color:white; display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,0.25); }
+  h1 { font-size:17px; margin:0; font-weight:700; display:flex; align-items:center; gap:8px; }
+  h1::before { content:''; width:10px; height:10px; border-radius:3px; background:linear-gradient(135deg,#2563eb,#7c3aed); flex-shrink:0; }
   nav { display:flex; flex-wrap:wrap; gap:4px; margin-right:auto; }
   nav a { color:#9ca3af; text-decoration:none; padding:5px 12px; border-radius:999px; font-size:14px; transition:background .15s, color .15s; }
-  nav a:hover { color:#fff; background:rgba(255,255,255,0.1); }
-  nav a[aria-current] { background:var(--accent); color:#fff; }
-  nav a:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }
-  header select { padding:6px 10px; border-radius:6px; border:1px solid #374151; background:#1f2937; color:#fff; font-size:14px; }
-  header select { -webkit-appearance:none; appearance:none; padding-right:28px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239ca3af' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 9px center; }
-  main { max-width:1200px; margin:0 auto; padding:20px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:20px; }
-  .card h2 { margin:0 0 4px; font-size:18px; }
-  .desc { color:var(--muted); font-size:13px; margin-bottom:12px; }
-  .bits-wrap { overflow-x:auto; padding:4px 2px 8px; }
-  .bit-labels, .row { display:grid; grid-template-columns:repeat(var(--bits),minmax(0,1fr)); min-width:calc(var(--bits) * 32px); }
+  nav a:hover { color:white; background:rgba(255,255,255,0.1); }
+  nav a[aria-current] { background:var(--accent); color:white; }
+  main { max-width:1200px; margin:auto; padding:20px; }
+  .intro, .card { background:white; border:1px solid var(--line); border-radius:8px; padding:20px; margin-bottom:20px; }
+  .intro p { margin:0 0 12px; line-height:1.7; color:var(--muted); font-size:14px; }
+  .controls { display:flex; gap:12px; flex-wrap:wrap; align-items:center; font-size:14px; }
+  select { padding:7px 12px; border:1px solid var(--line); border-radius:6px; background:white; color:var(--fg); font:inherit; -webkit-appearance:none; appearance:none; padding-right:30px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
+  .legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; font-size:12px; }
+  .legend span { padding:4px 10px; border-radius:4px; }
+  h2 { margin:0; font-size:20px; }
+  .heading { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+  #codec-format-heading { margin:16px 0 12px; gap:8px; line-height:1.5; }
+  #codec-format-heading .tag { line-height:1.5; }
+  .tag { font-size:12px; color:#3730a3; background:#e0e7ff; border-radius:10px; padding:3px 8px; }
+  .desc { color:var(--muted); font-size:14px; line-height:1.6; }
+  .scroll { overflow-x:auto; padding:4px 2px 8px; }
+  .bit-labels, .bit-row { display:grid; grid-template-columns:repeat(32,minmax(0,1fr)); min-width:1024px; }
   .bit-labels span { font:11px ui-monospace,monospace; text-align:center; color:var(--muted); padding:3px 0; }
-  .row { margin-bottom:10px; }
-  .cell { min-width:0; min-height:68px; padding:8px 4px; border:1px solid #9ca3af; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; position:relative; }
-  .cell-label { font:600 13px/1.4 ui-monospace,monospace; white-space:nowrap; flex-shrink:0; }
-  .cell.narrow .cell-label { writing-mode:vertical-rl; font-size:12px; }
-  .cell.rsv { background:repeating-linear-gradient(45deg,#f3f4f6,#f3f4f6 4px,#e5e7eb 4px,#e5e7eb 8px); color:var(--muted); }
-  .cell.hover, .cell:hover { outline:2px solid var(--accent); outline-offset:-2px; z-index:1; }
-  .c0 { background:#dbeafe; } .c1 { background:#dcfce7; } .c2 { background:#fef3c7; } .c3 { background:#fce7f3; } .c4 { background:#ede9fe; }
-  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
-  th, td { border-bottom:1px solid var(--line); padding:4px 8px; text-align:left; vertical-align:middle; }
+  .bit-row { margin-bottom:10px; }
+  .field { min-width:0; min-height:68px; padding:8px 4px; border:1px solid #9ca3af; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; position:relative; }
+  .field-name { font:600 13px/1.4 ui-monospace,monospace; white-space:nowrap; flex-shrink:0; }
+  .field.narrow .field-name { writing-mode:vertical-rl; font-size:12px; }
+  .opcode { background:#dbeafe; }
+  .function { background:#ede9fe; }
+  .destination { background:#dcfce7; }
+  .source { background:#fef3c7; }
+  .immediate { background:#fce7f3; }
+  .field.active { outline:2px solid var(--accent); outline-offset:-2px; z-index:1; }
+  table { width:100%; border-collapse:collapse; font-size:12px; margin-top:4px; }
+  th, td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); line-height:1.4; vertical-align:middle; }
+  th:nth-child(-n+3), td:nth-child(-n+3) { width:1%; white-space:nowrap; }
+  td:last-child { overflow-wrap:anywhere; }
   th { background:#f3f4f6; color:#4b5563; font-weight:600; border-bottom:2px solid #d1d5db; }
-  tr.hover { background:#eff6ff; }
-  code { background:#f3f4f6; padding:1px 4px; border-radius:3px; }
-  .tag { font-size:12px; padding:1px 6px; border-radius:10px; background:#e0e7ff; color:#3730a3; }
-  .hidden { display:none; }
-  .value-panel { background:#f8fafc; border:1px solid var(--line); border-radius:6px; padding:12px; margin:12px 0; }
-  .value-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-  .value-input, .field-input { font:13px ui-monospace,monospace; padding:7px 8px; border:1px solid #9ca3af; border-radius:4px; max-width:100%; }
-  .value-input { width:25ch; height:34px; }
-  .field-input { width:8ch; padding:7px 6px; }
-  .value-error { color:#b91c1c; font-size:13px; margin-top:2px; }
-  .value-error:empty { display:none; }
-  .value-controls label { font-size:14px; }
-  .value-divider { width:1px; align-self:stretch; background:var(--line); }
-  .search-input { flex:1 1 220px; min-width:180px; height:34px; font:13px ui-monospace,monospace; padding:0 10px 0 28px; border:1px solid #d1d5db; border-radius:6px; background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E") no-repeat left 9px center; }
-  input[aria-invalid="true"] { border-color:#b91c1c; }
-  .binary-value { display:block; overflow-wrap:anywhere; font:12px/1.8 ui-monospace,monospace; margin-top:8px; }
-  .bit-values { display:grid; grid-template-columns:repeat(var(--bits),minmax(0,1fr)); min-width:calc(var(--bits) * 32px); }
-  .bit-value { border:1px solid #d6dae1; background:#f8fafc; color:#6b7280; padding:4px 0; font:13px ui-monospace,monospace; cursor:pointer; }
-  .bit-value[aria-pressed="true"] { background:#2563eb; color:#fff; }
-  .cell[role="button"] { cursor:pointer; }
-  .cell.nonzero { box-shadow:inset 0 -3px #2563eb; }
-  .cell-value { font:600 12px ui-monospace,monospace; overflow-wrap:anywhere; max-width:100%; text-align:center; }
-  .cell.narrow .cell-value { writing-mode:vertical-rl; white-space:nowrap; }
-  .field-meaning { display:block; color:#3730a3; font-size:12px; line-height:1.4; }
-  .field-meaning:empty::after { content:'—'; color:#9ca3af; }
-  button:focus-visible, .cell:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-  input:focus-visible, header select:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
-  .table-wrap { overflow-x:auto; }
-  .field-details { margin-top:8px; }
-  .field-details > summary { cursor:pointer; padding:5px 0; font-size:13px; color:#6b7280; }
-  .field-details > summary:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }
-  .value-reset { height:34px; padding:0 14px; border:1px solid #9ca3af; border-radius:4px; background:white; cursor:pointer; font-size:14px; }
+  tr.active { background:#eff6ff; }
+  code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; background:#f3f4f6; padding:2px 5px; border-radius:4px; overflow-wrap:anywhere; }
+  .notes { background:#f8fafc; border-left:3px solid var(--accent); padding:12px 14px; margin-top:16px; font-size:13px; line-height:1.8; }
+  .notes p { margin:4px 0; }
+  .notes p:first-child { margin:0 0 6px; }
+  .example { font-size:13px; line-height:1.9; margin-bottom:0; }
+  a:focus-visible, select:focus-visible, .field:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }
+  select:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
+  .codec-controls { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:12px 0; font-size:14px; }
+  .codec-form { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0; }
+  .codec-form label { min-width:6em; font-size:14px; }
+  .codec-input { flex:1; min-width:180px; font:14px ui-monospace,monospace; padding:9px; border:1px solid #9ca3af; border-radius:6px; }
+  .codec-button { padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; background:#f8fafc; color:var(--fg); cursor:pointer; font-size:14px; }
+  .codec-error { color:#b91c1c; font-size:13px; line-height:1.6; }
+  .codec-error:empty { display:none; }
+  .codec-summary { font-size:14px; line-height:1.9; overflow-wrap:anywhere; }
+  #codec-help { margin:6px 0 0; }
+  .codec-bits { display:grid; grid-template-columns:repeat(32,minmax(0,1fr)); min-width:1024px; }
+  .codec-bit { border:1px solid #d6dae1; background:#f8fafc; padding:4px 0; font:13px ui-monospace,monospace; cursor:pointer; }
+  .codec-bit[aria-pressed="true"] { background:#2563eb; color:white; }
+  .codec-bit[data-fixed="true"] { box-shadow:inset 0 -3px #b45309; }
+  .field[data-fixed="true"] { border-bottom:3px solid #b45309; }
+  .fixed-marker { color:#78350f; background:#fef3c7; padding:2px 4px; border-radius:3px; font:11px/1.4 ui-monospace,monospace; max-width:100%; overflow-wrap:anywhere; }
+  .field.narrow .fixed-marker { writing-mode:vertical-rl; white-space:nowrap; }
+  .codec-pattern { display:grid; grid-template-columns:repeat(32,minmax(0,1fr)); min-width:1024px; }
+  .codec-pattern span { text-align:center; font:12px ui-monospace,monospace; padding:4px 0; color:#6b7280; background:#f8fafc; }
+  .codec-pattern span[data-fixed="true"] { color:#78350f; background:#fef3c7; font-weight:700; }
+  .codec-field-value { font:12px ui-monospace,monospace; max-width:100%; overflow-wrap:anywhere; }
+  .field.narrow .codec-field-value { writing-mode:vertical-rl; white-space:nowrap; }
+  .codec-input[aria-invalid="true"] { border-color:#b91c1c; }
+  #format-reference { padding:14px 0 0; margin-top:12px; border-top:1px solid var(--line); }
+  #format-reference > p { margin:0 0 6px; font-size:12px; line-height:1.4; }
+  #format-reference > .controls { gap:8px; font-size:13px; }
+  #format-reference select { padding:4px 28px 4px 8px; max-width:100%; }
+  #format-reference .legend { gap:4px; margin:6px 0; }
+  #format-reference .legend span { padding:2px 6px; }
+  #formats > .card { margin:0; padding:0; border:0; border-radius:0; }
+  #formats .format-details > summary { padding:6px 0; }
+  #formats .heading { gap:6px; }
+  #formats h2 { font-size:14px; margin:0 0 8px; }
+  #formats .tag { padding:1px 6px; font-size:11px; }
+  #formats .desc { font-size:12px; line-height:1.4; margin:4px 0; }
+  #formats .scroll { padding:2px 0 4px; }
+  #formats .bit-row { margin-bottom:0; }
+  #formats .field { min-height:48px; padding:4px; gap:3px; }
+  #formats .notes { margin-top:6px; padding:6px 8px; font-size:12px; line-height:1.4; }
+  #formats .example { margin:6px 0 8px; font-size:12px; line-height:1.5; }
+  .operation-code { margin:0 0 6px; white-space:pre-wrap; overflow-wrap:anywhere; font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace; }
+  .operation-code:empty { display:none; }
+  .operation-code code { background:none; padding:0; }
+  .format-details > summary { cursor:pointer; }
+  .format-details > summary .heading { display:inline-flex; flex-wrap:wrap; margin:0; vertical-align:middle; }
+  .format-details[open] > summary { margin-bottom:4px; }
+  .format-details > summary:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
+  button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  input:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
+  @media (max-width:600px) { header { padding-left:16px; padding-right:16px; } main { padding:12px; } .card, .intro { padding:14px; } }
 </style>
 </head>
 <body>
 <header>
   <h1>RISC-V 速查工具箱</h1>
   <nav aria-label="页面导航">
-    <a href="index.html" aria-current="page">寄存器位域</a>
-    <a href="instructions.html">指令编码</a>
+    <a href="index.html">寄存器位域</a>
+    <a href="instructions.html" aria-current="page">指令编码</a>
     <a href="traps.html">异常与中断</a>
     <a href="translation.html">地址翻译</a>
     <a href="bytes.html">字节换算</a>
   </nav>
-  <select id="sel"></select>
-  <select id="xlen">
-    <option value="64">RV64</option>
-    <option value="32">RV32</option>
-  </select>
 </header>
-<section class="value-panel" style="max-width:1160px; margin:20px auto 0" aria-label="CSR 赋值解析">
-  <div class="value-controls">
-    <form id="assignment-form" class="value-controls" novalidate>
-      <label for="assignment">粘贴 CSR 赋值</label>
-      <input id="assignment" class="value-input" style="width:34ch" placeholder="mstatus = 0x0000_1800" maxlength="300" spellcheck="false" aria-describedby="assignment-error">
-      <button class="value-reset" type="submit">解析并定位</button>
+<main>
+  <section id="instruction-card" class="card" aria-labelledby="codec-title">
+    <h2 id="codec-title">汇编 / 反汇编</h2>
+    <p class="desc">单条指令、32 位机器码与位域双向联动，按 RISC-V ISA 编码规则进行汇编和反汇编。</p>
+    <div class="codec-controls">
+      <label for="codec-xlen">架构</label>
+      <select id="codec-xlen"><option value="64">RV64</option><option value="32">RV32</option></select>
+      <span>I 基础指令</span>
+      <label><input type="checkbox" id="codec-m" checked> M</label>
+      <label><input type="checkbox" id="codec-a"> A（原子访存）</label>
+      <label><input type="checkbox" id="codec-v"> V（向量）</label>
+      <label><input type="checkbox" id="codec-f"> F（单精度）</label>
+      <label><input type="checkbox" id="codec-d"> D（含 F）</label>
+      <label><input type="checkbox" id="codec-csr" checked> Zicsr</label>
+      <label><input type="checkbox" id="codec-fence" checked> Zifencei</label>
+    </div>
+    <form id="codec-asm-form" class="codec-form">
+      <label for="codec-asm">汇编文本</label>
+      <input id="codec-asm" class="codec-input" value="add x1, x2, x3" maxlength="256" spellcheck="false" aria-describedby="codec-error">
+      <button type="submit" class="codec-button">汇编</button>
     </form>
-    <span class="value-divider" aria-hidden="true"></span>
-    <input id="q" class="search-input" placeholder="搜索寄存器 / 字段，如 MPP / SUM" aria-label="搜索寄存器或字段名" title="输入时搜索全部寄存器；多个关键词用斜杠、逗号或空格分隔，匹配任意一个">
-  </div>
-  <p class="hint">数字输入支持下划线分组，例如 0x0000_0001_0000_0000；下划线仅允许出现在数字之间，原位宽限制不变。</p>
-  <div id="assignment-error" class="value-error" role="status"></div>
-</section>
-<main id="main"></main>
-
-<script src="page-state.js"></script>
-<script src="trap-registers.js"></script>
+    <form id="codec-word-form" class="codec-form">
+      <label for="codec-word">机器码</label>
+      <input id="codec-word" class="codec-input" value="0x003100b3" maxlength="66" spellcheck="false" aria-describedby="codec-error">
+      <button type="submit" class="codec-button">反汇编</button>
+    </form>
+    <p id="instruction-transfer-status" class="desc" role="status"></p>
+    <div id="codec-error" class="codec-error" role="status"></div>
+    <div id="codec-result">
+      <p id="codec-summary" class="codec-summary"></p>
+      <p id="codec-bytes" class="desc"></p>
+      <div id="codec-format-heading" class="heading" aria-live="polite" hidden></div>
+      <div id="codec-diagram" class="scroll"></div>
+    </div>
+    <section id="format-reference" aria-label="当前指令语义" hidden>
+    <div id="formats"></div>
+    </section>
+  </section>
+  <noscript>请启用 JavaScript 以显示指令位域图与字段说明。</noscript>
+</main>
+<script src="riscv-codec.js"></script>
 <script>
-// fields: [name, hi, lo, desc]  ；xl: 'both'(默认) | 64 (仅RV64) | 32 (仅RV32)
-const REGS = [
-{
-  id:"mstatus", name:"mstatus", width:"XLEN", priv:"M", addr:"0x300",
-  desc:"机器模式状态寄存器。RV32 中 SD 位于 bit31，高位部分通过 mstatush 访问；RV64 为单个 64 位寄存器。",
-  fields:[
-    ["SD",63,63,"状态脏汇总位，FS/VS/XS 任一为 Dirty 时为 1（RV32 为 bit31）", 64],
-    ["WPRI",62,43,"保留", 64, true],
-    ["WPRI",40,40,"保留", 64, true],
-    ["MDT",42,42,"M 模式 double trap（Smdbltrp）", 64],
-    ["MPELP",41,41,"M 模式 landing pad 期望（Zicfilp）", 64],
-    ["MPV",39,39,"进入 M 前的虚拟化模式（H 扩展）", 64],
-    ["GVA",38,38,"陷入时 mtval 是否为 guest 虚拟地址", 64],
-    ["MBE",37,37,"M 模式数据访问大端", 64],
-    ["SBE",36,36,"S 模式数据访问大端", 64],
-    ["SXL",35,34,"S 模式 XLEN（1=32, 2=64）", 64],
-    ["UXL",33,32,"U 模式 XLEN（1=32, 2=64）", 64],
-    ["SD",31,31,"状态脏汇总位", 32],
-    ["WPRI",31,25,"保留", 64, true],
-    ["WPRI",30,25,"保留", 32, true],
-    ["SDT",24,24,"S 模式 double trap（Ssdbltrp）", 'both'],
-    ["SPELP",23,23,"S 模式 landing pad 期望", 'both'],
-    ["TSR",22,22,"陷入 S 模式 SRET", 'both'],
-    ["TW",21,21,"超时等待：WFI 在低特权级超时即陷入 M", 'both'],
-    ["TVM",20,20,"陷入虚拟内存操作（satp / SFENCE.VMA）", 'both'],
-    ["MXR",19,19,"可执行页可读（Make eXecutable Readable）", 'both'],
-    ["SUM",18,18,"S 模式可访问 U 页（permit Supervisor User Memory）", 'both'],
-    ["MPRV",17,17,"load/store 使用 MPP 的特权级与翻译", 'both'],
-    ["XS",16,15,"用户扩展状态（0 Off,1 Initial,2 Clean,3 Dirty）", 'both'],
-    ["FS",14,13,"浮点状态（0 Off,1 Initial,2 Clean,3 Dirty）", 'both'],
-    ["MPP",12,11,"陷入 M 前的特权级（0 U, 1 S, 3 M）", 'both'],
-    ["VS",10,9,"向量状态（0 Off,1 Initial,2 Clean,3 Dirty）", 'both'],
-    ["SPP",8,8,"陷入 S 前的特权级（0 U, 1 S）", 'both'],
-    ["MPIE",7,7,"陷入 M 前的 MIE", 'both'],
-    ["UBE",6,6,"U 模式数据访问大端", 'both'],
-    ["SPIE",5,5,"陷入 S 前的 SIE", 'both'],
-    ["WPRI",4,4,"保留", 'both', true],
-    ["MIE",3,3,"M 模式全局中断使能", 'both'],
-    ["WPRI",2,2,"保留", 'both', true],
-    ["SIE",1,1,"S 模式全局中断使能", 'both'],
-    ["WPRI",0,0,"保留", 'both', true],
-  ]
-},
-{
-  id:"sstatus", name:"sstatus", width:"XLEN", priv:"S", addr:"0x100",
-  desc:"mstatus 的受限视图（S 模式可见的子集）。",
-  fields:[
-    ["SD",63,63,"状态脏汇总位", 64],
-    ["UXL",33,32,"U 模式 XLEN", 64],
-    ["SD",31,31,"状态脏汇总位", 32],
-    ["MXR",19,19,"可执行页可读", 'both'],
-    ["SUM",18,18,"S 模式可访问 U 页", 'both'],
-    ["XS",16,15,"用户扩展状态", 'both'],
-    ["FS",14,13,"浮点状态", 'both'],
-    ["VS",10,9,"向量状态", 'both'],
-    ["SPP",8,8,"陷入 S 前的特权级", 'both'],
-    ["UBE",6,6,"U 模式数据大端", 'both'],
-    ["SPIE",5,5,"陷入 S 前的 SIE", 'both'],
-    ["SIE",1,1,"S 模式全局中断使能", 'both'],
-  ]
-},
-{
-  id:"misa", name:"misa", width:"XLEN", priv:"M", addr:"0x301",
-  desc:"ISA 与扩展。低 26 位每位对应字母 A–Z 扩展，最高 2 位为 MXL。",
-  fields:[
-    ["MXL",63,62,"机器 XLEN（1=32, 2=64, 3=128）；RV32 位于 [31:30]", 64],
-    ["MXL",31,30,"机器 XLEN", 32],
-    ["Extensions",25,0,"bit0=A 原子, 2=C 压缩, 3=D 双精度, 5=F 单精度, 7=H 虚拟化, 8=I(RV32I/64I), 12=M 乘除, 18=S 监管模式, 20=U 用户模式, 21=V 向量", 'both'],
-  ]
-},
-{
-  id:"mie", name:"mie / mip", width:"XLEN", priv:"M", addr:"mie 0x304 / mip 0x344",
-  desc:"中断使能（mie）与中断挂起（mip）位布局一致。S/VS 级位在设置委托后可见。",
-  fields:[
-    ["LCOFIE/LCOFIP",13,13,"本地计数器溢出中断（Sscofpmf）", 'both'],
-    ["MEIE/MEIP",11,11,"M 外部中断", 'both'],
-    ["SEIE/SEIP",9,9,"S 外部中断", 'both'],
-    ["MTIE/MTIP",7,7,"M 定时器中断", 'both'],
-    ["STIE/STIP",5,5,"S 定时器中断", 'both'],
-    ["MSIE/MSIP",3,3,"M 软件中断", 'both'],
-    ["SSIE/SSIP",1,1,"S 软件中断", 'both'],
-  ]
-},
-{
-  id:"mtvec", name:"mtvec / stvec", width:"XLEN", priv:"M", addr:"mtvec 0x305 / stvec 0x105",
-  desc:"陷入向量基址与模式。",
-  fields:[
-    ["BASE",63,2,"向量基址（4 字节对齐）；RV32 为 [31:2]", 'both'],
-    ["MODE",1,0,"0 Direct；1 Vectored（异常 pc=BASE，中断 pc=BASE+4*cause）", 'both'],
-  ]
-},
-{
-  id:"mcause", name:"mcause / scause", width:"XLEN", priv:"M", addr:"mcause 0x342 / scause 0x142",
-  desc:"陷入原因。Interrupt=1 为中断，=0 为异常。常见异常码：0 指令地址未对齐，1 指令访问错误，2 非法指令，3 断点，4 load 地址未对齐，5 load 访问错误，6 store 未对齐，7 store 访问错误，8 U-ecall，9 S-ecall，11 M-ecall，12 指令缺页，13 load 缺页，15 store 缺页。常见中断码：1 SSI，3 MSI，5 STI，7 MTI，9 SEI，11 MEI。",
-  fields:[
-    ["Interrupt",63,63,"1=中断，0=异常（RV32 为 bit31）", 64],
-    ["Exception Code",62,0,"原因编码", 64],
-    ["Interrupt",31,31,"1=中断，0=异常", 32],
-    ["Exception Code",30,0,"原因编码", 32],
-  ]
-},
-{
-  id:"mepc", name:"mepc / sepc", width:"XLEN", priv:"M", addr:"mepc 0x341 / sepc 0x141",
-  desc:"陷入时的指令地址（返回地址）。bit0 恒为 0；未实现 C 扩展时 bit1 也为 0。",
-  fields:[
-    ["PC",63,1,"陷入指令地址；bit1 在 IALIGN=32 时为零", 'both'],
-  ]
-},
-{
-  id:"mtval", name:"mtval / stval", width:"XLEN", priv:"M", addr:"mtval 0x343 / stval 0x143",
-  desc:"陷入附加值：通常为出错的虚拟地址、指令位或 0，具体由异常类型决定。",
-  fields:[
-    ["VALUE",63,0,"异常相关值（坏地址 / 指令位 / 0）", 'both'],
-  ]
-},
-{
-  id:"mtval2", name:"mtval2 / mtinst / htval / htinst", width:"XLEN", priv:"M", addr:"mtval2 0x34B / mtinst 0x34A / htval 0x643 / htinst 0x64A",
-  desc:"Hypervisor 相关的陷入附加值。mtval2 / htval：guest 物理地址右移 2 位；mtinst / htinst：陷入指令的变换形式。无相关异常时通常为 0。",
-  fields:[
-    ["VALUE",63,0,"guest PA >> 2、变换后的指令或 0", 'both'],
-  ]
-},
-{
-  id:"medeleg", name:"medeleg", width:"16", priv:"M", addr:"0x302",
-  desc:"异常委托位图：bit N=1 表示异常码 N 交给 S 模式处理。bit10/14 保留；bit11（M-ecall）只读 0；bit16（double trap）不可委托；高位为 0。",
-  fields:[
-    ["S-page",15,15,"store/AMO 缺页", 'both'],
-    ["RSVD",14,14,"保留", 'both', true],
-    ["L-page",13,13,"load 缺页", 'both'],
-    ["I-page",12,12,"指令缺页", 'both'],
-    ["M-ecall",11,11,"M 模式 ecall（只读 0，不可委托）", 'both'],
-    ["RSVD",10,10,"保留", 'both', true],
-    ["S-ecall",9,9,"S 模式 ecall", 'both'],
-    ["U-ecall",8,8,"U 模式 ecall", 'both'],
-    ["S-access",7,7,"store/AMO 访问错误", 'both'],
-    ["S-misaligned",6,6,"store/AMO 地址未对齐", 'both'],
-    ["L-access",5,5,"load 访问错误", 'both'],
-    ["L-misaligned",4,4,"load 地址未对齐", 'both'],
-    ["Breakpoint",3,3,"断点", 'both'],
-    ["Illegal",2,2,"非法指令", 'both'],
-    ["I-access",1,1,"指令访问错误", 'both'],
-    ["I-misaligned",0,0,"指令地址未对齐", 'both'],
-  ]
-},
-{
-  id:"mideleg", name:"mideleg", width:"16", priv:"M", addr:"0x303",
-  desc:"中断委托位图：bit N=1 表示中断码 N 交给 S 模式处理。S 级中断位 1/5/9 常被委托；M 级中断位 3/7/11 不应置 1；bit13 为本地计数器溢出中断（Sscofpmf）；高位为 0。",
-  fields:[
-    ["LCOFI",13,13,"本地计数器溢出中断（Sscofpmf）", 'both'],
-    ["MEI",11,11,"M 外部中断（M 级，不应委托）", 'both'],
-    ["SEI",9,9,"S 外部中断", 'both'],
-    ["MTI",7,7,"M 定时器中断（M 级，不应委托）", 'both'],
-    ["STI",5,5,"S 定时器中断", 'both'],
-    ["MSI",3,3,"M 软件中断（M 级，不应委托）", 'both'],
-    ["SSI",1,1,"S 软件中断", 'both'],
-  ]
-},
-{
-  id:"hedeleg", name:"hedeleg", width:"16", priv:"HS", addr:"0x602",
-  desc:"Hypervisor 异常委托位图，布局同 medeleg。bit N=1 表示已由 medeleg 委托到 HS 的异常 N 再委托给 VS 模式。",
-  fields:[
-    ["S-page",15,15,"store/AMO 缺页", 'both'],
-    ["RSVD",14,14,"保留", 'both', true],
-    ["L-page",13,13,"load 缺页", 'both'],
-    ["I-page",12,12,"指令缺页", 'both'],
-    ["M-ecall",11,11,"保留（不可委托）", 'both', true],
-    ["RSVD",10,10,"保留", 'both', true],
-    ["S-ecall",9,9,"S 模式 ecall", 'both'],
-    ["U-ecall",8,8,"U 模式 ecall", 'both'],
-    ["S-access",7,7,"store/AMO 访问错误", 'both'],
-    ["S-misaligned",6,6,"store/AMO 地址未对齐", 'both'],
-    ["L-access",5,5,"load 访问错误", 'both'],
-    ["L-misaligned",4,4,"load 地址未对齐", 'both'],
-    ["Breakpoint",3,3,"断点", 'both'],
-    ["Illegal",2,2,"非法指令", 'both'],
-    ["I-access",1,1,"指令访问错误", 'both'],
-    ["I-misaligned",0,0,"指令地址未对齐", 'both'],
-  ]
-},
-{
-  id:"hideleg", name:"hideleg", width:"16", priv:"HS", addr:"0x603",
-  desc:"Hypervisor 中断委托位图。bit N=1 表示已委托到 HS 的中断 N 再委托给 VS 模式；标准 VS 级中断位 2/6/10 可写，S 级位 1/5/9 只读 0。",
-  fields:[
-    ["VSEI",10,10,"虚拟 S 外部中断", 'both'],
-    ["VSTI",6,6,"虚拟 S 定时器中断", 'both'],
-    ["VSSI",2,2,"虚拟 S 软件中断", 'both'],
-  ]
-},
-{
-  id:"hvip", name:"hvip", width:"16", priv:"HS", addr:"0x645",
-  desc:"HS 模式写入的 VS 级虚拟中断挂起位：VSSIP=2、VSTIP=6、VSEIP=10，其余位只读 0。写 1 向 VS 模式注入对应中断。高位的 HSXLEN 部分为 0。",
-  fields:[
-    ["VSEIP",10,10,"虚拟 S 外部中断挂起", 'both'],
-    ["VSTIP",6,6,"虚拟 S 定时器中断挂起", 'both'],
-    ["VSSIP",2,2,"虚拟 S 软件中断挂起", 'both'],
-  ]
-},
-{
-  id:"hip", name:"hip", width:"16", priv:"HS", addr:"0x644",
-  desc:"HS 模式中断挂起寄存器，补充 sie/sip：VSSIP=2、VSTIP=6、VSEIP=10、SGEIP=12。SGEIP 只读，等于 hgeip 与 hgeie 按位与后非零。",
-  fields:[
-    ["SGEIP",12,12,"guest 外部中断挂起", 'both'],
-    ["VSEIP",10,10,"虚拟 S 外部中断挂起", 'both'],
-    ["VSTIP",6,6,"虚拟 S 定时器中断挂起", 'both'],
-    ["VSSIP",2,2,"虚拟 S 软件中断挂起", 'both'],
-  ]
-},
-{
-  id:"hie", name:"hie", width:"16", priv:"HS", addr:"0x604",
-  desc:"HS 模式中断使能寄存器，补充 sie：VSSIE=2、VSTIE=6、VSEIE=10、SGEIE=12。可写位与 hip 中对应中断能否挂起一致。",
-  fields:[
-    ["SGEIE",12,12,"guest 外部中断使能", 'both'],
-    ["VSEIE",10,10,"虚拟 S 外部中断使能", 'both'],
-    ["VSTIE",6,6,"虚拟 S 定时器中断使能", 'both'],
-    ["VSSIE",2,2,"虚拟 S 软件中断使能", 'both'],
-  ]
-},
-{
-  id:"mscratch", name:"mscratch / sscratch", width:"XLEN", priv:"M", addr:"mscratch 0x340 / sscratch 0x140",
-  desc:"特权模式专用临时寄存器，硬件不赋予语义，常用来保存陷入时的栈指针或上下文指针。",
-  fields:[
-    ["SCRATCH",63,0,"软件专用值", 'both'],
-  ]
-},
-{
-  id:"satp", name:"satp", width:"XLEN", priv:"S", addr:"0x180",
-  desc:"S 模式地址翻译与保护。",
-  fields:[
-    ["MODE",63,60,"0 Bare, 8 Sv39, 9 Sv48, 10 Sv57；其他编码保留", 64],
-    ["ASID",59,44,"地址空间 ID（最多 16 位）", 64],
-    ["PPN",43,0,"根页表物理页号", 64],
-    ["MODE",31,31,"0 Bare, 1 Sv32", 32],
-    ["ASID",30,22,"地址空间 ID（9 位）", 32],
-    ["PPN",21,0,"根页表物理页号", 32],
-  ]
-},
-{
-  id:"hgatp", name:"hgatp", width:"XLEN", priv:"HS", addr:"0x680",
-  desc:"Hypervisor guest 地址翻译与保护（G-stage）。结构与 satp 类似：MODE 选择 Sv32x4 / Sv39x4 / Sv48x4 / Sv57x4，VMID 用于按虚拟机刷新 TLB。",
-  fields:[
-    ["MODE",63,60,"0 Bare, 8 Sv39x4, 9 Sv48x4, 10 Sv57x4", 64],
-    ["WPRI",59,58,"保留", 64, true],
-    ["VMID",57,44,"虚拟机标识", 64],
-    ["PPN",43,0,"guest 根页表物理页号", 64],
-    ["MODE",31,31,"0 Bare, 1 Sv32x4", 32],
-    ["VMID",30,22,"虚拟机标识（9 位）", 32],
-    ["PPN",21,0,"guest 根页表物理页号", 32],
-  ]
-},
-{
-  id:"htimedelta", name:"htimedelta", width:"XLEN", priv:"HS", addr:"0x605 / htimedeltah 0x615",
-  desc:"有符号 64 位时间偏移，加到 time 上形成 VS 模式看到的虚拟时间（htimedelta + time）。RV32 高 32 位经 htimedeltah 访问。",
-  fields:[
-    ["DELTA",63,0,"有符号时间偏移量", 'both'],
-  ]
-},
-{
-  id:"pte", name:"页表项 PTE (Sv39/48/57)", width:"64", priv:"S", addr:"—",
-  desc:"R/W/X 全为 0 表示指向下一级页表；否则为叶子。",
-  fields:[
-    ["N",63,63,"NAPOT（Svnapot）", 64],
-    ["PBMT",62,61,"页内存类型（Svpbmt）", 64],
-    ["Reserved",60,54,"保留", 64, true],
-    ["PPN",53,10,"物理页号", 64],
-    ["RSW",9,8,"软件保留", 64],
-    ["D",7,7,"Dirty", 64],
-    ["A",6,6,"Accessed", 64],
-    ["G",5,5,"Global", 64],
-    ["U",4,4,"用户可访问", 64],
-    ["X",3,3,"可执行", 64],
-    ["W",2,2,"可写", 64],
-    ["R",1,1,"可读", 64],
-    ["V",0,0,"有效", 64],
-  ]
-},
-{
-  id:"pmpcfg", name:"pmpcfgN（单个 PMP 配置字节）", width:"8", priv:"M", addr:"pmpcfg0–15",
-  desc:"每个 pmpcfg 寄存器包含多个 8 位配置项（RV64 每个 8 项，RV32 每个 4 项），地址在 pmpaddrN 中（物理地址 >> 2）。",
-  fields:[
-    ["L",7,7,"锁定，M 模式也受限", 'both'],
-    ["WPRI",6,5,"保留", 'both', true],
-    ["A",4,3,"地址匹配：0 OFF, 1 TOR, 2 NA4, 3 NAPOT", 'both'],
-    ["X",2,2,"可执行", 'both'],
-    ["W",1,1,"可写", 'both'],
-    ["R",0,0,"可读", 'both'],
-  ]
-},
-{
-  id:"pmpaddr", name:"pmpaddrN", width:"XLEN", priv:"M", addr:"pmpaddr0–63（0x3B0–0x3EF）",
-  desc:"PMP 地址寄存器。保存物理地址右移 2 位的值，与 pmpcfgN.A 的匹配模式（TOR / NA4 / NAPOT）配合使用。",
-  fields:[
-    ["ADDR",53,0,"物理地址 [55:2]（地址 >> 2）", 64],
-    ["ADDR",29,0,"物理地址 [31:2]（地址 >> 2）", 32],
-  ]
-},
-{
-  id:"mseccfg", name:"mseccfg", width:"XLEN", priv:"M", addr:"mseccfg 0x747 / mseccfgh 0x757",
-  desc:"机器安全配置（Smepmp / Zkr / Zicfilp）。MML/MMWP/RLB 控制 PMP 策略与锁定；USEED/SSEED 控制 seed 访问；MLPE 控制 M 模式 landing pad。RV32 高 32 位经 mseccfgh 访问。",
-  fields:[
-    ["PMM",33,32,"Ssnpm：M 模式指针掩码（RV32 在 mseccfgh）", 64],
-    ["WPRI",31,11,"保留", 64, true],
-    ["MLPE",10,10,"Zicfilp：M 模式 landing pad 使能", 'both'],
-    ["SSEED",9,9,"Zkr：允许 S/HS 模式访问 seed", 'both'],
-    ["USEED",8,8,"Zkr：允许 U 模式访问 seed", 'both'],
-    ["WPRI",7,3,"保留", 'both', true],
-    ["RLB",2,2,"Rule Locking Bypass：允许临时修改锁定规则", 'both'],
-    ["MMWP",1,1,"Machine-Mode Allowlist Policy：未匹配 PMP 时 M 模式拒绝访问", 'both'],
-    ["MML",0,0,"Machine Mode Lockdown：改变 pmpcfg.L 的含义", 'both'],
-  ]
-},
-{
-  id:"mstateen0", name:"mstateen0", width:"XLEN", priv:"M", addr:"0x30C（高半 0x31C）",
-  desc:"Smstateen 状态使能寄存器 0，控制低特权级对可选扩展状态的访问。bit63 控制 sstateen0/hstateen0；0/1/2 分别控制自定义状态、FCSR、JVT。mstateen1–3 见下一卡片。",
-  fields:[
-    ["SE0",63,63,"允许访问 sstateen0 / hstateen0", 'both'],
-    ["ENVCFG",62,62,"允许访问 senvcfg / henvcfg", 'both'],
-    ["WPRI",61,61,"保留", 'both', true],
-    ["CSRIND",60,60,"允许访问间接 CSR（Smcsrind）状态", 'both'],
-    ["AIA",59,59,"允许访问 AIA 状态", 'both'],
-    ["IMSIC",58,58,"允许访问 IMSIC 状态", 'both'],
-    ["CONTEXT",57,57,"允许访问上下文状态", 'both'],
-    ["P1P13",56,56,"允许访问 P1P13 状态", 'both'],
-    ["SRMCFG",55,55,"允许访问 Smrnmi 配置", 'both'],
-    ["CTR",54,54,"允许访问 CTR 状态", 'both'],
-    ["WPRI",53,3,"保留", 'both', true],
-    ["JVT",2,2,"允许访问 JVT 状态（Zcmt）", 'both'],
-    ["FCSR",1,1,"允许访问浮点 CSR（fcsr/fflags/frm）", 'both'],
-    ["C",0,0,"允许访问自定义状态", 'both'],
-  ]
-},
-{
-  id:"mstateen1", name:"mstateen1–3", width:"XLEN", priv:"M", addr:"0x30D–0x30F（高半 0x31D–0x31F）",
-  desc:"Smstateen 状态使能寄存器 1–3，当前规范尚未分配任何位，全部为 WPRI，读为 0、写忽略；保留给未来扩展。",
-  fields:[
-    ["WPRI",63,0,"保留（当前无定义位）", 'both', true],
-  ]
-},
-{
-  id:"menvcfg", name:"menvcfg", width:"XLEN", priv:"M", addr:"menvcfg 0x30A / menvcfgh 0x31A",
-  desc:"机器模式环境配置，控制比 M 低特权级的行为。RV32 时高 32 位通过 menvcfgh 访问（STCE/PBMTE/ADUE/CDE/DTE/PMM）。",
-  fields:[
-    ["STCE",63,63,"Sstc：允许 S 模式使用 stimecmp", 64],
-    ["PBMTE",62,62,"Svpbmt：允许 S 模式使用 PBMT", 64],
-    ["ADUE",61,61,"Svadu：允许硬件更新 PTE A/D 位", 64],
-    ["CDE",60,60,"Smcdeleg：允许向 S 模式委托计数器", 64],
-    ["DTE",59,59,"Ssdbltrp：S 模式 double trap 使能", 64],
-    ["PMM",33,32,"Ssnpm：下一特权级的指针掩码", 64],
-    ["WPRI",31,8,"保留", 64, true],
-    ["CBZE",7,7,"允许 CBO.ZERO", 'both'],
-    ["CBCFE",6,6,"允许 CBO.CLEAN / CBO.FLUSH", 'both'],
-    ["CBIE",5,4,"CBO.INVAL 的处理方式", 'both'],
-    ["SSE",3,3,"Zicfiss 影子栈使能", 'both'],
-    ["LPE",2,2,"Zicfilp landing pad 使能", 'both'],
-    ["WPRI",1,1,"保留", 'both', true],
-    ["FIOM",0,0,"FENCE 的 I/O 顺序隐含内存顺序", 'both'],
-  ]
-},
-{
-  id:"senvcfg", name:"senvcfg", width:"XLEN", priv:"S", addr:"0x10A",
-  desc:"S 模式环境配置，控制 U 模式（V=1 时为 VS 模式）的行为。RV32 无 PMM 字段。",
-  fields:[
-    ["PMM",33,32,"Ssnpm：U 模式指针掩码（RV32 不存在）", 64],
-    ["WPRI",31,8,"保留", 64, true],
-    ["CBZE",7,7,"允许 CBO.ZERO", 'both'],
-    ["CBCFE",6,6,"允许 CBO.CLEAN / CBO.FLUSH", 'both'],
-    ["CBIE",5,4,"CBO.INVAL 的处理方式", 'both'],
-    ["SSE",3,3,"Zicfiss 影子栈使能", 'both'],
-    ["LPE",2,2,"Zicfilp landing pad 使能", 'both'],
-    ["WPRI",1,1,"保留", 'both', true],
-    ["FIOM",0,0,"FENCE 的 I/O 顺序隐含内存顺序", 'both'],
-  ]
-},
-{
-  id:"henvcfg", name:"henvcfg", width:"XLEN", priv:"HS", addr:"henvcfg 0x60A / henvcfgh 0x61A",
-  desc:"Hypervisor 环境配置，控制 V=1 时的执行环境。RV32 时高 32 位通过 henvcfgh 访问（STCE/PBMTE/ADUE/DTE/PMM）。",
-  fields:[
-    ["STCE",63,63,"Sstc：允许 VS 模式使用 stimecmp", 64],
-    ["PBMTE",62,62,"Svpbmt：允许 VS 阶段地址翻译使用 PBMT", 64],
-    ["ADUE",61,61,"Svadu：允许硬件更新 VS 阶段 PTE 的 A/D 位", 64],
-    ["WPRI",60,60,"保留", 64, true],
-    ["DTE",59,59,"Ssdbltrp：VS 模式 double trap 使能", 64],
-    ["PMM",33,32,"Ssnpm：VS 模式的指针掩码", 64],
-    ["WPRI",31,8,"保留", 64, true],
-    ["CBZE",7,7,"允许 CBO.ZERO", 'both'],
-    ["CBCFE",6,6,"允许 CBO.CLEAN / CBO.FLUSH", 'both'],
-    ["CBIE",5,4,"CBO.INVAL 的处理方式", 'both'],
-    ["SSE",3,3,"Zicfiss 影子栈使能", 'both'],
-    ["LPE",2,2,"Zicfilp landing pad 使能", 'both'],
-    ["WPRI",1,1,"保留", 'both', true],
-    ["FIOM",0,0,"FENCE 的 I/O 顺序隐含内存顺序", 'both'],
-  ]
-},
-{
-  id:"mcounteren", name:"mcounteren / scounteren", width:"32", priv:"M", addr:"mcounteren 0x306 / scounteren 0x106",
-  desc:"计数器访问控制。mcounteren 控制 S/U 模式能否读取 cycle、time、instret 和 HPM 计数器；scounteren 进一步控制 U 模式。",
-  fields:[
-    ["HPM",31,3,"HPM3–HPM31 各自的使能位", 'both'],
-    ["IR",2,2,"允许读取 instret", 'both'],
-    ["TM",1,1,"允许读取 time", 'both'],
-    ["CY",0,0,"允许读取 cycle", 'both'],
-  ]
-},
-{
-  id:"mcountinhibit", name:"mcountinhibit", width:"32", priv:"M", addr:"0x320",
-  desc:"计数器抑制：置 1 的计数器停止递增（不影响可读性）。bit1 保留；time 不受该寄存器控制。",
-  fields:[
-    ["HPM",31,3,"HPM3–HPM31 各自的停止位", 'both'],
-    ["IR",2,2,"停止 minstret 递增", 'both'],
-    ["WPRI",1,1,"保留", 'both', true],
-    ["CY",0,0,"停止 mcycle 递增", 'both'],
-  ]
-},
-{
-  id:"mcycle", name:"mcycle / minstret", width:"XLEN", priv:"M", addr:"mcycle 0xB00 / minstret 0xB02（高半 0xB80 / 0xB82）",
-  desc:"64 位周期计数与退休指令计数；RV32 高 32 位分别在 mcycleh / minstreth。可用 mcountinhibit 停止递增。",
-  fields:[
-    ["COUNT",63,0,"计数器当前值", 'both'],
-  ]
-},
-{
-  id:"cycle", name:"cycle / time / instret", width:"XLEN", priv:"U", addr:"0xC00 / 0xC01 / 0xC02（高半 0xC80–0xC82）",
-  desc:"U 模式只读影子计数器：cycle（周期）、time（平台定时器）、instret（退休指令）。RV32 高 32 位在 cycleh / timeh / instreth；访问受 mcounteren / scounteren 控制。",
-  fields:[
-    ["COUNT",63,0,"计数器当前值", 'both'],
-  ]
-},
-{
-  id:"mhpmcounter", name:"mhpmcounterN", width:"XLEN", priv:"M", addr:"0xB03–0xB1F（RV32 高半 0xB83–0xB9F）",
-  desc:"HPM 事件计数器 3–31，64 位精度；RV32 高 32 位在 mhpmcounterhN。计数事件由 mhpmeventN 选择。",
-  fields:[
-    ["COUNT",63,0,"计数器当前值", 'both'],
-  ]
-},
-{
-  id:"mhpmevent", name:"mhpmeventN", width:"XLEN", priv:"M", addr:"0x323–0x33F（RV32 高半 0x723–0x73F）",
-  desc:"HPM 事件选择器 3–31，64 位 WARL；低 56 位事件编码由平台定义，0 表示不计数。Sscofpmf 定义 OF 与各特权级的计数抑制位。",
-  fields:[
-    ["OF",63,63,"计数溢出状态（置位后不再产生溢出中断）", 64],
-    ["MINH",62,62,"禁止在 M 模式计数", 64],
-    ["SINH",61,61,"禁止在 S/HS 模式计数", 64],
-    ["UINH",60,60,"禁止在 U 模式计数", 64],
-    ["VSINH",59,59,"禁止在 VS 模式计数", 64],
-    ["VUINH",58,58,"禁止在 VU 模式计数", 64],
-    ["WPRI",57,56,"保留", 64, true],
-    ["EVENT",55,0,"事件选择编码（平台定义）", 'both'],
-  ]
-},
-{
-  id:"stimecmp", name:"stimecmp", width:"XLEN", priv:"S", addr:"stimecmp 0x14D / stimecmph 0x15D",
-  desc:"Sstc：S 模式定时器比较值，64 位精度。time >= stimecmp 时 STIP 置位；需 menvcfg.STCE=1。RV32 高 32 位经 stimecmph 访问。",
-  fields:[
-    ["TIME",63,0,"定时器比较值", 'both'],
-  ]
-},
-{
-  id:"vstimecmp", name:"vstimecmp", width:"XLEN", priv:"HS", addr:"vstimecmp 0x24D / vstimecmph 0x25D",
-  desc:"Sstc + H：VS 模式定时器比较值，64 位精度。time + htimedelta >= vstimecmp 时 VSTIP 置位；RV32 高 32 位经 vstimecmph 访问。",
-  fields:[
-    ["TIME",63,0,"VS 定时器比较值", 'both'],
-  ]
-},
-{
-  id:"mstatush", name:"mstatush", width:"32", priv:"M", addr:"0x310",
-  desc:"RV32 专用：存放 mstatus 高 32 位中的部分字段。RV64 不存在该寄存器。",
-  fields:[
-    ["MDT",10,10,"M 模式 double trap 已推迟（Smdbltrp）", 32],
-    ["MPELP",9,9,"M 模式 landing pad 期望（Zicfilp）", 32],
-    ["WPRI",8,8,"保留", 32, true],
-    ["MPV",7,7,"陷入 M 前的虚拟化模式（H 扩展）", 32],
-    ["GVA",6,6,"mtval 是否为 guest 虚拟地址", 32],
-    ["MBE",5,5,"M 模式数据访问大端", 32],
-    ["SBE",4,4,"S 模式数据访问大端", 32],
-    ["WPRI",3,0,"保留", 32, true],
-  ]
-},
-{
-  id:"fcsr", name:"fcsr / fflags / frm", width:"32", priv:"U", addr:"fflags 0x001 / frm 0x002 / fcsr 0x003",
-  desc:"浮点控制状态。fflags=fcsr[4:0]，frm=fcsr[7:5]。",
-  fields:[
-    ["frm",7,5,"舍入模式：0 RNE, 1 RTZ, 2 RDN, 3 RUP, 4 RMM；5–7 保留（DYN=7 用于指令 rm 字段）", 'both'],
-    ["NV",4,4,"无效操作", 'both'],
-    ["DZ",3,3,"除零", 'both'],
-    ["OF",2,2,"上溢", 'both'],
-    ["UF",1,1,"下溢", 'both'],
-    ["NX",0,0,"不精确", 'both'],
-  ]
-},
-{
-  id:"vtype", name:"vtype", width:"XLEN", priv:"U", addr:"0xC21",
-  desc:"向量扩展类型寄存器。",
-  fields:[
-    ["vill",63,63,"非法配置（RV32 为 bit31）", 64],
-    ["vill",31,31,"非法配置", 32],
-    ["vma",7,7,"mask 不关注策略（1=agnostic）", 'both'],
-    ["vta",6,6,"tail 不关注策略（1=agnostic）", 'both'],
-    ["vsew",5,3,"SEW：0=8, 1=16, 2=32, 3=64", 'both'],
-    ["vlmul",2,0,"LMUL：5=1/8, 6=1/4, 7=1/2, 0=1, 1=2, 2=4, 3=8", 'both'],
-  ]
-},
-{
-  id:"hstatus", name:"hstatus", width:"XLEN", priv:"HS", addr:"0x600",
-  desc:"H 扩展：hypervisor 状态寄存器。",
-  fields:[
-    ["VSXL",33,32,"VS 模式 XLEN", 64],
-    ["VTSR",22,22,"陷入 VS 的 SRET", 'both'],
-    ["VTW",21,21,"陷入 VS 的 WFI", 'both'],
-    ["VTVM",20,20,"陷入 VS 的虚拟内存操作", 'both'],
-    ["VGEIN",17,12,"虚拟 guest 外部中断号选择", 'both'],
-    ["HU",9,9,"VU 模式可使用 hypervisor load/store 指令", 'both'],
-    ["SPVP",8,8,"HS 陷入前 VS 的特权级", 'both'],
-    ["SPV",7,7,"陷入 HS 前的虚拟化模式", 'both'],
-    ["GVA",6,6,"mtval/stval 是否为 guest 虚拟地址", 'both'],
-    ["VSBE",5,5,"VS 模式数据大端", 'both'],
-  ]
-},
-{
-  id:"mvendorid", name:"mvendorid", width:"32", priv:"M", addr:"0xF11",
-  desc:"JEDEC 厂商 ID（只读）。0 表示未实现或非商业实现。",
-  fields:[
-    ["Bank",31,7,"连续 0x7f 字节数（JEDEC bank - 1）", 'both'],
-    ["Offset",6,0,"最后一个非 0x7f 字节（去掉奇偶位）", 'both'],
-  ]
-},
-{
-  id:"mconfigptr", name:"mconfigptr", width:"XLEN", priv:"M", addr:"0xF15",
-  desc:"只读配置指针，指向设备树 / 配置数据结构所在的物理地址；0 表示未提供。",
-  fields:[
-    ["CONFIGPTR",63,0,"配置结构物理地址", 'both'],
-  ]
-},
-{
-  id:"seed", name:"seed", width:"32", priv:"U", addr:"0x015",
-  desc:"Zkr 熵源寄存器（只读）。返回 16 位随机熵并报告 BIST 状态；访问受 mseccfg.USEED / SSEED 与 mstateen0 控制。",
-  fields:[
-    ["OPST",31,30,"熵源状态", 'both'],
-    ["BIST",29,28,"内建自检结果", 'both'],
-    ["WPRI",27,24,"保留", 'both', true],
-    ["CUSTOM",23,16,"自定义熵位", 'both'],
-    ["ENTROPY",15,0,"16 位随机熵", 'both'],
-  ]
-},
-{
-  id:"marchid", name:"marchid / mimpid / mhartid", width:"XLEN", priv:"M", addr:"marchid 0xF12 / mimpid 0xF13 / mhartid 0xF14",
-  desc:"只读标识寄存器。marchid：微架构 ID；mimpid：实现版本；mhartid：hart 编号（多 hart 系统中必须唯一且至少一个为 0）。",
-  fields:[
-    ["ID",63,0,"架构 / 实现 / hart 编号", 'both'],
-  ]
-},
-{
-  id:"mnscratch", name:"mnscratch", width:"XLEN", priv:"M", addr:"0x740",
-  desc:"Smrnmi：可恢复 NMI 处理程序的临时寄存器，用于保存被中断的上下文。",
-  fields:[
-    ["SCRATCH",63,0,"软件专用值", 'both'],
-  ]
-},
-{
-  id:"mnepc", name:"mnepc", width:"XLEN", priv:"M", addr:"0x741",
-  desc:"Smrnmi：进入 RNMI 处理程序时保存被中断指令的 PC。bit0 恒为 0；IALIGN=32 时 bit1 也为 0。",
-  fields:[
-    ["PC",63,1,"被中断的 PC", 'both'],
-  ]
-},
-{
-  id:"mncause", name:"mncause", width:"XLEN", priv:"M", addr:"0x742",
-  desc:"Smrnmi：RNMI 原因。最高位为 1 表示中断，最低位字段为原因编码；为 0 表示 M 模式 double trap 引发的异常。",
-  fields:[
-    ["Interrupt",63,63,"1=中断，0=异常", 64],
-    ["Code",62,0,"RNMI 原因编码", 64],
-    ["Interrupt",31,31,"1=中断，0=异常", 32],
-    ["Code",30,0,"RNMI 原因编码", 32],
-  ]
-},
-{
-  id:"mnstatus", name:"mnstatus", width:"XLEN", priv:"M", addr:"0x744",
-  desc:"Smrnmi：RNMI 状态。MNPP 记录被中断特权级，MNPV 记录虚拟化模式，MNPELP 记录 ELP，NMIE 为全局 RNMI 使能（复位为 0）。",
-  fields:[
-    ["MNPP",12,11,"被中断的特权级（同 mstatus.MPP）", 'both'],
-    ["MNPELP",9,9,"被中断的 ELP（Zicfilp）", 'both'],
-    ["MNPV",7,7,"被中断的虚拟化模式（H 扩展）", 'both'],
-    ["NMIE",3,3,"RNMI 使能；为 0 时所有中断被屏蔽", 'both'],
-  ]
-},
+const opcode = ['opcode', 6, 0, 'opcode', '7 位主操作码，用于区分指令大类。'];
+const rd = ['rd', 11, 7, 'destination', '目标整数寄存器编号，5 位编码对应 x0–x31。'];
+const rs1 = ['rs1', 19, 15, 'source', '第一源整数寄存器编号；加载 / 存储时通常为基址寄存器。'];
+const rs2 = ['rs2', 24, 20, 'source', '第二源整数寄存器编号；存储时提供待写入的数据。'];
+const funct3 = ['funct3', 14, 12, 'function', '3 位功能码，与 opcode 等字段共同确定操作。'];
+const FORMATS = [
+  {
+    id:'R', kind:'寄存器运算', instructions:'ADD / SUB / AND / OR / SLL',
+    desc:'使用两个源寄存器，将结果写入 rd。典型形式：op rd, rs1, rs2。',
+    fields:[['funct7',31,25,'function','7 位功能码。例如 ADD 为 0000000，SUB 为 0100000。'],rs2,rs1,funct3,rd,opcode],
+    formula:[['code','ADD: x[rd] = (x[rs1] + x[rs2]) mod 2^XLEN\nSUB: x[rd] = (x[rs1] - x[rs2]) mod 2^XLEN\nAND: x[rd] = x[rs1] & x[rs2]\nOR:  x[rd] = x[rs1] | x[rs2]\nSLL: x[rd] = (x[rs1] << (x[rs2] & (XLEN - 1))) mod 2^XLEN']],
+    note:'opcode / funct3 / funct7 共同选择具体操作；mod 2^XLEN 表示取模，结果范围为 0…2^XLEN−1，即只保留低 XLEN 位（负数也按此范围回绕）。所有写回均遵循 x[0] 恒为 0。',
+    example:'add x1, x2, x3', word:0x003100b3,
+    values:['0000000','00011','00010','000','00001','0110011']
+  },
+  {
+    id:'I', kind:'立即数运算 / 加载 / JALR', instructions:'ADDI / ANDI / LW / JALR',
+    desc:'一个源寄存器和一个连续的 12 位立即数，结果写入 rd。典型形式：op rd, rs1, imm。',
+    fields:[['imm[11:0]',31,20,'immediate','12 位立即数，普通算术、加载和 JALR 使用符号扩展。'],rs1,funct3,rd,opcode],
+    formula:[['code','imm = 符号扩展到XLEN位(inst[31:20])\nADDI: x[rd] = (x[rs1] + imm) mod 2^XLEN\nANDI: x[rd] = x[rs1] & imm\nLW:   x[rd] = 符号扩展到XLEN位(load32((x[rs1] + imm) mod 2^XLEN))\nJALR:\n  target = ((x[rs1] + imm) mod 2^XLEN) & ~1\n  link = (PC + 4) mod 2^XLEN\n  check_instruction_alignment(target)\n  x[rd] = link\n  PC = target']],
+    note:'符号扩展到XLEN位 按源位宽符号扩展到 XLEN；普通 imm 范围 −2048…2047。JALR 先读取源寄存器再写回，适用于 rd=rs1。移位立即数和 CSR 复用布局，但分别编码 shamt/功能位和 CSR 地址。',
+    example:'addi x1, x2, -1', word:0xfff10093,
+    values:['111111111111','00010','000','00001','0010011']
+  },
+  {
+    id:'S', kind:'存储', instructions:'SB / SH / SW / SD（RV64）',
+    desc:'将 rs2 的数据写入 rs1 + 偏移指定的内存位置，不包含 rd。立即数被拆成高 7 位与低 5 位。',
+    fields:[['imm[11:5]',31,25,'immediate','存储偏移的高 7 位，inst[31] 为符号位。'],rs2,rs1,funct3,['imm[4:0]',11,7,'immediate','存储偏移的低 5 位，占用 R / I 格式中 rd 的位置。'],opcode],
+    formula:[['code','imm = 符号扩展到XLEN位(concat(inst[31:25], inst[11:7]))\naddr = (x[rs1] + imm) mod 2^XLEN\nSB: store8(addr, x[rs2][7:0])\nSH: store16(addr, x[rs2][15:0])\nSW: store32(addr, x[rs2][31:0])\nSD: store64(addr, x[rs2][63:0])  // RV64']],
+    note:'concat 按从高到低拼接位段；偏移范围 −2048…2047 字节。load/store 表示架构内存访问，仍需地址翻译、权限及对齐检查，并非绕过异常的直接写内存。',
+    example:'sw x3, 12(x2)', word:0x00312623,
+    values:['0000000','00011','00010','010','01100','0100011']
+  },
+  {
+    id:'B', kind:'条件分支', instructions:'BEQ / BNE / BLT / BGE / BLTU / BGEU',
+    desc:'比较 rs1 与 rs2，条件成立时跳转到当前指令 PC + 偏移。立即数分散在四个区域，最低位隐含为 0。',
+    fields:[['imm[12]',31,31,'immediate','分支偏移的符号位。'],['imm[10:5]',30,25,'immediate','偏移的第 10 到 5 位。'],rs2,rs1,funct3,['imm[4:1]',11,8,'immediate','偏移的第 4 到 1 位。'],['imm[11]',7,7,'immediate','偏移的第 11 位，注意它不与 imm[12] 相邻。'],opcode],
+    formula:[['code','offset = 符号扩展到XLEN位(concat(inst[31], inst[7], inst[30:25], inst[11:8], 0b0))\nBEQ: taken = (x[rs1] == x[rs2])\nBNE: taken = (x[rs1] != x[rs2])\nBLT: taken = (signed(x[rs1]) < signed(x[rs2]))\nBGE: taken = (signed(x[rs1]) >= signed(x[rs2]))\nBLTU: taken = (unsigned(x[rs1]) < unsigned(x[rs2]))\nBGEU: taken = (unsigned(x[rs1]) >= unsigned(x[rs2]))\nif taken:\n  target = (PC + offset) mod 2^XLEN\n  check_instruction_alignment(target)\n  PC = target\nelse:\n  PC = (PC + 4) mod 2^XLEN']],
+    note:'13 位有符号字节偏移，范围 −4096 … +4094，步长 2 字节。目标基于当前 PC，而非 PC + 4。仅支持 IALIGN=32 时，实际跳转目标仍须 4 字节对齐。',
+    example:'beq x1, x2, +16', word:0x00208863,
+    values:['0','000000','00010','00001','000','1000','0','1100011']
+  },
+  {
+    id:'U', kind:'高位立即数', instructions:'LUI / AUIPC',
+    desc:'指令高 20 位携带立即数，构造结果时低 12 位补 0。只包含 rd，无源寄存器字段。',
+    fields:[['imm[31:12]',31,12,'immediate','立即数高 20 位，低 12 位不编码、固定补 0。'],rd,opcode],
+    formula:[['code','imm32 = concat(inst[31:12], 0b000000000000)\nimm = 符号扩展到XLEN位(imm32)\nLUI:   x[rd] = imm\nAUIPC: x[rd] = (PC + imm) mod 2^XLEN\n\n// lui rd, 0x12345\nimm32 = 0x12345 << 12  // 0x12345000']],
+    note:'concat 按从高到低拼接；符号扩展到XLEN位 将 32 位值符号扩展到 XLEN（RV32 不扩展）。PC 指当前指令地址；写 x[0] 的结果被丢弃。',
+    example:'lui x1, 0x12345', word:0x123450b7,
+    values:['00010010001101000101','00001','0110111']
+  },
+  {
+    id:'J', kind:'无条件跳转', instructions:'JAL',
+    desc:'跳转到当前 PC + 偏移，并将返回地址 PC + 4 写入 rd。立即数分散排列，最低位隐含为 0。',
+    fields:[['imm[20]',31,31,'immediate','跳转偏移的符号位。'],['imm[10:1]',30,21,'immediate','偏移的第 10 到 1 位。'],['imm[11]',20,20,'immediate','偏移的第 11 位。'],['imm[19:12]',19,12,'immediate','偏移的第 19 到 12 位。'],rd,opcode],
+    formula:[['code','offset = 符号扩展到XLEN位(concat(inst[31], inst[19:12], inst[20], inst[30:21], 0b0))\ntarget = (PC + offset) mod 2^XLEN\nlink = (PC + 4) mod 2^XLEN\ncheck_instruction_alignment(target)\nx[rd] = link\nPC = target']],
+    note:'21 位有符号字节偏移，范围 −1048576 … +1048574，步长 2 字节。rd = x0 时丢弃返回地址（伪指令 j）。JALR 属于 I-type，不属于 J-type；IALIGN=32 时目标须 4 字节对齐。',
+    example:'jal x1, +32', word:0x020000ef,
+    values:['0','0000010000','0','00000000','00001','1101111']
+  }
 ];
 
-TrapRegisters.forEach(reg => {
-  if (!REGS.some(existing => existing.id === reg.id)) REGS.push({ ...reg, width:String(reg.width), priv:'现场', addr:'—', desc:'日志现场寄存器；未填写时仅作手动解码演示。扩展字段依目标实现。' });
-});
+for (const [id, kind, assembly, note] of [
+  ['V-OP', '向量整数运算 · OP-V', 'vadd.vv v1, v2, v3', 'funct3 区分 vv / vx / vi 等操作数类型；同一位置可能是向量寄存器、整数寄存器或立即数。vm=0 使用 v0.t 掩码。'],
+  ['V-SETVL', '寄存器配置 · vsetvl', 'vsetvl x1, x2, x3', 'rs1 提供 AVL，rs2 提供 vtype；rd 接收选定的 VL。rs1/rd 为 x0 时有特殊规则。'],
+  ['V-SETVLI', '立即数配置 · vsetvli', 'vsetvli zero, zero, e64, m4, tu, ma', 'vtypei 编码 LMUL、SEW 和尾部/掩码策略；不支持的配置可导致 vill 置位，不表示指令编码无法识别。'],
+  ['V-SETIVLI', '立即 AVL 配置 · vsetivli', 'vsetivli zero, 19, e64, m4, tu, ma', 'AVL 来自 5 位 uimm，不是 rs1 寄存器；高两位固定为 11。'],
+  ['V-MEM', '单位步长访存 · STORE-FP', 'vse32.v v16, (x25)', '示例对应故障机器码 0x020ce827。vs3 是存储源，不是 rd；width=110 表示 EEW=32，sumop=00000 为普通单位步长存储。向量加载使用 LOAD-FP opcode。'],
+  ['V-STRIDE', '步长访存', 'vlse32.v v8, (x10), x11', 'mop=10，rs2 指定以字节为单位的步长，不是存储数据源。'],
+  ['V-INDEX', '索引访存', 'vluxei32.v v8, (x10), v12', 'mop=01 为无序索引，11 为有序索引；width 表示索引 EEW，实际数据元素宽度取自 SEW。']
+]) {
+  const decoded = RISCVCodec.assemble(assembly, { xlen:64, extensions:['V'] });
+  FORMATS.push({
+    id, group:'V', kind, instructions:decoded.mnemonic, desc:'V 扩展 32 位编码子格式；下面展示代表指令的固定编码及可变操作数字段。',
+    fields:decoded.fields.map(field => [field.name, field.hi, field.lo, field.category,
+      field.description + (field.fixed ? '；本示例固定编码 0b' + field.fixedValue.toString(2).padStart(field.hi - field.lo + 1, '0') : '；可变字段'), field.fixed ? field.fixedValue.toString(16) : null]),
+    formula:[['text','V 指令需结合 VL、VTYPE、VSTART 与掩码判断运行行为；编码解读不代表执行条件全部满足。']],
+    note, example:assembly, word:decoded.word,
+    values:decoded.fields.map(field => field.value.toString(2).padStart(field.hi - field.lo + 1, '0'))
+  });
+}
 
-const cachedPage = PageState.load();
-let incomingSnapshot = null;
-try { incomingSnapshot = sessionStorage.getItem('riscv-trap-snapshot'); } catch { /* 读取失败会在同步状态中提示 */ }
-let snapshotRaw = incomingSnapshot || (typeof cachedPage?.extra?.snapshot === 'string' ? cachedPage.extra.snapshot : null);
-let importedRegisters = null;
-let snapshotFocus = null;
-let importMessage = '';
-if (snapshotRaw || location.hash === '#from-traps') {
-  try {
-    const raw = snapshotRaw;
-    if (!raw) throw new Error('没有可用的异常页快照，请返回异常页重新同步。');
-    if (raw.length > 200000) throw new Error('快照过大。');
-    const snapshot = JSON.parse(raw);
-    if (snapshot.version !== 1 || ![32, 64].includes(snapshot.xlen) || !Array.isArray(snapshot.registers) || !snapshot.registers.length || snapshot.registers.length > 180) throw new Error('快照格式无效。');
-    const ids = new Set();
-    importedRegisters = snapshot.registers.map(entry => {
-      if (!/^[a-z][a-z0-9-]{0,40}$/.test(entry.id) || ids.has(entry.id) || !/^[a-z][a-z0-9]*$/.test(entry.kind) || typeof entry.name !== 'string' || entry.name.length > 100 || ![32,64,128].includes(entry.width) || (entry.value !== null && (typeof entry.value !== 'string' || !/^0x[0-9a-f]{1,32}$/i.test(entry.value) || BigInt(entry.value) >= (1n << BigInt(entry.width))))) throw new Error('寄存器字段或数值无效。');
-      ids.add(entry.id);
-      if (!Array.isArray(entry.fields) || !entry.fields.length || entry.fields.length > 64) throw new Error('位域定义无效。');
-      let top = entry.width - 1;
-      for (const field of entry.fields) {
-        if (!Array.isArray(field) || typeof field[0] !== 'string' || field[0].length > 100 || !Number.isInteger(field[1]) || !Number.isInteger(field[2]) || field[1] !== top || field[2] < 0 || field[2] > field[1] || typeof field[3] !== 'string' || field[3].length > 1000 || field[4] !== 'both' || typeof field[5] !== 'boolean') throw new Error('位域定义无效。');
-        top = field[2] - 1;
+const container = document.getElementById('formats');
+let activeFormat = null;
+let activeDecoded = null;
+function prioritizeFormat(decoded) {
+  activeDecoded = decoded;
+  activeFormat = null;
+  if (decoded) {
+    if (decoded.format === 'V') {
+      activeFormat = ({ vsetvl:'V-SETVL', vsetvli:'V-SETVLI', vsetivli:'V-SETIVLI' })[decoded.mnemonic];
+      if (!activeFormat) {
+        const opcode = Number(decoded.word & 127n);
+        const mop = Number((decoded.word >> 26n) & 3n);
+        activeFormat = opcode === 0x57 ? 'V-OP' : mop === 2 ? 'V-STRIDE' : mop === 1 || mop === 3 ? 'V-INDEX' : 'V-MEM';
       }
-      if (top !== -1) throw new Error('位域定义不完整。');
-      return { id:entry.id, name:entry.name, kind:entry.kind, width:String(entry.width), priv:'快照', addr:'—', fields:entry.fields,
-        desc:'来自异常与中断页的已填写值；未同步的寄存器不表示为零。当前修改仅在本页生效。', snapshotValue:entry.value === null ? undefined : BigInt(entry.value), readOnly:entry.id === 'gpr-0' };
-    });
-    if (snapshot.focus !== undefined && snapshot.focus !== null && (typeof snapshot.focus !== 'string' || !ids.has(snapshot.focus))) throw new Error('定位目标无效。');
-    snapshotFocus = snapshot.focus || null;
-    document.getElementById('xlen').value = String(snapshot.xlen);
-    document.getElementById('xlen').disabled = true;
-    importMessage = '已同步 ' + importedRegisters.length + ' 个寄存器 / PTE，保持源位宽；完整寄存器目录仍保留，未同步卡片仅作手动解码演示，不代表现场值。';
-    sessionStorage.removeItem('riscv-trap-snapshot');
-  } catch (error) {
-    importedRegisters = [];
-    snapshotRaw = null;
-    importMessage = '未载入快照：' + error.message;
+    } else activeFormat = decoded.format;
   }
-}
-const remainingSnapshots = new Map((importedRegisters || []).map(reg => [reg.id, reg]));
-const displayedRegisters = REGS.map(reg => {
-  const snapshot = [...remainingSnapshots.values()].find(item => item.name === reg.name);
-  if (!snapshot) return remainingSnapshots.has(reg.id) ? { ...reg, id:'catalog-' + reg.id, kind:reg.id } : reg;
-  remainingSnapshots.delete(snapshot.id);
-  return { ...reg, ...snapshot };
-});
-displayedRegisters.push(...remainingSnapshots.values());
-const sel = document.getElementById('sel');
-const xlenSel = document.getElementById('xlen');
-const q = document.getElementById('q');
-const main = document.getElementById('main');
-
-displayedRegisters.forEach(r => { const o = document.createElement('option'); o.value = r.id; o.textContent = r.name; sel.appendChild(o); });
-const all = document.createElement('option'); all.value = 'all'; all.textContent = '全部寄存器'; sel.insertBefore(all, sel.firstChild);
-sel.value = incomingSnapshot && snapshotFocus ? snapshotFocus : 'all';
-
-function esc(s){ return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
-
-function fieldsFor(reg, xlen) {
-  const width = regTop(reg, xlen);
-  const mode = reg.width === 'XLEN' ? xlen : width;
-  return reg.fields.filter(f => f[4] === 'both' || f[4] === mode)
-    .filter(f => f[2] < width)
-    .map(f => [f[0], Math.min(f[1], width - 1), ...f.slice(2)])
-    .sort((a,b) => b[1]-a[1]);
-}
-
-function regTop(reg, xlen) {
-  if (reg.width === 'XLEN') return xlen;
-  return parseInt(reg.width);
-}
-
-const registerValues = new Map((importedRegisters || []).filter(reg => reg.snapshotValue !== undefined).map(reg => [`${reg.id}:${reg.width}`, reg.snapshotValue]));
-document.getElementById('assignment-error').textContent = importMessage;
-function bitMask(width) { return (1n << BigInt(width)) - 1n; }
-function readField(value, hi, lo) { return (value >> BigInt(lo)) & bitMask(hi - lo + 1); }
-function writeField(value, hi, lo, next) {
-  const mask = bitMask(hi - lo + 1) << BigInt(lo);
-  return (value & ~mask) | ((next << BigInt(lo)) & mask);
-}
-function parseValue(text, width) {
-  const input = text.trim();
-  if (!/^(?:0x[0-9a-f]+(?:_[0-9a-f]+)*|0b[01]+(?:_[01]+)*|[0-9]+(?:_[0-9]+)*)$/i.test(input)) {
-    throw new Error('请输入 0x 十六进制、0b 二进制或十进制非负整数；允许数字间单个下划线分组。');
+  const heading = document.getElementById('codec-format-heading');
+  heading.replaceChildren();
+  heading.hidden = !decoded;
+  if (decoded) {
+    const reference = FORMATS.find(format => format.id === activeFormat);
+    let kind = reference?.kind || (decoded.format === 'R4' ? '融合乘加' : decoded.format === 'AMO' ? '原子访存' : '指令编码');
+    if (decoded.format === 'R' && ['F','D'].includes(decoded.extension)) kind = '浮点运算 / 转换';
+    if (decoded.extension === 'Zicsr') kind = 'CSR 访问';
+    heading.append(element('strong', '', decoded.format + '-type'), element('span', 'tag', kind));
   }
-  if (input.replaceAll('_', '').length > width + 2) throw new Error(`输入过长，最多支持 ${width} 位数值。`);
-  const value = BigInt(input.replaceAll('_', ''));
-  if (value > bitMask(width)) throw new Error(`数值超出 ${width} 位范围（最大 0x${bitMask(width).toString(16)}）。`);
-  return value;
+  render();
 }
-function parseAssignment(text, xlen) {
-  const match = /^\s*([a-z][a-z0-9]*)\s*=\s*(.*?)\s*$/i.exec(text);
-  if (!match) throw new Error('请使用 寄存器名 = 数值 格式，例如 mstatus = 0x1800。');
-  const reg = displayedRegisters.find(item => item.name.toLowerCase() === match[1].toLowerCase()) || displayedRegisters.find(item => item.id === match[1].toLowerCase());
-  if (!reg) throw new Error('暂不支持该寄存器名，请使用本页卡片名；别名寄存器不自动映射。');
-  const width = regTop(reg, xlen);
-  const value = parseValue(match[2], width);
-  if (reg.readOnly && value !== 0n) throw new Error('x0 固定为零，不可修改。');
-  return { reg, width, value };
+function element(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
 }
-// 多位枚举字段：键为字段名，值为 编码 → 含义
-const ENUM_FIELDS = {
-  MPP: {0:'U 模式',1:'S 模式',2:'保留',3:'M 模式'},
-  SPP: {0:'U 模式',1:'S 模式'},
-  MXL: {1:'32 位',2:'64 位',3:'128 位 / 需核对实现'},
-  SXL: {1:'32 位',2:'64 位'},
-  UXL: {1:'32 位',2:'64 位'},
-  VSXL: {1:'32 位',2:'64 位'},
-  frm: {0:'RNE 就近偶数',1:'RTZ 向零',2:'RDN 向下',3:'RUP 向上',4:'RMM 就近最大',5:'保留',6:'保留',7:'保留'},
-  Interrupt: {0:'异常',1:'中断'},
-  FS: {0:'Off 关闭',1:'Initial 初始',2:'Clean 干净',3:'Dirty 脏'},
-  VS: {0:'Off 关闭',1:'Initial 初始',2:'Clean 干净',3:'Dirty 脏'},
-  XS: {0:'Off 关闭',1:'Initial 初始',2:'Clean 干净',3:'Dirty 脏'},
-  vsew: {0:'SEW=8 位',1:'SEW=16 位',2:'SEW=32 位',3:'SEW=64 位',4:'保留',5:'保留',6:'保留',7:'保留'},
-  vlmul: {0:'LMUL=1',1:'LMUL=2',2:'LMUL=4',3:'LMUL=8',4:'保留',5:'LMUL=1/8',6:'LMUL=1/4',7:'LMUL=1/2'},
-  PBMT: {0:'按 PMA 属性',1:'NC 非缓存一致',2:'IO 内存',3:'保留'},
-  CBIE: {0:'禁止 CBO.INVAL',1:'执行但按 flush 处理',2:'保留',3:'执行但按 invalidate 处理'},
-  PMM: {0:'关闭（PMLEN=0）',1:'保留',2:'PMLEN=XLEN-57',3:'PMLEN=XLEN-48'},
-  OPST: {0:'BIST 未启动',1:'BIST 已启动',2:'保留',3:'保留'},
-  BIST: {0:'未实现或未完成',1:'通过',2:'失败',3:'保留'},
-};
-// 单位布尔字段：[清零含义, 置位含义]
-const BOOL_FIELDS = {
-  SD: ['无脏状态','存在脏状态（FS/VS/XS 有 Dirty）'],
-  SDT: ['S 模式 double trap 使能','S 模式 double trap 已推迟'],
-  MDT: ['M 模式 double trap 使能','M 模式 double trap 已推迟'],
-  SPELP: ['landing pad 关闭','landing pad 期望置位（ELP 已置位）'],
-  MPELP: ['landing pad 关闭','landing pad 期望置位（ELP 已置位）'],
-  TSR: ['S 模式 SRET 正常执行','S 模式 SRET 陷入 M 模式'],
-  TW: ['WFI 正常执行','低特权级 WFI 超时陷入 M'],
-  TVM: ['S 模式可访问 satp / SFENCE.VMA','S 模式访问虚拟内存操作陷入 M'],
-  MXR: ['仅可读可读页','可读页和仅可执行页'],
-  SUM: ['S 模式不可访问 U 页','S 模式可访问 U 页'],
-  MPRV: ['load/store 按当前特权级','load/store 按 MPP 特权级与翻译'],
-  MPIE: ['陷入前 MIE=0','陷入前 MIE=1'],
-  SPIE: ['陷入前 SIE=0','陷入前 SIE=1'],
-  MIE: ['M 模式中断禁止','M 模式中断使能'],
-  SIE: ['S 模式中断禁止','S 模式中断使能'],
-  UBE: ['U 模式小端','U 模式大端'],
-  MBE: ['M 模式小端','M 模式大端'],
-  SBE: ['S 模式小端','S 模式大端'],
-  MPV: ['陷入前非虚拟化模式','陷入前为虚拟化 guest（需 H 扩展）'],
-  GVA: ['mtval 为原始地址','mtval 为 guest 虚拟地址'],
-  'LCOFIE/LCOFIP': ['未使能 / 未挂起','使能 / 挂起中'],
-  'MEIE/MEIP': ['未使能 / 未挂起','使能 / 挂起中'],
-  'SEIE/SEIP': ['未使能 / 未挂起','使能 / 挂起中'],
-  'MTIE/MTIP': ['未使能 / 未挂起','使能 / 挂起中'],
-  'STIE/STIP': ['未使能 / 未挂起','使能 / 挂起中'],
-  'MSIE/MSIP': ['未使能 / 未挂起','使能 / 挂起中'],
-  'SSIE/SSIP': ['未使能 / 未挂起','使能 / 挂起中'],
-  vill: ['vtype 配置合法','vtype 配置非法，其余字段值无效'],
-  vma: ['tail/mask undisturbed','tail/mask agnostic'],
-  vta: ['tail/mask undisturbed','tail/mask agnostic'],
-  N: ['普通 PTE','NAPOT 连续页（Svnapot）'],
-  V: ['PTE 无效','PTE 有效'],
-  R: ['禁止读','允许读'],
-  W: ['禁止写','允许写'],
-  X: ['禁止执行','允许执行'],
-  U: ['仅 S/U 之外特权级可访问（非用户）','用户模式可访问'],
-  G: ['非全局映射','全局映射（所有地址空间共享）'],
-  A: ['页未被访问，硬件或软件需先置位','页已被访问'],
-  D: ['页未被修改，写入前需先置位','页已被修改'],
-  L: ['未锁定','已锁定（M 模式写入也受限）'],
-  NV: ['未发生','已发生无效操作'],
-  DZ: ['未发生','已发生除零'],
-  OF: ['未发生','已发生上溢'],
-  UF: ['未发生','已发生下溢'],
-  NX: ['未发生','已发生不精确'],
-  VTSR: ['VS 模式 SRET 正常执行','VS 模式 SRET 陷入 HS'],
-  VTW: ['VS 模式 WFI 正常执行','VS 模式 WFI 超时陷入 HS'],
-  VTVM: ['VS 模式可访问 satp / SFENCE.VMA','VS 模式访问虚拟内存操作陷入 HS'],
-  HU: ['VU 模式不能执行 hypervisor load/store','VU 模式可执行 hypervisor load/store'],
-  SPVP: ['陷入前为 VU 模式（U）','陷入前为 VS 模式（S）'],
-  SPV: ['陷入前为 VS 模式','陷入前为 VU 模式'],
-  VSBE: ['VS 模式小端','VS 模式大端'],
-  FIOM: ['FENCE 的 I/O 顺序不隐含内存顺序','FENCE 的 I/O 顺序隐含内存顺序'],
-  LPE: ['Zicfilp 关闭','Zicfilp 启用（landing pad）'],
-  SSE: ['Zicfiss 关闭','Zicfiss 启用（影子栈）'],
-  CBCFE: ['禁止 CBO.CLEAN / CBO.FLUSH','允许 CBO.CLEAN / CBO.FLUSH'],
-  CBZE: ['禁止 CBO.ZERO','允许 CBO.ZERO'],
-  DTE: ['Ssdbltrp 关闭','Ssdbltrp 使能（double trap）'],
-  CDE: ['Smcdeleg 关闭','Smcdeleg 使能（计数器委托）'],
-  ADUE: ['硬件不更新 A/D 位（按 Svade）','硬件更新 PTE 的 A/D 位（Svadu）'],
-  PBMTE: ['Svpbmt 关闭','Svpbmt 启用'],
-  STCE: ['禁止使用 stimecmp','允许使用 stimecmp（Sstc）'],
-  CY: ['不可读 cycle','可读 cycle'],
-  TM: ['不可读 time','可读 time'],
-  IR: ['不可读 instret','可读 instret'],
-  MML: ['正常 PMP 规则','M 模式锁定（MML）'],
-  MMWP: ['未匹配 PMP 时按默认策略','未匹配 PMP 时 M 模式拒绝（sticky）'],
-  RLB: ['锁定规则不可修改','允许临时修改锁定规则'],
-  USEED: ['U 模式不可访问 seed','U 模式可读写 seed'],
-  SSEED: ['S/HS 模式不可访问 seed','S/HS 模式可读写 seed'],
-  MLPE: ['M 模式 landing pad 关闭','M 模式 landing pad 使能'],
-};
-const MCAUSE_EXCEPTIONS = {0:'指令地址未对齐',1:'指令访问错误',2:'非法指令',3:'断点',4:'load 地址未对齐',5:'load 访问错误',6:'store 地址未对齐',7:'store 访问错误',8:'U-ecall',9:'S-ecall',11:'M-ecall',12:'指令缺页',13:'load 缺页',15:'store 缺页'};
-const MCAUSE_INTERRUPTS = {1:'S 模式软件中断',3:'M 模式软件中断',5:'S 模式定时器中断',7:'M 模式定时器中断',9:'S 模式外部中断',11:'M 模式外部中断',13:'S 模式 guest 外部中断'};
-function fieldMeaning(reg, field, value, width, word) {
-  const name = field[0];
-  const key = value.toString();
-  if (reg.id === 'medeleg' || reg.id === 'mideleg' || reg.id === 'hedeleg' || reg.id === 'hideleg') {
-    if (reg.id === 'mideleg' && [3,7,11].includes(field[1])) return 'M 级中断不可委托（应保持 0）';
-    if (reg.id === 'hedeleg' || reg.id === 'hideleg') return value ? '进一步委托给 VS 模式' : '不向 VS 委托';
-    return value ? '委托给 S 模式处理' : '由 M 模式处理（不委托）';
+function instructionSemantics(decoded) {
+  const name = decoded.mnemonic;
+  const imm = 'imm = 符号扩展到XLEN位(inst[31:20])\n';
+  const wrap = expression => '(' + expression + ') mod 2^XLEN';
+  const binary = { add:'+', sub:'-', and:'&', or:'|', xor:'^' };
+  if (binary[name]) return 'x[rd] = ' + (['add','sub'].includes(name) ? wrap('x[rs1] ' + binary[name] + ' x[rs2]') : 'x[rs1] ' + binary[name] + ' x[rs2]');
+  const immediate = { addi:'+', andi:'&', ori:'|', xori:'^' };
+  if (immediate[name]) return imm + 'x[rd] = ' + (name === 'addi' ? wrap('x[rs1] + imm') : 'x[rs1] ' + immediate[name] + ' imm');
+  if (['slt','sltu','slti','sltiu'].includes(name)) {
+    const isImmediate = name.includes('i'), cast = name.endsWith('u') ? 'unsigned' : 'signed';
+    return (isImmediate ? imm : '') + 'x[rd] = (' + cast + '(x[rs1]) < ' + cast + '(' + (isImmediate ? 'imm' : 'x[rs2]') + ')) ? 1 : 0';
   }
-  if (reg.id === 'mcountinhibit' && (name === 'CY' || name === 'IR'))
-    return value ? '停止计数' : '正常计数';
-  if (reg.id === 'mhpmevent' && (name === 'OF' || name.endsWith('INH'))) {
-    if (name === 'OF') return value ? '已计数溢出（该计数器不再产生溢出中断）' : '未溢出';
-    return value ? '禁止在该模式计数' : '允许在该模式计数';
+  if (['addw','subw','addiw'].includes(name)) return (name === 'addiw' ? imm : '') + 'result32 = (x[rs1] ' + (name === 'subw' ? '-' : '+') + ' ' + (name === 'addiw' ? 'imm' : 'x[rs2]') + ') mod 2^32\nx[rd] = 符号扩展到XLEN位(result32)';
+  if (/^s(ll|rl|ra)i?w?$/.test(name)) {
+    const word = name.endsWith('w'), immediate = name.includes('i'), arithmetic = name.startsWith('sra');
+    const bits = word ? '32' : 'XLEN';
+    const source = word ? 'x[rs1][31:0]' : 'x[rs1]';
+    return 'shamt = ' + (immediate ? 'inst[' + (word || decoded.xlen === 32 ? '24' : '25') + ':20]' : 'x[rs2] & (' + bits + ' - 1)') + '\nresult = (' + (arithmetic ? 'signed(' + source + ')' : source) + (name.startsWith('sll') ? ' << shamt' : arithmetic ? ' arithmetic_shift_right shamt' : ' logical_shift_right shamt') + ') mod 2^' + bits + '\nx[rd] = ' + (word ? '符号扩展到XLEN位(result)' : 'result');
   }
-  if (reg.id === 'hvip' || reg.id === 'hip') return value ? '该虚拟中断挂起' : '无挂起';
-  if (reg.id === 'hie') return value ? '中断使能' : '中断禁用';
-  if (reg.id === 'mstateen0')
-    return value ? '允许低特权级访问该状态' : '禁止访问（读取为 0 / 写入忽略）';
-  if (reg.id === 'mnstatus' && name === 'MNPP')
-    return ['U 模式','S 模式','保留','M 模式'][Number(value)] ?? '';
-  if (reg.id === 'mnstatus' && name === 'MNPV') return value ? 'VS 模式' : 'HS 模式';
-  if (reg.id === 'mnstatus' && name === 'MNPELP') return value ? 'ELP=1' : 'ELP=0';
-  if (reg.id === 'mnstatus' && name === 'NMIE') return value ? 'RNMI 使能' : '所有中断屏蔽';
-  if (name === 'Extensions') {
-    if (value === 0n) return '未声明任何扩展';
-    const letters = [];
-    for (let bit = 0; bit <= 25; bit++) if ((value >> BigInt(bit)) & 1n) letters.push(String.fromCharCode(65 + bit));
-    return '已置位扩展：' + letters.join(' ');
+  const loads = { lb:8, lbu:8, lh:16, lhu:16, lw:32, lwu:32, ld:64, flw:32, fld:64 };
+  if (loads[name]) {
+    const floating = name.startsWith('f');
+    return imm + 'addr = ' + wrap('x[rs1] + imm') + '\n' + (floating ? 'f[rd]' : 'x[rd]') + ' = ' + (floating ? (name === 'flw' ? 'NaN_box_FLEN' : 'load64') : name.endsWith('u') ? '零扩展到XLEN位' : '符号扩展到XLEN位') + (floating && name === 'fld' ? '(addr)' : '(load' + loads[name] + '(addr))');
   }
-  if (name === 'RSW') return '软件保留：硬件忽略，供软件使用';
-  if (name === 'Exception Code' && reg.id === 'mcause') {
-    const isInterrupt = (word >> BigInt(width - 1)) & 1n;
-    const table = isInterrupt ? MCAUSE_INTERRUPTS : MCAUSE_EXCEPTIONS;
-    return table[key] ?? (isInterrupt ? '标准未分配 / 平台专用中断号' : '标准未分配 / 平台自定义异常码');
+  const stores = { sb:8, sh:16, sw:32, sd:64, fsw:32, fsd:64 };
+  if (stores[name]) return 'imm = 符号扩展到XLEN位(concat(inst[31:25], inst[11:7]))\naddr = ' + wrap('x[rs1] + imm') + '\nstore' + stores[name] + '(addr, ' + (name.startsWith('f') ? 'f' : 'x') + '[rs2][' + (stores[name] - 1) + ':0])';
+  if (['lui','auipc'].includes(name)) return 'imm32 = concat(inst[31:12], 0b000000000000)\nimm = 符号扩展到XLEN位(imm32)\nx[rd] = ' + (name === 'lui' ? 'imm' : wrap('PC + imm'));
+  const branches = { beq:'x[rs1] == x[rs2]', bne:'x[rs1] != x[rs2]', blt:'signed(x[rs1]) < signed(x[rs2])', bge:'signed(x[rs1]) >= signed(x[rs2])', bltu:'unsigned(x[rs1]) < unsigned(x[rs2])', bgeu:'unsigned(x[rs1]) >= unsigned(x[rs2])' };
+  if (branches[name]) return 'offset = 符号扩展到XLEN位(concat(inst[31], inst[7], inst[30:25], inst[11:8], 0b0))\nif ' + branches[name] + ':\n  target = ' + wrap('PC + offset') + '\n  check_instruction_alignment(target)\n  PC = target\nelse:\n  PC = ' + wrap('PC + 4');
+  if (name === 'jal' || name === 'jalr') return (name === 'jal' ? 'offset = 符号扩展到XLEN位(concat(inst[31], inst[19:12], inst[20], inst[30:21], 0b0))\ntarget = ' + wrap('PC + offset') : imm + 'target = (' + wrap('x[rs1] + imm') + ') & ~1') + '\nlink = ' + wrap('PC + 4') + '\ncheck_instruction_alignment(target)\nx[rd] = link\nPC = target';
+  if (name === 'mul' || name === 'mulw') return name === 'mul' ? 'x[rd] = (x[rs1] * x[rs2]) mod 2^XLEN' : 'result32 = (x[rs1] * x[rs2]) mod 2^32\nx[rd] = 符号扩展到XLEN位(result32)';
+  if (['mulh','mulhu','mulhsu'].includes(name)) return 'product = ' + (name === 'mulhu' ? 'unsigned' : 'signed') + '(x[rs1]) * ' + (name === 'mulh' ? 'signed' : 'unsigned') + '(x[rs2])\nx[rd] = (product mod 2^(2 * XLEN))[2 * XLEN - 1:XLEN]';
+  if (name === 'ecall') return 'raise_exception(environment_call, current_privilege)\nexception_pc = PC';
+  if (name === 'ebreak') return 'raise_exception(breakpoint)\nexception_pc = PC';
+  const memory = /^(vl|vs)e(8|16|32|64)\.v$/.exec(name);
+  if (memory) {
+    const bits = Number(memory[2]), store = memory[1] === 'vs';
+    return 'for i in VSTART .. VL - 1:\n  if vm == 1 or v0.mask[i] == 1:\n    addr = (x[rs1] + i * ' + (bits / 8) + ') mod 2^XLEN\n    ' + (store ? 'store' + bits + '(addr, v[vs3].element' + bits + '[i])' : 'v[vd].element' + bits + '[i] = load' + bits + '(addr)') + '\n// 正常完成后 VSTART = 0；掩码/尾部策略按 VTYPE，异常按向量重启规则处理';
   }
-  if (reg.id === 'pmpcfg' && name === 'A')
-    return {0:'OFF 不匹配',1:'TOR 上界匹配',2:'NA4 4 字节匹配',3:'NAPOT 2 的幂匹配'}[key] ?? '保留编码';
-  if (reg.id === 'satp' && name === 'MODE')
-    return ({0:'Bare 不翻译',1:'Sv32',8:'Sv39',9:'Sv48',10:'Sv57'})[key] ?? '保留编码';
-  if (reg.id === 'hgatp' && name === 'MODE')
-    return ({0:'Bare 不翻译',1:'Sv32x4',8:'Sv39x4',9:'Sv48x4',10:'Sv57x4'})[key] ?? '保留编码';
-  if (reg.id === 'mtvec' && name === 'MODE')
-    return {0:'Direct 直接模式',1:'Vectored 向量模式'}[key] ?? '保留编码';
-  if (reg.id === 'fcsr' && name === 'frm' && key === '7') return '保留（DYN=7 仅用于指令 rm 字段）';
-  if (ENUM_FIELDS[name]) return ENUM_FIELDS[name][key] ?? '保留 / 未定义编码';
-  if (BOOL_FIELDS[name] && (field[1] === field[2] || value <= 1n)) return BOOL_FIELDS[name][key] ?? '';
+  const vector = /^(vadd|vsub|vand|vor|vxor)\.(vv|vx|vi)$/.exec(name);
+  if (vector) {
+    const op = { vadd:'+', vsub:'-', vand:'&', vor:'|', vxor:'^' }[vector[1]];
+    const operand = vector[2] === 'vv' ? 'v[vs1].element_SEW[i]' : vector[2] === 'vx' ? 'resize_signed_to_SEW(x[rs1])' : '符号扩展到SEW位(inst[19:15])';
+    return 'for i in VSTART .. VL - 1:\n  if vm == 1 or v0.mask[i] == 1:\n    v[vd].element_SEW[i] = (v[vs2].element_SEW[i] ' + op + ' ' + operand + ') mod 2^SEW\n// 正常完成后 VSTART = 0；未激活元素和尾部按 VTYPE 策略处理';
+  }
   return '';
 }
 
 function render() {
-  const expanded = new Set([...main.querySelectorAll('.card')].filter(card => card.querySelector('.field-details')?.open).map(card => card.dataset.register));
-  const xlen = parseInt(xlenSel.value);
-  const keys = q.value.toLowerCase().split(/[\s/／,，、]+/u).filter(Boolean);
-  const matches = text => keys.some(key => text.toLowerCase().includes(key));
-  main.innerHTML = '';
-  displayedRegisters.forEach(reg => {
-    if (sel.value !== 'all' && sel.value !== reg.id) return;
-    const fs = fieldsFor(reg, xlen);
-    if (keys.length && !fs.some(f => matches(f[0])) && !matches(reg.name)) return;
-    const top = regTop(reg, xlen) - 1;
-    const card = document.createElement('div'); card.className = 'card'; card.dataset.register = reg.id;
-    card.id = 'register-' + reg.id; card.tabIndex = -1; card.style.scrollMarginTop = '90px';
-    card.innerHTML = `<h2>${esc(reg.name)} <span class="tag">${reg.priv}</span> <span class="tag">CSR ${esc(reg.addr)}</span></h2><div class="desc">${esc(reg.desc)}</div>`;
-    if (importedRegisters !== null) {
-      const provenance = document.createElement('p'); provenance.className = 'snapshot-provenance';
-      provenance.textContent = reg.snapshotValue !== undefined ? '已同步现场值；本页编辑不回写异常页。' : '未提供 / 未同步此寄存器值：以下数值仅作手动解码演示，不是故障现场值。';
-      card.appendChild(provenance);
-    }
-    const width = top + 1;
-    const stateKey = `${reg.id}:${width}`;
-    let value = registerValues.get(stateKey) ?? 0n;
-    const bindings = [];
-    const editors = new Map();
-    const panel = document.createElement('div'); panel.className = 'value-panel';
-    const controls = document.createElement('div'); controls.className = 'value-controls';
-    const label = document.createElement('label'); label.textContent = `${width} 位原始值`;
-    const input = document.createElement('input'); input.className = 'value-input';
-    input.id = `${reg.id}-value`; input.type = 'text'; input.spellcheck = false;
-    input.maxLength = 2 * width + 2; input.readOnly = !!reg.readOnly; label.htmlFor = input.id;
-    const reset = document.createElement('button'); reset.className = 'value-reset';
-    reset.type = 'button'; reset.textContent = '清零'; reset.disabled = !!reg.readOnly;
-    const error = document.createElement('div'); error.className = 'value-error';
-    error.id = `${reg.id}-error`; error.setAttribute('aria-live', 'polite');
-    input.setAttribute('aria-describedby', error.id);
-    const binary = document.createElement('output'); binary.className = 'binary-value';
-    controls.append(label, input, reset);
-    panel.append(controls, error, binary);
-    card.appendChild(panel);
-    function refresh(origin) {
-      registerValues.set(stateKey, value);
-      if (origin !== input) input.value = '0x' + value.toString(16).padStart(Math.ceil(width / 4), '0');
-      input.setAttribute('aria-invalid', 'false'); error.textContent = '';
-      binary.textContent = '二进制：' + value.toString(2).padStart(width, '0').match(/.{1,4}/g).join(' ');
-      bindings.forEach(update => update(origin));
-    }
-    input.addEventListener('input', () => {
-      try { value = parseValue(input.value, width); refresh(input); }
-      catch (e) { error.textContent = e.message; input.setAttribute('aria-invalid', 'true'); }
-    });
-    reset.addEventListener('click', () => { value = 0n; refresh(); });
-
-    // 按位宽绘制，补齐空洞为未定义；超过 32 位时拆成 hi/lo 两行
-    const cells = [];
-    let cur = top;
-    fs.forEach(f => {
-      if (f[1] > cur) return;
-      if (f[1] < cur) cells.push({gap:true, hi:cur, lo:f[1]+1});
-      cells.push({f, hi:f[1], lo:f[2]});
-      cur = f[2]-1;
-    });
-    if (cur >= 0) cells.push({gap:true, hi:cur, lo:0});
-
-    const rows = Array.from({ length:Math.ceil((top + 1) / 32) }, (_, index) => {
-      const hi = top - index * 32;
-      return [hi, Math.max(0, hi - 31)];
-    });
-    const wrap = document.createElement('div'); wrap.className = 'bits-wrap';
-    const measure = document.createElement('canvas').getContext('2d');
-    measure.font = '600 13px ui-monospace,monospace';
-    rows.forEach(([rh, rl]) => {
-      const labels = document.createElement('div'); labels.className = 'bit-labels';
-      labels.style.setProperty('--bits', rh - rl + 1);
-      labels.setAttribute('aria-hidden', 'true');
-      const bitValues = document.createElement('div'); bitValues.className = 'bit-values';
-      bitValues.style.setProperty('--bits', rh - rl + 1);
-      for (let bit = rh; bit >= rl; bit--) {
-        const label = document.createElement('span'); label.textContent = bit;
-        labels.appendChild(label);
-        const toggle = document.createElement('button'); toggle.className = 'bit-value';
-        toggle.type = 'button'; toggle.disabled = !!reg.readOnly;
-        const bc = cells.find(c => bit >= c.lo && bit <= c.hi);
-        toggle.title = bc && !bc.gap && !bc.f[5]
-          ? `${reg.name} bit ${bit} · ${bc.f[0]} [${bc.hi}${bc.hi !== bc.lo ? ':' + bc.lo : ''}]：${bc.f[3]}`
-          : `${reg.name} bit ${bit} · 保留 / 未定义位`;
-        toggle.addEventListener('click', () => { value ^= 1n << BigInt(bit); refresh(); });
-        bindings.push(() => {
-          const on = readField(value, bit, bit) === 1n;
-          toggle.textContent = on ? '1' : '0';
-          toggle.setAttribute('aria-pressed', String(on));
-          toggle.setAttribute('aria-label', `${reg.name} bit ${bit} = ${on ? 1 : 0}，点击翻转`);
-        });
-        bitValues.appendChild(toggle);
-      }
-      const row = document.createElement('div'); row.className = 'row';
-      row.style.setProperty('--bits', rh - rl + 1);
-      cells.forEach((c, i) => {
-        const hi = Math.min(c.hi, rh), lo = Math.max(c.lo, rl);
-        if (hi < lo) return;
-        const d = document.createElement('div');
-        const width = hi - lo + 1;
-        const isRsv = c.gap || c.f[5];
-        const narrow = !c.gap && measure.measureText(c.f[0]).width > width * 32 - 10;
-        d.className = 'cell ' + (isRsv ? 'rsv' : 'c' + (i % 5)) + (narrow ? ' narrow' : '');
-        d.style.gridColumn = `span ${width}`;
-        d.innerHTML = c.gap ? '' : `<span class="cell-label">${esc(c.f[0])}</span>`;
-        if (!c.gap) {
-          d.dataset.k = c.f[0] + '_' + c.f[1];
-          d.title = `${c.f[0]}[${hi}${hi!==lo?':'+lo:''}] ${c.f[3]}`;
-          d.setAttribute('aria-label', d.title);
-          if (!isRsv) {
-            const output = document.createElement('span'); output.className = 'cell-value';
-            d.appendChild(output);
-            d.tabIndex = reg.readOnly ? -1 : 0; d.setAttribute('role', 'button');
-            if (reg.readOnly) d.setAttribute('aria-disabled', 'true');
-            const activate = () => {
-              if (reg.readOnly) return;
-              if (c.f[1] === c.f[2]) { value ^= 1n << BigInt(c.f[2]); refresh(); }
-              else {
-                details.open = true;
-                editors.get(d.dataset.k).focus();
-              }
-            };
-            d.addEventListener('click', activate);
-            d.addEventListener('keydown', event => {
-              if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(); }
-            });
-            bindings.push(() => {
-              const fieldValue = readField(value, c.f[1], c.f[2]);
-              output.textContent = c.f[1] === c.f[2] ? fieldValue.toString() : '0x' + fieldValue.toString(16);
-              d.classList.toggle('nonzero', fieldValue !== 0n);
-              d.setAttribute('aria-label', `${d.title}；完整字段值 ${output.textContent}`);
-              if (c.f[1] === c.f[2]) d.setAttribute('aria-pressed', String(fieldValue === 1n));
-            });
-          }
-        }
-        row.appendChild(d);
-      });
-      wrap.appendChild(labels);
-      wrap.appendChild(bitValues);
-      wrap.appendChild(row);
-    });
-    card.appendChild(wrap);
-
-    const tb = document.createElement('table');
-    tb.innerHTML = '<tr><th>位</th><th>字段</th><th>当前值</th><th>当前值解释</th><th>说明</th></tr>';
-    fs.forEach(f => {
-      if (f[5]) return;
-      const tr = document.createElement('tr');
-      tr.dataset.k = f[0] + '_' + f[1];
-      const bits = f[1] === f[2] ? `${f[1]}` : `${f[1]}:${f[2]}`;
-      tr.innerHTML = `<td><code>${bits}</code></td><td><b>${esc(f[0])}</b></td>`;
-      const valueCell = document.createElement('td');
-      const editor = document.createElement('input'); editor.className = 'field-input';
-      editor.type = 'text'; editor.spellcheck = false; editor.maxLength = 2 * (f[1] - f[2] + 1) + 2; editor.readOnly = !!reg.readOnly;
-      editor.setAttribute('aria-label', `${reg.name} ${f[0]} [${bits}] 字段值`);
-      editors.set(tr.dataset.k, editor);
-      const meaning = document.createElement('span'); meaning.className = 'field-meaning';
-      const meaningCell = document.createElement('td');
-      const fieldError = document.createElement('div'); fieldError.className = 'value-error';
-      fieldError.id = `${reg.id}-field-${f[1]}-error`;
-      fieldError.setAttribute('aria-live', 'polite');
-      editor.setAttribute('aria-describedby', fieldError.id);
-      editor.addEventListener('input', () => {
-        try {
-          const next = parseValue(editor.value, f[1] - f[2] + 1);
-          value = writeField(value, f[1], f[2], next); refresh(editor);
-        } catch (e) { fieldError.textContent = e.message; editor.setAttribute('aria-invalid', 'true'); }
-      });
-      bindings.push(origin => {
-        const fieldValue = readField(value, f[1], f[2]);
-        if (origin !== editor) editor.value = f[1] - f[2] < 4 ? fieldValue.toString() : '0x' + fieldValue.toString(16);
-        editor.setAttribute('aria-invalid', 'false'); fieldError.textContent = '';
-        const text = fieldMeaning(reg.kind ? { ...reg, id:reg.kind } : reg, f, fieldValue, width, value);
-        meaning.textContent = text;
-      });
-      valueCell.append(editor, fieldError);
-      meaningCell.appendChild(meaning);
-      const description = document.createElement('td'); description.textContent = f[3];
-      tr.append(valueCell, meaningCell, description);
-      if (matches(f[0])) tr.style.background = '#fef9c3';
-      tb.appendChild(tr);
-    });
-    const tableWrap = document.createElement('div'); tableWrap.className = 'table-wrap';
-    tableWrap.appendChild(tb);
-    const details = document.createElement('details'); details.className = 'field-details';
-    details.open = expanded.has(reg.id);
-    const summary = document.createElement('summary'); summary.textContent = '字段解释与编辑';
-    summary.setAttribute('aria-label', `${reg.name} 字段解释与编辑`);
-    details.append(summary, tableWrap);
-    card.appendChild(details);
-    refresh();
-    main.appendChild(card);
-
-    card.querySelectorAll('[data-k]').forEach(el => {
-      el.addEventListener('mouseenter', () => card.querySelectorAll(`[data-k="${el.dataset.k}"]`).forEach(e => e.classList.add('hover')));
-      el.addEventListener('mouseleave', () => card.querySelectorAll('.hover').forEach(e => e.classList.remove('hover')));
-    });
-  });
-  if (!main.children.length) main.innerHTML = '<div class="card">没有匹配结果</div>';
+  container.replaceChildren();
+  document.getElementById('format-reference').hidden = !activeDecoded;
+  if (!activeDecoded) return;
+  const card = element('section', 'card');
+  card.id = activeFormat + '-type';
+  card.dataset.mnemonic = activeDecoded.mnemonic;
+  card.append(element('h2', '', activeDecoded.mnemonic + ' · 语义'));
+  const code = instructionSemantics(activeDecoded);
+  if (code) card.append(element('pre', 'operation-code', code));
+  else card.append(element('p', 'desc', '当前仅提供 ' + activeDecoded.mnemonic + ' 的编码解析，尚未提供该指令的独立语义伪代码。'));
+  if (code) card.append(element('p', 'desc', '伪代码描述成功执行路径，不模拟执行。mod 2^N 取低 N 位，符号扩展在高位补原值的最高位，零扩展在高位补 0；x[0] 恒为零。访存仍需翻译、权限及对齐检查。'));
+  if (activeDecoded.note) card.append(element('p', 'desc', activeDecoded.note));
+  container.append(card);
 }
-
-document.getElementById('assignment-form').addEventListener('submit', event => {
-  event.preventDefault();
-  const input = document.getElementById('assignment');
-  const status = document.getElementById('assignment-error');
-  try {
-    const parsed = parseAssignment(input.value, Number(xlenSel.value));
-    registerValues.set(`${parsed.reg.id}:${parsed.width}`, parsed.value);
-    sel.value = parsed.reg.id;
-    q.value = '';
-    render();
-    input.setAttribute('aria-invalid', 'false');
-    status.textContent = `已解析 ${parsed.reg.id}（${parsed.width} 位），结果见下方。`;
-  } catch (error) {
-    input.setAttribute('aria-invalid', 'true');
-    status.textContent = error.message;
-  }
-});
-[sel, xlenSel].forEach(e => e.addEventListener('change', render));
-q.addEventListener('input', () => {
-  sel.value = 'all';
-  render();
-});
 render();
-PageState.bind({
-  state:incomingSnapshot ? null : cachedPage,
-  selector:'#sel, #xlen, #q, #assignment',
-  read:() => ({ snapshot:snapshotRaw, values:[...registerValues].map(([key, value]) => [key, value.toString()]),
-    expanded:[...main.querySelectorAll('.card')].filter(card => card.querySelector('details')?.open).map(card => card.dataset.register) }),
-  restore:extra => {
-    if (!Array.isArray(extra?.values)) return;
-    for (const entry of extra.values) {
-      if (!Array.isArray(entry) || typeof entry[0] !== 'string' || typeof entry[1] !== 'string' || !/^[0-9]{1,39}$/.test(entry[1])) continue;
-      const [id, bits] = entry[0].split(':');
-      const width = Number(bits);
-      const reg = displayedRegisters.find(item => item.id === id);
-      if (!reg || ![32,64,128].includes(width) || (reg.width !== 'XLEN' && Number(reg.width) !== width)) continue;
-      const value = BigInt(entry[1]);
-      if (value < (1n << BigInt(width)) && (!reg.readOnly || value === 0n)) registerValues.set(entry[0], value);
-    }
-  },
-  render:() => {
-    render();
-    const expanded = cachedPage?.extra?.expanded;
-    if (Array.isArray(expanded)) main.querySelectorAll('.card').forEach(card => {
-      if (expanded.includes(card.dataset.register) && card.querySelector('details')) card.querySelector('details').open = true;
-    });
+</script>
+<script src="page-state.js"></script>
+<script>
+const codecAsm = document.getElementById('codec-asm');
+const codecWordInput = document.getElementById('codec-word');
+const codecError = document.getElementById('codec-error');
+const codecResult = document.getElementById('codec-result');
+let codecWord = 0x003100b3n;
+let codecSource = 'assembly';
+function codecOptions() {
+  const extensions = ['I'];
+  for (const [id, name] of [['codec-m','M'], ['codec-a','A'], ['codec-v','V'], ['codec-f','F'], ['codec-d','D'], ['codec-csr','Zicsr'], ['codec-fence','Zifencei']]) {
+    if (document.getElementById(id).checked) extensions.push(name);
   }
-});
-if (incomingSnapshot && snapshotFocus) {
-  const card = document.getElementById('register-' + snapshotFocus);
-  card?.scrollIntoView({ block:'start' });
-  card?.focus({ preventScroll:true });
+  return { xlen:Number(document.getElementById('codec-xlen').value), extensions };
+}
+function codecHex(value) { return '0x' + value.toString(16).padStart(8, '0'); }
+function renderCodecWord(decoded) {
+  prioritizeFormat(decoded);
+  codecResult.hidden = false;
+  document.getElementById('codec-summary').textContent = decoded
+    ? decoded.assembly + ' · ' + decoded.extension + ' · ' + decoded.format + '-type · 匹配掩码=' + codecHex(decoded.mask) + ' / 固定值=' + codecHex(decoded.match)
+    : '当前机器码未被所选架构 / 扩展的编解码器识别。下方仅显示原始位段，不代表已判定指令类型或架构非法。';
+  const bytes = Array.from({length:4}, (_, i) => ((codecWord >> BigInt(i * 8)) & 255n).toString(16).padStart(2, '0'));
+  document.getElementById('codec-bytes').textContent = codecHex(codecWord) + ' · 小端字节（低地址 → 高地址）：' + bytes.join(' ');
+  const diagram = document.getElementById('codec-diagram');
+  diagram.replaceChildren();
+  const labels = element('div', 'bit-labels');
+  labels.setAttribute('aria-hidden', 'true');
+  const bits = element('div', 'codec-bits');
+  const pattern = element('div', 'codec-pattern');
+  pattern.setAttribute('aria-label', '当前指令编码模板：0/1 为固定编码，· 为可变位，? 为未识别');
+  const fields = decoded ? decoded.fields : [[31,25],[24,20],[19,15],[14,12],[11,7],[6,0]].map(([hi,lo]) => ({name:'bits['+hi+':'+lo+']', hi, lo, value:(codecWord >> BigInt(lo)) & ((1n << BigInt(hi-lo+1))-1n), category:'function', description:'原始位段；尚未识别指令。'}));
+  for (let bit = 31; bit >= 0; bit--) {
+    labels.append(element('span', '', bit));
+    const value = (codecWord >> BigInt(bit)) & 1n;
+    const button = element('button', 'codec-bit', value.toString());
+    button.type = 'button'; button.id = 'codec-bit-' + bit;
+    button.setAttribute('aria-pressed', String(value === 1n));
+    const fixed = decoded ? ((decoded.mask >> BigInt(bit)) & 1n) === 1n : false;
+    const expected = decoded ? (decoded.match >> BigInt(bit)) & 1n : null;
+    const patternBit = element('span', '', decoded ? fixed ? String(expected) : '·' : '?');
+    patternBit.dataset.fixed = String(fixed);
+    patternBit.title = '第 ' + bit + ' 位：' + (decoded ? fixed ? '固定编码 ' + expected : '可变位' : '尚未识别，不推断固定值');
+    pattern.append(patternBit);
+    button.dataset.fixed = String(fixed);
+    const fixedText = fixed ? '；当前指令固定为 ' + expected + '，修改可能改变指令或成为未识别编码' : '';
+    button.setAttribute('aria-label', '第 ' + bit + ' 位 = ' + value + fixedText + '，点击翻转');
+    const bf = fields.find(f => bit >= f.lo && bit <= f.hi);
+    button.title = bf
+      ? '第 ' + bit + ' 位 · ' + bf.name + '：' + bf.description + fixedText
+      : '第 ' + bit + ' 位 · 保留 / 未定义位';
+    button.addEventListener('click', () => {
+      codecSource = 'word'; codecWord ^= 1n << BigInt(bit);
+      codecWordInput.value = codecHex(codecWord); updateCodec('word');
+      document.getElementById('codec-bit-' + bit).focus();
+    });
+    bits.append(button);
+  }
+  const row = element('div', 'bit-row');
+  const measure = document.createElement('canvas').getContext('2d');
+  measure.font = '600 13px ui-monospace,monospace';
+  fields.forEach(field => {
+    const width = field.hi - field.lo + 1;
+    const narrow = measure.measureText(field.name).width > width * 32 - 10;
+    const box = element('div', 'field ' + field.category + (narrow ? ' narrow' : ''));
+    box.style.gridColumn = 'span ' + width;
+    box.dataset.fixed = String(field.fixed === true);
+    box.dataset.field = field.name;
+    const fixedDescription = field.fixed ? '固定编码 = 0b' + field.fixedValue.toString(2).padStart(width, '0') : field.fixedMask ? '部分固定，掩码 0x' + field.fixedMask.toString(16) + '，固定值 0x' + field.fixedValue.toString(16) : '';
+    box.append(element('span', 'field-name', field.name), element('span', 'codec-field-value', '0x' + field.value.toString(16)));
+    if (fixedDescription) box.append(element('span', 'fixed-marker', field.fixed ? '固定 0x' + field.fixedValue.toString(16) : '部分固定'));
+    box.tabIndex = 0;
+    box.title = field.name + ' [' + (field.hi === field.lo ? field.hi : field.hi + ':' + field.lo) + ']：' + field.description + (fixedDescription ? '；' + fixedDescription : '');
+    box.setAttribute('aria-label', field.name + '，值 ' + field.value + '。' + field.description + '。' + fixedDescription);
+    box.addEventListener('mouseenter', () => box.classList.add('active'));
+    box.addEventListener('mouseleave', () => box.classList.remove('active'));
+    box.addEventListener('focus', () => box.classList.add('active'));
+    box.addEventListener('blur', () => box.classList.remove('active'));
+    row.append(box);
+  });
+  diagram.append(labels, pattern, bits, row);
+}
+function updateCodec(source) {
+  codecSource = source;
+  codecError.textContent = '';
+  codecAsm.setAttribute('aria-invalid', 'false'); codecWordInput.setAttribute('aria-invalid', 'false');
+  const options = codecOptions();
+  if (source === 'assembly') {
+    try {
+      const decoded = RISCVCodec.assemble(codecAsm.value, options);
+      codecWord = decoded.word; codecWordInput.value = codecHex(codecWord);
+      renderCodecWord(decoded);
+    } catch (error) {
+      codecError.textContent = error.message; codecAsm.setAttribute('aria-invalid', 'true');
+      codecWordInput.value = ''; codecResult.hidden = true;
+      prioritizeFormat(null);
+    }
+  } else {
+    try { codecWord = RISCVCodec.parseWord(codecWordInput.value); }
+    catch (error) {
+      codecError.textContent = error.message; codecWordInput.setAttribute('aria-invalid', 'true');
+      codecAsm.value = ''; codecResult.hidden = true; prioritizeFormat(null); return;
+    }
+    try {
+      const decoded = RISCVCodec.decode(codecWord, options);
+      codecAsm.value = decoded.assembly; renderCodecWord(decoded);
+    } catch (error) {
+      codecAsm.value = ''; codecError.textContent = error.message;
+      renderCodecWord(null);
+    }
+  }
+}
+function updateCodecOptions() {
+  updateCodec(codecSource);
+}
+document.getElementById('codec-asm-form').addEventListener('submit', event => { event.preventDefault(); updateCodec('assembly'); });
+document.getElementById('codec-word-form').addEventListener('submit', event => { event.preventDefault(); updateCodec('word'); });
+codecAsm.addEventListener('input', () => updateCodec('assembly'));
+codecWordInput.addEventListener('input', () => updateCodec('word'));
+for (const id of ['codec-xlen','codec-m','codec-a','codec-v','codec-f','codec-d','codec-csr','codec-fence']) document.getElementById(id).addEventListener('change', updateCodecOptions);
+updateCodecOptions();
+const saveCodecState = PageState.bind({ read:() => ({ source:codecSource }), restore:extra => { codecSource = extra?.source === 'word' ? 'word' : 'assembly'; }, render:() => { render(); updateCodecOptions(); } });
+{
+  try {
+    const raw = sessionStorage.getItem('riscv-trap-instruction');
+    if (raw !== null) {
+      if (raw.length > 200) throw new Error('指令数据过长');
+      const incoming = JSON.parse(raw);
+      if (!incoming || incoming.version !== 1 || ![32,64].includes(incoming.xlen) || typeof incoming.word !== 'string') throw new Error('指令数据格式无效');
+      const word = RISCVCodec.parseWord(incoming.word);
+      document.getElementById('codec-xlen').value = String(incoming.xlen);
+      codecWordInput.value = codecHex(word);
+      updateCodec('word');
+      sessionStorage.removeItem('riscv-trap-instruction');
+      saveCodecState();
+      document.getElementById('instruction-transfer-status').textContent = '已载入异常页机器码与 XLEN。扩展选项沿用本页设置；未识别的指令仍显示原始位段，不代表指令非法。';
+      codecWordInput.scrollIntoView({ block:'center' });
+      codecWordInput.focus({ preventScroll:true });
+    }
+  } catch (error) {
+    document.getElementById('instruction-transfer-status').textContent = '未载入指令：' + error.message;
+  }
 }
 </script>
 </body>
