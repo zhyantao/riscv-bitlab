@@ -88,7 +88,7 @@
         <input id="va" type="text" value="0x000000123456789a" spellcheck="false" autocomplete="off" aria-describedby="input-help mode-help va-error">
       </div>
     </div>
-    <p id="input-help" class="desc">输入自动识别：0x 十六进制、0b 二进制、无前缀十进制（例如 4096）。只接受完整非负整数，允许首尾空白；不接受正负号、小数、指数、分隔符或裸十六进制。所有地址运算使用 BigInt，不截断溢出值。</p>
+    <p id="input-help" class="desc">输入自动识别：0x 十六进制、0b 二进制、无前缀十进制（例如 4096）。只接受完整非负整数，允许首尾空白；支持数字间单个下划线分组（如 0x0000_0001_0000_0000）；不接受正负号、小数、指数、其他分隔符或裸十六进制。所有地址运算使用 BigInt，不截断溢出值。</p>
     <p id="mode-help" class="desc"></p>
     <div class="examples" aria-label="填入示例">
       <span>示例：</span>
@@ -148,6 +148,7 @@
   </section>
   <noscript>请启用支持 BigInt 的 JavaScript 以使用计算器。页面完全离线运行，无外部依赖。</noscript>
 </main>
+<script src="page-state.js"></script>
 <script>
 'use strict';
 const MODES = Object.freeze({
@@ -173,10 +174,10 @@ function hex(value, digits = 0) {
 function parseUnsigned(text, bits, label = '数值') {
   const input = text.trim();
   if (!input) throw new Error(label + ' 不能为空。');
-  if (!/^(?:0[xX][0-9a-fA-F]+|0[bB][01]+|[0-9]+)$/.test(input)) {
-    throw new Error(label + ' 格式错误：仅接受无符号十进制、0x 十六进制或 0b 二进制完整整数。');
+  if (!/^(?:0[xX][0-9a-fA-F]+(?:_[0-9a-fA-F]+)*|0[bB][01]+(?:_[01]+)*|[0-9]+(?:_[0-9]+)*)$/.test(input)) {
+    throw new Error(label + ' 格式错误：仅接受无符号十进制、0x 十六进制或 0b 二进制完整整数，允许数字间单个下划线分组。');
   }
-  const value = BigInt(input);
+  const value = BigInt(input.replaceAll('_', ''));
   if (value > mask(bits)) throw new Error(label + ' 超出 ' + bits + ' 位无符号范围（最大 ' + hex(mask(bits)) + '）。');
   return value;
 }
@@ -446,6 +447,7 @@ function initCalculator() {
     });
   });
   renderCalculator();
+  PageState.bind({ render:renderCalculator });
 }
 
 if (typeof document !== 'undefined') initCalculator();
