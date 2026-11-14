@@ -63,6 +63,9 @@
   button:focus-visible, .cell:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   input:focus-visible, header select:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
   .table-wrap { overflow-x:auto; }
+  .field-details { margin-top:8px; }
+  .field-details > summary { cursor:pointer; padding:5px 0; font-size:13px; color:#6b7280; }
+  .field-details > summary:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }
   .value-reset { height:34px; padding:0 14px; border:1px solid #9ca3af; border-radius:4px; background:white; cursor:pointer; font-size:14px; }
 </style>
 </head>
@@ -86,16 +89,19 @@
   <div class="value-controls">
     <form id="assignment-form" class="value-controls" novalidate>
       <label for="assignment">粘贴 CSR 赋值</label>
-      <input id="assignment" class="value-input" style="width:34ch" placeholder="mstatus = 0x1800" maxlength="100" spellcheck="false" aria-describedby="assignment-error">
+      <input id="assignment" class="value-input" style="width:34ch" placeholder="mstatus = 0x0000_1800" maxlength="300" spellcheck="false" aria-describedby="assignment-error">
       <button class="value-reset" type="submit">解析并定位</button>
     </form>
     <span class="value-divider" aria-hidden="true"></span>
     <input id="q" class="search-input" placeholder="搜索寄存器 / 字段，如 MPP / SUM" aria-label="搜索寄存器或字段名" title="输入时搜索全部寄存器；多个关键词用斜杠、逗号或空格分隔，匹配任意一个">
   </div>
+  <p class="hint">数字输入支持下划线分组，例如 0x0000_0001_0000_0000；下划线仅允许出现在数字之间，原位宽限制不变。</p>
   <div id="assignment-error" class="value-error" role="status"></div>
 </section>
 <main id="main"></main>
 
+<script src="page-state.js"></script>
+<script src="trap-registers.js"></script>
 <script>
 // fields: [name, hi, lo, desc]  ；xl: 'both'(默认) | 64 (仅RV64) | 32 (仅RV32)
 const REGS = [
@@ -681,14 +687,66 @@ const REGS = [
 },
 ];
 
+TrapRegisters.forEach(reg => {
+  if (!REGS.some(existing => existing.id === reg.id)) REGS.push({ ...reg, width:String(reg.width), priv:'现场', addr:'—', desc:'日志现场寄存器；未填写时仅作手动解码演示。扩展字段依目标实现。' });
+});
+
+const cachedPage = PageState.load();
+let incomingSnapshot = null;
+try { incomingSnapshot = sessionStorage.getItem('riscv-trap-snapshot'); } catch { /* 读取失败会在同步状态中提示 */ }
+let snapshotRaw = incomingSnapshot || (typeof cachedPage?.extra?.snapshot === 'string' ? cachedPage.extra.snapshot : null);
+let importedRegisters = null;
+let snapshotFocus = null;
+let importMessage = '';
+if (snapshotRaw || location.hash === '#from-traps') {
+  try {
+    const raw = snapshotRaw;
+    if (!raw) throw new Error('没有可用的异常页快照，请返回异常页重新同步。');
+    if (raw.length > 200000) throw new Error('快照过大。');
+    const snapshot = JSON.parse(raw);
+    if (snapshot.version !== 1 || ![32, 64].includes(snapshot.xlen) || !Array.isArray(snapshot.registers) || !snapshot.registers.length || snapshot.registers.length > 180) throw new Error('快照格式无效。');
+    const ids = new Set();
+    importedRegisters = snapshot.registers.map(entry => {
+      if (!/^[a-z][a-z0-9-]{0,40}$/.test(entry.id) || ids.has(entry.id) || !/^[a-z][a-z0-9]*$/.test(entry.kind) || typeof entry.name !== 'string' || entry.name.length > 100 || ![32,64,128].includes(entry.width) || (entry.value !== null && (typeof entry.value !== 'string' || !/^0x[0-9a-f]{1,32}$/i.test(entry.value) || BigInt(entry.value) >= (1n << BigInt(entry.width))))) throw new Error('寄存器字段或数值无效。');
+      ids.add(entry.id);
+      if (!Array.isArray(entry.fields) || !entry.fields.length || entry.fields.length > 64) throw new Error('位域定义无效。');
+      let top = entry.width - 1;
+      for (const field of entry.fields) {
+        if (!Array.isArray(field) || typeof field[0] !== 'string' || field[0].length > 100 || !Number.isInteger(field[1]) || !Number.isInteger(field[2]) || field[1] !== top || field[2] < 0 || field[2] > field[1] || typeof field[3] !== 'string' || field[3].length > 1000 || field[4] !== 'both' || typeof field[5] !== 'boolean') throw new Error('位域定义无效。');
+        top = field[2] - 1;
+      }
+      if (top !== -1) throw new Error('位域定义不完整。');
+      return { id:entry.id, name:entry.name, kind:entry.kind, width:String(entry.width), priv:'快照', addr:'—', fields:entry.fields,
+        desc:'来自异常与中断页的已填写值；未同步的寄存器不表示为零。当前修改仅在本页生效。', snapshotValue:entry.value === null ? undefined : BigInt(entry.value), readOnly:entry.id === 'gpr-0' };
+    });
+    if (snapshot.focus !== undefined && snapshot.focus !== null && (typeof snapshot.focus !== 'string' || !ids.has(snapshot.focus))) throw new Error('定位目标无效。');
+    snapshotFocus = snapshot.focus || null;
+    document.getElementById('xlen').value = String(snapshot.xlen);
+    document.getElementById('xlen').disabled = true;
+    importMessage = '已同步 ' + importedRegisters.length + ' 个寄存器 / PTE，保持源位宽；完整寄存器目录仍保留，未同步卡片仅作手动解码演示，不代表现场值。';
+    sessionStorage.removeItem('riscv-trap-snapshot');
+  } catch (error) {
+    importedRegisters = [];
+    snapshotRaw = null;
+    importMessage = '未载入快照：' + error.message;
+  }
+}
+const remainingSnapshots = new Map((importedRegisters || []).map(reg => [reg.id, reg]));
+const displayedRegisters = REGS.map(reg => {
+  const snapshot = [...remainingSnapshots.values()].find(item => item.name === reg.name);
+  if (!snapshot) return remainingSnapshots.has(reg.id) ? { ...reg, id:'catalog-' + reg.id, kind:reg.id } : reg;
+  remainingSnapshots.delete(snapshot.id);
+  return { ...reg, ...snapshot };
+});
+displayedRegisters.push(...remainingSnapshots.values());
 const sel = document.getElementById('sel');
 const xlenSel = document.getElementById('xlen');
 const q = document.getElementById('q');
 const main = document.getElementById('main');
 
-REGS.forEach(r => { const o = document.createElement('option'); o.value = r.id; o.textContent = r.name; sel.appendChild(o); });
+displayedRegisters.forEach(r => { const o = document.createElement('option'); o.value = r.id; o.textContent = r.name; sel.appendChild(o); });
 const all = document.createElement('option'); all.value = 'all'; all.textContent = '全部寄存器'; sel.insertBefore(all, sel.firstChild);
-sel.value = 'all';
+sel.value = incomingSnapshot && snapshotFocus ? snapshotFocus : 'all';
 
 function esc(s){ return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
@@ -706,7 +764,8 @@ function regTop(reg, xlen) {
   return parseInt(reg.width);
 }
 
-const registerValues = new Map();
+const registerValues = new Map((importedRegisters || []).filter(reg => reg.snapshotValue !== undefined).map(reg => [`${reg.id}:${reg.width}`, reg.snapshotValue]));
+document.getElementById('assignment-error').textContent = importMessage;
 function bitMask(width) { return (1n << BigInt(width)) - 1n; }
 function readField(value, hi, lo) { return (value >> BigInt(lo)) & bitMask(hi - lo + 1); }
 function writeField(value, hi, lo, next) {
@@ -715,21 +774,23 @@ function writeField(value, hi, lo, next) {
 }
 function parseValue(text, width) {
   const input = text.trim();
-  if (!/^(?:0x[0-9a-f]+|0b[01]+|[0-9]+)$/i.test(input)) {
-    throw new Error('请输入 0x 十六进制、0b 二进制或无前缀十进制非负整数。');
+  if (!/^(?:0x[0-9a-f]+(?:_[0-9a-f]+)*|0b[01]+(?:_[01]+)*|[0-9]+(?:_[0-9]+)*)$/i.test(input)) {
+    throw new Error('请输入 0x 十六进制、0b 二进制或十进制非负整数；允许数字间单个下划线分组。');
   }
-  if (input.length > 66) throw new Error('输入过长，最多支持 64 位数值。');
-  const value = BigInt(input);
+  if (input.replaceAll('_', '').length > width + 2) throw new Error(`输入过长，最多支持 ${width} 位数值。`);
+  const value = BigInt(input.replaceAll('_', ''));
   if (value > bitMask(width)) throw new Error(`数值超出 ${width} 位范围（最大 0x${bitMask(width).toString(16)}）。`);
   return value;
 }
 function parseAssignment(text, xlen) {
   const match = /^\s*([a-z][a-z0-9]*)\s*=\s*(.*?)\s*$/i.exec(text);
   if (!match) throw new Error('请使用 寄存器名 = 数值 格式，例如 mstatus = 0x1800。');
-  const reg = REGS.find(item => item.id === match[1].toLowerCase());
+  const reg = displayedRegisters.find(item => item.name.toLowerCase() === match[1].toLowerCase()) || displayedRegisters.find(item => item.id === match[1].toLowerCase());
   if (!reg) throw new Error('暂不支持该寄存器名，请使用本页卡片名；别名寄存器不自动映射。');
   const width = regTop(reg, xlen);
-  return { reg, width, value: parseValue(match[2], width) };
+  const value = parseValue(match[2], width);
+  if (reg.readOnly && value !== 0n) throw new Error('x0 固定为零，不可修改。');
+  return { reg, width, value };
 }
 // 多位枚举字段：键为字段名，值为 编码 → 含义
 const ENUM_FIELDS = {
@@ -878,17 +939,24 @@ function fieldMeaning(reg, field, value, width, word) {
 }
 
 function render() {
+  const expanded = new Set([...main.querySelectorAll('.card')].filter(card => card.querySelector('.field-details')?.open).map(card => card.dataset.register));
   const xlen = parseInt(xlenSel.value);
   const keys = q.value.toLowerCase().split(/[\s/／,，、]+/u).filter(Boolean);
   const matches = text => keys.some(key => text.toLowerCase().includes(key));
   main.innerHTML = '';
-  REGS.forEach(reg => {
+  displayedRegisters.forEach(reg => {
     if (sel.value !== 'all' && sel.value !== reg.id) return;
     const fs = fieldsFor(reg, xlen);
     if (keys.length && !fs.some(f => matches(f[0])) && !matches(reg.name)) return;
     const top = regTop(reg, xlen) - 1;
-    const card = document.createElement('div'); card.className = 'card';
+    const card = document.createElement('div'); card.className = 'card'; card.dataset.register = reg.id;
+    card.id = 'register-' + reg.id; card.tabIndex = -1; card.style.scrollMarginTop = '90px';
     card.innerHTML = `<h2>${esc(reg.name)} <span class="tag">${reg.priv}</span> <span class="tag">CSR ${esc(reg.addr)}</span></h2><div class="desc">${esc(reg.desc)}</div>`;
+    if (importedRegisters !== null) {
+      const provenance = document.createElement('p'); provenance.className = 'snapshot-provenance';
+      provenance.textContent = reg.snapshotValue !== undefined ? '已同步现场值；本页编辑不回写异常页。' : '未提供 / 未同步此寄存器值：以下数值仅作手动解码演示，不是故障现场值。';
+      card.appendChild(provenance);
+    }
     const width = top + 1;
     const stateKey = `${reg.id}:${width}`;
     let value = registerValues.get(stateKey) ?? 0n;
@@ -899,9 +967,9 @@ function render() {
     const label = document.createElement('label'); label.textContent = `${width} 位原始值`;
     const input = document.createElement('input'); input.className = 'value-input';
     input.id = `${reg.id}-value`; input.type = 'text'; input.spellcheck = false;
-    input.maxLength = 66; label.htmlFor = input.id;
+    input.maxLength = 2 * width + 2; input.readOnly = !!reg.readOnly; label.htmlFor = input.id;
     const reset = document.createElement('button'); reset.className = 'value-reset';
-    reset.type = 'button'; reset.textContent = '清零';
+    reset.type = 'button'; reset.textContent = '清零'; reset.disabled = !!reg.readOnly;
     const error = document.createElement('div'); error.className = 'value-error';
     error.id = `${reg.id}-error`; error.setAttribute('aria-live', 'polite');
     input.setAttribute('aria-describedby', error.id);
@@ -933,7 +1001,10 @@ function render() {
     });
     if (cur >= 0) cells.push({gap:true, hi:cur, lo:0});
 
-    const rows = top >= 32 ? [[63,32],[31,0]].filter(r => r[0] <= top || r[1] <= top).map(r => [Math.min(r[0],top), r[1]]) : [[top,0]];
+    const rows = Array.from({ length:Math.ceil((top + 1) / 32) }, (_, index) => {
+      const hi = top - index * 32;
+      return [hi, Math.max(0, hi - 31)];
+    });
     const wrap = document.createElement('div'); wrap.className = 'bits-wrap';
     const measure = document.createElement('canvas').getContext('2d');
     measure.font = '600 13px ui-monospace,monospace';
@@ -947,7 +1018,7 @@ function render() {
         const label = document.createElement('span'); label.textContent = bit;
         labels.appendChild(label);
         const toggle = document.createElement('button'); toggle.className = 'bit-value';
-        toggle.type = 'button';
+        toggle.type = 'button'; toggle.disabled = !!reg.readOnly;
         const bc = cells.find(c => bit >= c.lo && bit <= c.hi);
         toggle.title = bc && !bc.gap && !bc.f[5]
           ? `${reg.name} bit ${bit} · ${bc.f[0]} [${bc.hi}${bc.hi !== bc.lo ? ':' + bc.lo : ''}]：${bc.f[3]}`
@@ -980,10 +1051,15 @@ function render() {
           if (!isRsv) {
             const output = document.createElement('span'); output.className = 'cell-value';
             d.appendChild(output);
-            d.tabIndex = 0; d.setAttribute('role', 'button');
+            d.tabIndex = reg.readOnly ? -1 : 0; d.setAttribute('role', 'button');
+            if (reg.readOnly) d.setAttribute('aria-disabled', 'true');
             const activate = () => {
+              if (reg.readOnly) return;
               if (c.f[1] === c.f[2]) { value ^= 1n << BigInt(c.f[2]); refresh(); }
-              else editors.get(d.dataset.k).focus();
+              else {
+                details.open = true;
+                editors.get(d.dataset.k).focus();
+              }
             };
             d.addEventListener('click', activate);
             d.addEventListener('keydown', event => {
@@ -1016,7 +1092,7 @@ function render() {
       tr.innerHTML = `<td><code>${bits}</code></td><td><b>${esc(f[0])}</b></td>`;
       const valueCell = document.createElement('td');
       const editor = document.createElement('input'); editor.className = 'field-input';
-      editor.type = 'text'; editor.spellcheck = false; editor.maxLength = 66;
+      editor.type = 'text'; editor.spellcheck = false; editor.maxLength = 2 * (f[1] - f[2] + 1) + 2; editor.readOnly = !!reg.readOnly;
       editor.setAttribute('aria-label', `${reg.name} ${f[0]} [${bits}] 字段值`);
       editors.set(tr.dataset.k, editor);
       const meaning = document.createElement('span'); meaning.className = 'field-meaning';
@@ -1035,7 +1111,7 @@ function render() {
         const fieldValue = readField(value, f[1], f[2]);
         if (origin !== editor) editor.value = f[1] - f[2] < 4 ? fieldValue.toString() : '0x' + fieldValue.toString(16);
         editor.setAttribute('aria-invalid', 'false'); fieldError.textContent = '';
-        const text = fieldMeaning(reg, f, fieldValue, width, value);
+        const text = fieldMeaning(reg.kind ? { ...reg, id:reg.kind } : reg, f, fieldValue, width, value);
         meaning.textContent = text;
       });
       valueCell.append(editor, fieldError);
@@ -1047,7 +1123,12 @@ function render() {
     });
     const tableWrap = document.createElement('div'); tableWrap.className = 'table-wrap';
     tableWrap.appendChild(tb);
-    card.appendChild(tableWrap);
+    const details = document.createElement('details'); details.className = 'field-details';
+    details.open = expanded.has(reg.id);
+    const summary = document.createElement('summary'); summary.textContent = '字段解释与编辑';
+    summary.setAttribute('aria-label', `${reg.name} 字段解释与编辑`);
+    details.append(summary, tableWrap);
+    card.appendChild(details);
     refresh();
     main.appendChild(card);
 
@@ -1082,6 +1163,36 @@ q.addEventListener('input', () => {
   render();
 });
 render();
+PageState.bind({
+  state:incomingSnapshot ? null : cachedPage,
+  selector:'#sel, #xlen, #q, #assignment',
+  read:() => ({ snapshot:snapshotRaw, values:[...registerValues].map(([key, value]) => [key, value.toString()]),
+    expanded:[...main.querySelectorAll('.card')].filter(card => card.querySelector('details')?.open).map(card => card.dataset.register) }),
+  restore:extra => {
+    if (!Array.isArray(extra?.values)) return;
+    for (const entry of extra.values) {
+      if (!Array.isArray(entry) || typeof entry[0] !== 'string' || typeof entry[1] !== 'string' || !/^[0-9]{1,39}$/.test(entry[1])) continue;
+      const [id, bits] = entry[0].split(':');
+      const width = Number(bits);
+      const reg = displayedRegisters.find(item => item.id === id);
+      if (!reg || ![32,64,128].includes(width) || (reg.width !== 'XLEN' && Number(reg.width) !== width)) continue;
+      const value = BigInt(entry[1]);
+      if (value < (1n << BigInt(width)) && (!reg.readOnly || value === 0n)) registerValues.set(entry[0], value);
+    }
+  },
+  render:() => {
+    render();
+    const expanded = cachedPage?.extra?.expanded;
+    if (Array.isArray(expanded)) main.querySelectorAll('.card').forEach(card => {
+      if (expanded.includes(card.dataset.register) && card.querySelector('details')) card.querySelector('details').open = true;
+    });
+  }
+});
+if (incomingSnapshot && snapshotFocus) {
+  const card = document.getElementById('register-' + snapshotFocus);
+  card?.scrollIntoView({ block:'start' });
+  card?.focus({ preventScroll:true });
+}
 </script>
 </body>
 </html>
