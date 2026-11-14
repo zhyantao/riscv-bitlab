@@ -93,12 +93,14 @@ header h1 {
   gap: 10px;
 }
 header h1::before {
-  content: '';
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: var(--accent);
-  flex-shrink: 0;
+  content: none; /* 红点改为站点 logo（.site-logo） */
+}
+
+header .site-logo {
+  height: 34px;
+  width: auto;
+  display: block;
+  margin-right: 2px;
 }
 
 nav {
