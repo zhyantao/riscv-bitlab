@@ -89,7 +89,7 @@
         </div>
         <button type="button" id="clear-btn">清空</button>
       </div>
-      <p class="tip" id="input-tip">自动识别：0x 前缀或含 A–F 的整数按十六进制，纯数字按十进制。纯数字十六进制请加 0x。仅接受非负整数，最多 4096 个字符。不支持科学计数法；例如 1e3 会按十六进制解析为 483。</p>
+      <p class="tip" id="input-tip">自动识别：0x 前缀或含 A–F 的整数按十六进制，纯数字按十进制。纯数字十六进制请加 0x。支持数字间单个下划线分组（如 0x0000_0001_0000_0000 或 1_024）；仅接受非负整数，最多 4096 个字符。不支持科学计数法；例如 1e3 会按十六进制解析为 483。</p>
       <p class="error" id="input-error" role="alert" hidden></p>
     </section>
     <section class="section" aria-labelledby="units-title">
@@ -103,6 +103,7 @@
     </section>
   </section>
 </main>
+<script src="page-state.js"></script>
 <script>
 const input = document.getElementById('number-input');
 const error = document.getElementById('input-error');
@@ -157,11 +158,11 @@ function parseBytes(raw) {
   if (raw.length > 4096) throw new Error('输入不能超过 4096 个字符。');
   if (!text) return null;
   if (/^0x/i.test(text) || /[a-f]/i.test(text)) {
-    if (!/^(?:0x)?[0-9a-f]+$/i.test(text)) throw new Error('请输入有效的十六进制非负整数，例如 0xFF 或 FF。');
-    return BigInt('0x' + text.replace(/^0x/i, ''));
+    if (!/^(?:0x)?[0-9a-f]+(?:_[0-9a-f]+)*$/i.test(text)) throw new Error('请输入有效的十六进制非负整数，例如 0xFF 或 FF。');
+    return BigInt('0x' + text.replace(/^0x/i, '').replaceAll('_', ''));
   }
-  if (!/^[0-9]+$/.test(text)) throw new Error('请输入有效的十进制非负整数，不支持小数、负数或分隔符。');
-  return BigInt(text);
+  if (!/^[0-9]+(?:_[0-9]+)*$/.test(text)) throw new Error('请输入有效的十进制非负整数，允许数字间单个下划线，不支持小数、负数或其他分隔符。');
+  return BigInt(text.replaceAll('_', ''));
 }
 function formatRatio(bytes, divisor) {
   const integer = bytes / divisor;
@@ -204,6 +205,7 @@ function updateResults() {
 input.addEventListener('input', updateResults);
 document.getElementById('clear-btn').addEventListener('click', () => { input.value = ''; updateResults(); input.focus(); });
 updateResults();
+PageState.bind({ render:updateResults });
 </script>
 </body>
 </html>
