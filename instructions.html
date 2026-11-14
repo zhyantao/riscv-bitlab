@@ -93,9 +93,9 @@
   #formats .field { min-height:48px; padding:4px; gap:3px; }
   #formats .notes { margin-top:6px; padding:6px 8px; font-size:12px; line-height:1.4; }
   #formats .example { margin:6px 0 8px; font-size:12px; line-height:1.5; }
-  .operation-code { margin:0 0 6px; white-space:pre-wrap; overflow-wrap:anywhere; font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace; }
+  .operation-code { margin:0 0 8px; padding:10px 12px; border:1px solid var(--line); border-radius:6px; background:#f8fafc; white-space:pre-wrap; overflow-wrap:anywhere; font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace; }
   .operation-code:empty { display:none; }
-  .operation-code code { background:none; padding:0; }
+  .operation-code code { background:none; padding:0; font:inherit; }
   .format-details > summary { cursor:pointer; }
   .format-details > summary .heading { display:inline-flex; flex-wrap:wrap; margin:0; vertical-align:middle; }
   .format-details[open] > summary { margin-bottom:4px; }
@@ -302,7 +302,7 @@ function instructionSemantics(decoded) {
   if (stores[name]) return 'imm = 符号扩展到XLEN位(concat(inst[31:25], inst[11:7]))\naddr = ' + wrap('x[rs1] + imm') + '\nstore' + stores[name] + '(addr, ' + (name.startsWith('f') ? 'f' : 'x') + '[rs2][' + (stores[name] - 1) + ':0])';
   if (['lui','auipc'].includes(name)) return 'imm32 = concat(inst[31:12], 0b000000000000)\nimm = 符号扩展到XLEN位(imm32)\nx[rd] = ' + (name === 'lui' ? 'imm' : wrap('PC + imm'));
   const branches = { beq:'x[rs1] == x[rs2]', bne:'x[rs1] != x[rs2]', blt:'signed(x[rs1]) < signed(x[rs2])', bge:'signed(x[rs1]) >= signed(x[rs2])', bltu:'unsigned(x[rs1]) < unsigned(x[rs2])', bgeu:'unsigned(x[rs1]) >= unsigned(x[rs2])' };
-  if (branches[name]) return 'offset = 符号扩展到XLEN位(concat(inst[31], inst[7], inst[30:25], inst[11:8], 0b0))\nif ' + branches[name] + ':\n  target = ' + wrap('PC + offset') + '\n  check_instruction_alignment(target)\n  PC = target\nelse:\n  PC = ' + wrap('PC + 4');
+  if (branches[name]) return 'offset = 符号扩展到XLEN位(concat(inst[31], inst[7], inst[30:25], inst[11:8], 0b0))\nif ' + branches[name] + ':\n    target = ' + wrap('PC + offset') + '\n    check_instruction_alignment(target)\n    PC = target\nelse:\n    PC = ' + wrap('PC + 4');
   if (name === 'jal' || name === 'jalr') return (name === 'jal' ? 'offset = 符号扩展到XLEN位(concat(inst[31], inst[19:12], inst[20], inst[30:21], 0b0))\ntarget = ' + wrap('PC + offset') : imm + 'target = (' + wrap('x[rs1] + imm') + ') & ~1') + '\nlink = ' + wrap('PC + 4') + '\ncheck_instruction_alignment(target)\nx[rd] = link\nPC = target';
   if (name === 'mul' || name === 'mulw') return name === 'mul' ? 'x[rd] = (x[rs1] * x[rs2]) mod 2^XLEN' : 'result32 = (x[rs1] * x[rs2]) mod 2^32\nx[rd] = 符号扩展到XLEN位(result32)';
   if (['mulh','mulhu','mulhsu'].includes(name)) return 'product = ' + (name === 'mulhu' ? 'unsigned' : 'signed') + '(x[rs1]) * ' + (name === 'mulh' ? 'signed' : 'unsigned') + '(x[rs2])\nx[rd] = (product mod 2^(2 * XLEN))[2 * XLEN - 1:XLEN]';
@@ -311,13 +311,13 @@ function instructionSemantics(decoded) {
   const memory = /^(vl|vs)e(8|16|32|64)\.v$/.exec(name);
   if (memory) {
     const bits = Number(memory[2]), store = memory[1] === 'vs';
-    return 'for i in VSTART .. VL - 1:\n  if vm == 1 or v0.mask[i] == 1:\n    addr = (x[rs1] + i * ' + (bits / 8) + ') mod 2^XLEN\n    ' + (store ? 'store' + bits + '(addr, v[vs3].element' + bits + '[i])' : 'v[vd].element' + bits + '[i] = load' + bits + '(addr)') + '\n// 正常完成后 VSTART = 0；掩码/尾部策略按 VTYPE，异常按向量重启规则处理';
+    return 'for i in VSTART .. VL - 1:\n    if vm == 1 or v0.mask[i] == 1:\n        addr = (x[rs1] + i * ' + (bits / 8) + ') mod 2^XLEN\n        ' + (store ? 'store' + bits + '(addr, v[vs3].element' + bits + '[i])' : 'v[vd].element' + bits + '[i] = load' + bits + '(addr)') + '\n// 正常完成后 VSTART = 0；掩码/尾部策略按 VTYPE，异常按向量重启规则处理';
   }
   const vector = /^(vadd|vsub|vand|vor|vxor)\.(vv|vx|vi)$/.exec(name);
   if (vector) {
     const op = { vadd:'+', vsub:'-', vand:'&', vor:'|', vxor:'^' }[vector[1]];
     const operand = vector[2] === 'vv' ? 'v[vs1].element_SEW[i]' : vector[2] === 'vx' ? 'resize_signed_to_SEW(x[rs1])' : '符号扩展到SEW位(inst[19:15])';
-    return 'for i in VSTART .. VL - 1:\n  if vm == 1 or v0.mask[i] == 1:\n    v[vd].element_SEW[i] = (v[vs2].element_SEW[i] ' + op + ' ' + operand + ') mod 2^SEW\n// 正常完成后 VSTART = 0；未激活元素和尾部按 VTYPE 策略处理';
+    return 'for i in VSTART .. VL - 1:\n    if vm == 1 or v0.mask[i] == 1:\n        v[vd].element_SEW[i] = (v[vs2].element_SEW[i] ' + op + ' ' + operand + ') mod 2^SEW\n// 正常完成后 VSTART = 0；未激活元素和尾部按 VTYPE 策略处理';
   }
   return '';
 }
@@ -331,7 +331,11 @@ function render() {
   card.dataset.mnemonic = activeDecoded.mnemonic;
   card.append(element('h2', '', activeDecoded.mnemonic + ' · 语义'));
   const code = instructionSemantics(activeDecoded);
-  if (code) card.append(element('pre', 'operation-code', code));
+  if (code) {
+    const block = element('pre', 'operation-code');
+    block.append(element('code', '', code));
+    card.append(block);
+  }
   else card.append(element('p', 'desc', '当前仅提供 ' + activeDecoded.mnemonic + ' 的编码解析，尚未提供该指令的独立语义伪代码。'));
   if (code) card.append(element('p', 'desc', '伪代码描述成功执行路径，不模拟执行。mod 2^N 取低 N 位，符号扩展在高位补原值的最高位，零扩展在高位补 0；x[0] 恒为零。访存仍需翻译、权限及对齐检查。'));
   if (activeDecoded.note) card.append(element('p', 'desc', activeDecoded.note));
