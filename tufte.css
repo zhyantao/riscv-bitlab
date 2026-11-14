@@ -123,6 +123,24 @@ nav a[aria-current]::before { content: "\0003c\000a0"; }
 nav a[aria-current]::after { content: "\000a0\0003e"; }
 nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* ---------- 站点互跳导航（与 zhyantao.github.io 各站页眉一致） ---------- */
+header > nav.site-nav {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 2px 0 10px;
+  border-bottom: 1px solid var(--line);
+}
+header > nav.site-nav a {
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  padding: 3px 0;
+}
+header > nav.site-nav a:hover { color: var(--fg); background: transparent; }
+header > nav.site-nav a[aria-current="page"] { color: var(--fg); }
+header > nav.site-nav a[aria-current="page"]::before { content: "\0003c\000a0"; }
+header > nav.site-nav a[aria-current="page"]::after { content: "\000a0\0003e"; }
+
 /* ---------- 主区 ---------- */
 main { max-width: 1200px; margin: 0 auto; padding: 24px 20px 48px; }
 
