@@ -15,7 +15,8 @@
   .control { display:flex; flex-direction:column; gap:8px; }
   .control :is(input, select) { flex:1; }
   .control.grow { flex:1 1 300px; }
-  select, input, button { padding:8px 12px; }
+  select { padding:8px 30px 8px 12px; }  /* 右侧 30px 留给下拉箭头 */
+  input, button { padding:8px 12px; }
   input { width:100%; }
   button { font-size:13px; }
   .examples { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:16px; font-size:13px; }
