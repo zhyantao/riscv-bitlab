@@ -4,78 +4,48 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RISC-V 速查工具箱</title>
+<link rel="stylesheet" href="tufte.css">
 <style>
-  :root { --bg:#f6f7f9; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
-  * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; background:var(--bg); color:var(--fg); }
-  header { position:sticky; top:0; z-index:100; padding:10px max(24px, calc((100% - 1160px) / 2)); background:#111827; color:white; display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,0.25); }
-  h1 { font-size:17px; margin:0; font-weight:700; display:flex; align-items:center; gap:8px; }
-  h1::before { content:''; width:10px; height:10px; border-radius:3px; background:linear-gradient(135deg,#2563eb,#7c3aed); flex-shrink:0; }
-  nav { display:flex; flex-wrap:wrap; gap:4px; margin-right:auto; }
-  nav a { color:#9ca3af; text-decoration:none; padding:5px 12px; border-radius:999px; font-size:14px; transition:background .15s, color .15s; }
-  nav a:hover { color:white; background:rgba(255,255,255,0.1); }
-  nav a[aria-current] { background:var(--accent); color:white; }
-  main { max-width:1200px; margin:auto; padding:20px; }
-  .intro, .card { background:white; border:1px solid var(--line); border-radius:8px; padding:20px; margin-bottom:20px; }
-  .intro p { margin:0 0 12px; line-height:1.7; color:var(--muted); font-size:14px; }
+  /* 页面专属布局（基础主题见 tufte.css） */
+  .intro p { margin:0 0 12px; line-height:1.7; font-size:14px; }
   .controls { display:flex; gap:12px; flex-wrap:wrap; align-items:center; font-size:14px; }
-  select { padding:7px 12px; border:1px solid var(--line); border-radius:6px; background:white; color:var(--fg); font:inherit; -webkit-appearance:none; appearance:none; padding-right:30px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
+  select { padding:7px 30px 7px 12px; }
   .legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; font-size:12px; }
-  .legend span { padding:4px 10px; border-radius:4px; }
-  h2 { margin:0; font-size:20px; }
+  .legend span { padding:4px 10px; border:1px solid #c9c7b8; }
   .heading { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
   #codec-format-heading { margin:16px 0 12px; gap:8px; line-height:1.5; }
   #codec-format-heading .tag { line-height:1.5; }
-  .tag { font-size:12px; color:#3730a3; background:#e0e7ff; border-radius:10px; padding:3px 8px; }
-  .desc { color:var(--muted); font-size:14px; line-height:1.6; }
+  .desc { font-size:14px; line-height:1.6; }
   .scroll { overflow-x:auto; padding:4px 2px 8px; }
   .bit-labels, .bit-row { display:grid; grid-template-columns:repeat(32,minmax(0,1fr)); min-width:1024px; }
-  .bit-labels span { font:11px ui-monospace,monospace; text-align:center; color:var(--muted); padding:3px 0; }
   .bit-row { margin-bottom:10px; }
-  .field { min-width:0; min-height:68px; padding:8px 4px; border:1px solid #9ca3af; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; position:relative; }
-  .field-name { font:600 13px/1.4 ui-monospace,monospace; white-space:nowrap; flex-shrink:0; }
+  .field { min-width:0; min-height:68px; padding:8px 4px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; position:relative; }
+  .field-name { font:600 13px/1.4 var(--mono); white-space:nowrap; flex-shrink:0; }
   .field.narrow .field-name { writing-mode:vertical-rl; font-size:12px; }
-  .opcode { background:#dbeafe; }
-  .function { background:#ede9fe; }
-  .destination { background:#dcfce7; }
-  .source { background:#fef3c7; }
-  .immediate { background:#fce7f3; }
-  .field.active { outline:2px solid var(--accent); outline-offset:-2px; z-index:1; }
-  table { width:100%; border-collapse:collapse; font-size:12px; margin-top:4px; }
-  th, td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); line-height:1.4; vertical-align:middle; }
+  table { font-size:12px; margin-top:4px; }
+  th, td { padding:4px 6px; line-height:1.4; }
   th:nth-child(-n+3), td:nth-child(-n+3) { width:1%; white-space:nowrap; }
   td:last-child { overflow-wrap:anywhere; }
-  th { background:#f3f4f6; color:#4b5563; font-weight:600; border-bottom:2px solid #d1d5db; }
-  tr.active { background:#eff6ff; }
-  code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; background:#f3f4f6; padding:2px 5px; border-radius:4px; overflow-wrap:anywhere; }
-  .notes { background:#f8fafc; border-left:3px solid var(--accent); padding:12px 14px; margin-top:16px; font-size:13px; line-height:1.8; }
-  .notes p { margin:4px 0; }
-  .notes p:first-child { margin:0 0 6px; }
+  .notes { margin-top:16px; font-size:13px; line-height:1.8; }
   .example { font-size:13px; line-height:1.9; margin-bottom:0; }
-  a:focus-visible, select:focus-visible, .field:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }
-  select:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
   .codec-controls { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:12px 0; font-size:14px; }
   .codec-form { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0; }
   .codec-form label { min-width:6em; font-size:14px; }
-  .codec-input { flex:1; min-width:180px; font:14px ui-monospace,monospace; padding:9px; border:1px solid #9ca3af; border-radius:6px; }
-  .codec-button { padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; background:#f8fafc; color:var(--fg); cursor:pointer; font-size:14px; }
-  .codec-error { color:#b91c1c; font-size:13px; line-height:1.6; }
-  .codec-error:empty { display:none; }
+  .codec-input { flex:1; min-width:180px; font:14px var(--mono); padding:9px; border:1px solid #b9b7a5; border-radius:2px; background:#fffdf6; color:var(--fg); }
+  .codec-error { font-size:13px; line-height:1.6; }
   .codec-summary { font-size:14px; line-height:1.9; overflow-wrap:anywhere; }
   #codec-help { margin:6px 0 0; }
   .codec-bits { display:grid; grid-template-columns:repeat(32,minmax(0,1fr)); min-width:1024px; }
-  .codec-bit { border:1px solid #d6dae1; background:#f8fafc; padding:4px 0; font:13px ui-monospace,monospace; cursor:pointer; }
-  .codec-bit[aria-pressed="true"] { background:#2563eb; color:white; }
+  .codec-bit { padding:4px 0; font:13px var(--mono); cursor:pointer; }
   .codec-bit[data-fixed="true"] { box-shadow:inset 0 -3px #b45309; }
   .field[data-fixed="true"] { border-bottom:3px solid #b45309; }
-  .fixed-marker { color:#78350f; background:#fef3c7; padding:2px 4px; border-radius:3px; font:11px/1.4 ui-monospace,monospace; max-width:100%; overflow-wrap:anywhere; }
+  .fixed-marker { color:#78350f; background:#f2e9c8; padding:2px 4px; border-radius:2px; font:11px/1.4 var(--mono); max-width:100%; overflow-wrap:anywhere; }
   .field.narrow .fixed-marker { writing-mode:vertical-rl; white-space:nowrap; }
   .codec-pattern { display:grid; grid-template-columns:repeat(32,minmax(0,1fr)); min-width:1024px; }
-  .codec-pattern span { text-align:center; font:12px ui-monospace,monospace; padding:4px 0; color:#6b7280; background:#f8fafc; }
-  .codec-pattern span[data-fixed="true"] { color:#78350f; background:#fef3c7; font-weight:700; }
-  .codec-field-value { font:12px ui-monospace,monospace; max-width:100%; overflow-wrap:anywhere; }
+  .codec-pattern span { text-align:center; font:12px var(--mono); padding:4px 0; color:var(--muted); background:#f7f5ec; }
+  .codec-pattern span[data-fixed="true"] { color:#78350f; background:#f2e9c8; font-weight:700; }
+  .codec-field-value { font:12px var(--mono); max-width:100%; overflow-wrap:anywhere; }
   .field.narrow .codec-field-value { writing-mode:vertical-rl; white-space:nowrap; }
-  .codec-input[aria-invalid="true"] { border-color:#b91c1c; }
   #format-reference { padding:14px 0 0; margin-top:12px; border-top:1px solid var(--line); }
   #format-reference > p { margin:0 0 6px; font-size:12px; line-height:1.4; }
   #format-reference > .controls { gap:8px; font-size:13px; }
@@ -93,16 +63,13 @@
   #formats .field { min-height:48px; padding:4px; gap:3px; }
   #formats .notes { margin-top:6px; padding:6px 8px; font-size:12px; line-height:1.4; }
   #formats .example { margin:6px 0 8px; font-size:12px; line-height:1.5; }
-  .operation-code { margin:0 0 8px; padding:10px 12px; border:1px solid var(--line); border-radius:6px; background:#f8fafc; white-space:pre-wrap; overflow-wrap:anywhere; font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace; }
+  .operation-code { margin:0 0 8px; padding:10px 12px; border:1px solid var(--line); border-radius:2px; background:#f7f4ea; white-space:pre-wrap; overflow-wrap:anywhere; font:12px/1.6 var(--mono); }
   .operation-code:empty { display:none; }
   .operation-code code { background:none; padding:0; font:inherit; }
   .format-details > summary { cursor:pointer; }
   .format-details > summary .heading { display:inline-flex; flex-wrap:wrap; margin:0; vertical-align:middle; }
   .format-details[open] > summary { margin-bottom:4px; }
-  .format-details > summary:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
-  button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-  input:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
-  @media (max-width:600px) { header { padding-left:16px; padding-right:16px; } main { padding:12px; } .card, .intro { padding:14px; } }
+  @media (max-width:600px) { main { padding:12px; } .card, .intro { padding:14px; } }
 </style>
 </head>
 <body>
@@ -487,5 +454,9 @@ const saveCodecState = PageState.bind({ read:() => ({ source:codecSource }), res
   }
 }
 </script>
+<footer class="site-footer">
+  <hr class="slender">
+  <div class="credits">RISC-V 速查工具箱 · 版式取法 <a href="https://edwardtufte.github.io/tufte-css/">Tufte CSS</a></div>
+</footer>
 </body>
 </html>

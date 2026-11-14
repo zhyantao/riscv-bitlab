@@ -1,0 +1,322 @@
+/* ==========================================================================
+   Tufte theme for RISC-V BitLab
+   移植自 zhyantao.github.io（Tufte Jekyll / Tufte CSS by Dave Liepmann）
+   纸面米色 #fffff8 · 墨色正文 #111 · 深红强调 #a00000 · ET Book 衬线
+   ========================================================================== */
+
+/* ---------- ET Book 字体（与参考站同源） ---------- */
+@font-face {
+  font-family: "ET Book";
+  src: url("fonts/et-book/et-book-roman-line-figures/et-book-roman-line-figures.woff") format("woff"),
+       url("fonts/et-book/et-book-roman-line-figures/et-book-roman-line-figures.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "ET Book";
+  src: url("fonts/et-book/et-book-display-italic-old-style-figures/et-book-display-italic-old-style-figures.woff") format("woff"),
+       url("fonts/et-book/et-book-display-italic-old-style-figures/et-book-display-italic-old-style-figures.ttf") format("truetype");
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "ET Book";
+  src: url("fonts/et-book/et-book-bold-line-figures/et-book-bold-line-figures.woff") format("woff"),
+       url("fonts/et-book/et-book-bold-line-figures/et-book-bold-line-figures.ttf") format("truetype");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------- 设计令牌 ---------- */
+:root {
+  --bg: #fffff8;            /* Tufte 纸面 */
+  --paper: #fffefb;         /* 卡片纸 */
+  --fg: #111111;            /* 正文墨色 */
+  --muted: #6b6b60;         /* 暖灰辅助色 */
+  --line: #dddcd0;          /* 细分隔线 */
+  --rule: #333333;          /* booktabs 粗线 */
+  --accent: #a00000;        /* Tufte 深红 */
+  --accent-soft: #f3e6e0;   /* 深红的纸面淡底 */
+  --serif: "ET Book", Palatino, "Palatino Linotype", "Book Antiqua", Georgia,
+           "Songti SC", "Noto Serif CJK SC", "SimSun", serif;
+  --sans: "Gill Sans", "Gill Sans MT", "Gotham Narrow", Lato, Calibri,
+          "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+/* ---------- 基础 ---------- */
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  font-family: var(--serif);
+  background-color: var(--bg);
+  color: var(--fg);
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: #c1171c; }
+
+::selection { background: var(--accent); color: #fff; }
+
+/* ---------- 页头导航（参考站 nav.group 风格） ---------- */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 14px max(24px, calc((100% - 1200px) / 2)) 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  align-items: center;
+}
+
+header h1 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+header h1::before {
+  content: '';
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin-right: auto;
+}
+nav a {
+  font-family: var(--sans);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 5px 2px;
+  border-radius: 0;
+  transition: color .15s;
+}
+nav a:hover { color: #111; background: transparent; }
+nav a[aria-current] { color: #111; }
+nav a[aria-current]::before { content: "\0003c\000a0"; }
+nav a[aria-current]::after { content: "\000a0\0003e"; }
+nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- 主区 ---------- */
+main { max-width: 1200px; margin: 0 auto; padding: 24px 20px 48px; }
+
+/* ---------- 标题（Tufte：h1 直立、h2/h3 斜体衬线） ---------- */
+h1 { font-weight: 400; font-family: var(--serif); }
+h2, h3 { font-family: var(--serif); font-weight: 400; font-style: italic; }
+h2 { font-size: 22px; line-height: 1.25; }
+h3 { font-size: 17px; line-height: 1.3; }
+
+/* ---------- 正文 ---------- */
+p, li { line-height: 1.65; }
+.desc, .tip, .help, .hint { color: var(--muted); }
+
+/* ---------- 卡片：细线纸面，直角为主 ---------- */
+.intro, .card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+/* ---------- booktabs 三线表 ---------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 10px;
+}
+caption { text-align: left; color: var(--muted); padding: 6px 0; font-style: italic; }
+th, td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  line-height: 1.55;
+  vertical-align: middle;
+}
+thead th, th {
+  background: transparent;
+  color: var(--fg);
+  font-weight: 600;
+  font-family: var(--sans);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--rule);
+}
+table { border-top: 2px solid var(--rule); border-bottom: 2px solid var(--rule); }
+tr:last-child td { border-bottom: none; }
+tr.hover, tr.active { background: #f7f2e8; }
+.table-wrap { overflow-x: auto; }
+
+/* ---------- 代码 ---------- */
+code, pre {
+  font-family: var(--mono);
+  background: #f2f1e8;
+  padding: 1px 5px;
+  border-radius: 2px;
+  overflow-wrap: anywhere;
+}
+pre { padding: 10px 12px; line-height: 1.6; }
+
+/* ---------- 表单控件：纸面、细墨线、微直角 ---------- */
+input, select, textarea, button {
+  font: inherit;
+  border: 1px solid #b9b7a5;
+  border-radius: 2px;
+  background: var(--bg);
+  color: var(--fg);
+}
+input, textarea {
+  font-family: var(--mono);
+  background: #fffdf6;
+}
+input[aria-invalid="true"] { border-color: #b91c1c; }
+button, .codec-button, .value-reset {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  padding: 7px 14px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #fff;
+  transition: background .15s, color .15s;
+}
+button:hover, .codec-button:hover, .value-reset:hover { background: #7c0000; border-color: #7c0000; color: #fff; }
+button.secondary { background: var(--bg); color: var(--accent); }
+button.secondary:hover { background: var(--accent-soft); border-color: var(--accent); color: #7c0000; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(160, 0, 0, 0.12);
+}
+
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding: 6px 30px 6px 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a00000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+header select { background-color: #fffdf6; font-family: var(--sans); font-size: 13px; }
+
+/* ---------- 标签：深红纸面小签 ---------- */
+.tag {
+  font-size: 12px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid #e3ccc3;
+  border-radius: 2px;
+  padding: 2px 8px;
+  font-family: var(--sans);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ---------- 注释块：左侧深红墨线 ---------- */
+.notes {
+  background: #f7f4ea;
+  border-left: 3px solid var(--accent);
+  padding: 10px 14px;
+  margin-top: 14px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.notes p { margin: 4px 0; }
+.warning { background: #faf3e3; border-left-color: #b45309; }
+
+.error, .value-error { color: #b91c1c; }
+.error:empty, .value-error:empty { display: none; }
+
+/* ---------- 位域格 / 字段格（暖纸淡彩，沿用分类语义） ---------- */
+.bit-labels span { font: 11px var(--mono); text-align: center; color: var(--muted); padding: 3px 0; }
+
+.field, .cell {
+  border: 1px solid #b9b7a5;
+  background: var(--paper);
+}
+.cell.rsv, .rsv {
+  background: repeating-linear-gradient(45deg, #f4f3ec, #f4f3ec 4px, #e9e8de 4px, #e9e8de 8px);
+  color: var(--muted);
+}
+.cell.hover, .cell:hover, .field.active, .field:hover {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+/* 分类配色：蓝 / 绿 / 黄 / 粉 / 紫（暖化以贴合纸面） */
+.c0, .opcode, .vpn-even { background: #dde7f0; }
+.c1, .destination { background: #e2ecd9; }
+.c2, .source, .offset { background: #f2e9c8; }
+.c3, .immediate { background: #f0dcd9; }
+.c4, .function, .vpn-odd { background: #e7e0ea; }
+.extension { background: #e9e8de; }
+
+.cell.nonzero { box-shadow: inset 0 -3px var(--accent); }
+.bit-value, .codec-bit {
+  border: 1px solid var(--line);
+  background: #f7f5ec;
+  color: var(--muted);
+}
+.bit-value[aria-pressed="true"], .codec-bit[aria-pressed="true"], .bit-button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ---------- 页脚（参考站 footer 风格） ---------- */
+footer.site-footer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  font-family: var(--sans);
+}
+footer.site-footer hr.slender {
+  border: 0;
+  height: 1px;
+  margin: 1.4rem 0;
+  background-image: linear-gradient(left, rgba(0,0,0,0), rgba(0,0,0,0.45), rgba(0,0,0,0));
+}
+footer.site-footer .credits {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- 打印 ---------- */
+@media print {
+  header, footer.site-footer, button, .actions { display: none !important; }
+  body { background: #fff; }
+  .intro, .card { border: none; padding: 0; }
+}

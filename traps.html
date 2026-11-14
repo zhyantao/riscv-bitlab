@@ -4,23 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RISC-V 速查工具箱</title>
+<link rel="stylesheet" href="tufte.css">
 <style>
-  :root { --bg:#f6f7f9; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
-  * { box-sizing:border-box; }
-  [hidden] { display:none !important; }
-  body { margin:0; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; background:var(--bg); color:var(--fg); }
-  header { position:sticky; top:0; z-index:100; padding:10px max(24px, calc((100% - 1160px) / 2)); background:#111827; color:white; display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,0.25); }
-  h1 { font-size:17px; margin:0; font-weight:700; display:flex; align-items:center; gap:8px; }
-  h1::before { content:''; width:10px; height:10px; border-radius:3px; background:linear-gradient(135deg,#2563eb,#7c3aed); flex-shrink:0; }
-  nav { display:flex; flex-wrap:wrap; gap:4px; margin-right:auto; }
-  nav a { color:#9ca3af; text-decoration:none; padding:5px 12px; border-radius:999px; font-size:14px; transition:background .15s, color .15s; }
-  nav a:hover { color:white; background:rgba(255,255,255,0.1); }
-  nav a[aria-current] { background:var(--accent); color:white; }
-  main { max-width:1200px; margin:auto; padding:20px; }
-  .intro, .card { background:white; border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:12px; }
+  /* 页面专属布局（基础主题见 tufte.css） */
+  .intro, .card { padding:12px; margin-bottom:12px; }
   p, li { line-height:1.5; font-size:13px; }
   .card p { margin:6px 0; }
-  .intro > p, .desc { color:var(--muted); }
   .intro > p:first-child { margin-top:0; }
   h2 { margin:0 0 8px; font-size:18px; }
   h3 { font-size:14px; margin:12px 0 6px; }
@@ -29,40 +18,28 @@
   .input-group { display:flex; flex:1 1 240px; flex-direction:column; gap:6px; font-size:14px; min-width:0; }
   .width-group { flex:0 1 130px; }
   .optional { font-size:12px; font-weight:400; color:var(--muted); }
-  input, select, button { padding:9px 12px; border:1px solid var(--line); border-radius:6px; background:white; color:var(--fg); font:inherit; }
-  select { -webkit-appearance:none; appearance:none; padding-right:30px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
-  input { min-width:0; width:100%; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
-  button { cursor:pointer; background:var(--accent); color:white; }
-  .help { font-size:13px; color:var(--muted); }
-  .notes { background:#f8fafc; border-left:3px solid var(--accent); padding:8px 10px; margin-top:8px; font-size:13px; line-height:1.5; }
-  .notes p { margin:4px 0; }
-  .warning { background:#fffbeb; border-left-color:#d97706; }
-  .error { color:#b91c1c; overflow-wrap:anywhere; }
-  .error:empty { display:none; }
+  input, select, button { padding:9px 12px; }
+  input { min-width:0; width:100%; }
+  .help { font-size:13px; }
+  .notes { padding:8px 10px; margin-top:8px; font-size:13px; line-height:1.5; }
   .heading { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   .heading h2 { margin:0; }
-  .tag { font-size:12px; color:#3730a3; background:#e0e7ff; border-radius:10px; padding:3px 8px; }
-  .binary { font:13px/1.8 ui-monospace,monospace; overflow-wrap:anywhere; }
-  .result-title { font-size:16px; font-weight:600; margin:12px 0 0; }
+  .binary { font:13px/1.8 var(--mono); overflow-wrap:anywhere; }
+  .result-title { font-size:16px; font-weight:600; font-style:normal; margin:12px 0 0; }
   .scroll { overflow-x:auto; padding:2px 2px 4px; }
-  table { width:100%; border-collapse:collapse; font-size:12px; margin-top:6px; }
-  caption { text-align:left; font-weight:600; padding:6px 0; }
-  th, td { text-align:left; padding:6px; border-bottom:1px solid var(--line); line-height:1.5; vertical-align:middle; }
-  th { background:#f3f4f6; color:#4b5563; font-weight:600; border-bottom:2px solid #d1d5db; }
-  code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; background:#f3f4f6; padding:2px 5px; border-radius:4px; overflow-wrap:anywhere; }
+  table { font-size:12px; margin-top:6px; }
+  caption { font-weight:600; font-style:normal; padding:6px 0; }
+  th, td { padding:6px; line-height:1.5; }
   dl { display:grid; grid-template-columns:90px minmax(0,1fr); gap:12px; font-size:14px; line-height:1.7; }
   dt { font-weight:600; }
   dd { margin:0; overflow-wrap:anywhere; }
   dd p { margin:6px 0 0; }
-  a:focus-visible, button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-  input:focus-visible, select:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
-  [hidden] { display:none !important; }
   .context-grid, .gpr-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:14px; }
   .gpr-grid { grid-template-columns:repeat(auto-fit,minmax(175px,1fr)); }
-  .gpr-source { background:#eff6ff; border-radius:6px; outline:2px solid #93c5fd; padding:6px; }
-  .diagnostic { padding:8px 10px; border-left:3px solid #94a3b8; background:#f8fafc; margin:6px 0; font-size:13px; line-height:1.5; overflow-wrap:anywhere; white-space:pre-line; }
-  .diagnostic[data-state="fault"] { border-color:#dc2626; background:#fef2f2; }
-  .diagnostic[data-state="candidate"] { border-color:#2563eb; background:#eff6ff; }
+  .gpr-source { background:#f7f0e6; border-radius:2px; outline:2px solid #d8b3a8; padding:6px; }
+  .diagnostic { padding:8px 10px; border-left:3px solid #b0aea0; background:#f7f4ea; margin:6px 0; font-size:13px; line-height:1.5; overflow-wrap:anywhere; white-space:pre-line; }
+  .diagnostic[data-state="fault"] { border-color:#b91c1c; background:#f9ecec; }
+  .diagnostic[data-state="candidate"] { border-color:#55544a; background:#f2f1e8; }
   #input-panel { padding:14px; }
   #input-panel > p { margin:6px 0 10px; font-size:13px; }
   #input-panel .controls, #snapshot-input-sections { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:6px 10px; align-items:end; }
@@ -89,23 +66,22 @@
   .pte-input { min-width:0; }
   .actions { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
   .evidence-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:8px; margin:8px 0; padding:0; list-style:none; }
-  .evidence-item { border:1px solid var(--line); border-left:4px solid #d97706; border-radius:6px; padding:8px; overflow-wrap:anywhere; }
-  .evidence-item[data-state="provided"] { border-color:#86efac; border-left-color:#16a34a; background:#f0fdf4; }
-  .evidence-item[data-state="provided"] > strong { color:#166534; }
-  .evidence-item[data-state="missing"], .evidence-item[data-state="conflict"] { border-color:#fca5a5; border-left-color:#dc2626; background:#fef2f2; }
+  .evidence-item { border:1px solid var(--line); border-left:4px solid #b45309; border-radius:2px; padding:8px; overflow-wrap:anywhere; }
+  .evidence-item[data-state="provided"] { border-color:#a9c39a; border-left-color:#4a7c3f; background:#eef3e6; }
+  .evidence-item[data-state="provided"] > strong { color:#3d6b34; }
+  .evidence-item[data-state="missing"], .evidence-item[data-state="conflict"] { border-color:#dcaea8; border-left-color:#b91c1c; background:#f9ecec; }
   .evidence-item[data-state="missing"] > strong, .evidence-item[data-state="conflict"] > strong { color:#991b1b; }
   .evidence-item p { margin:6px 0; }
-  a.action-button { display:inline-flex; align-items:center; justify-content:center; padding:5px 8px; border:1px solid var(--accent); border-radius:6px; background:var(--accent); color:white; text-decoration:none; font-size:12px; line-height:1.5; }
-  a.action-button:hover { filter:brightness(.94); }
-  button.secondary { background:white; color:var(--fg); }
+  a.action-button { display:inline-flex; align-items:center; justify-content:center; padding:5px 8px; border:1px solid var(--accent); border-radius:2px; background:var(--accent); color:#fff; text-decoration:none; font-size:12px; line-height:1.5; }
+  a.action-button:hover { background:#7c0000; border-color:#7c0000; color:#fff; }
   .title-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:8px; }
   .title-actions h2 { margin:0; margin-right:auto; }
   #snapshot-input-sections h3 { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
   #snapshot-input-sections h3 button { margin-left:auto; font-weight:400; }
   [id] { scroll-margin-top:90px; }
   #external-inputs pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; }
-  textarea { min-height:90px; width:100%; padding:10px; border:1px solid var(--line); border-radius:6px; font:inherit; resize:vertical; }
-  @media (max-width:600px) { header { padding-left:16px; padding-right:16px; } main { padding:12px; } .card, .intro { padding:10px; } dl { grid-template-columns:1fr; gap:6px; } dd { margin-bottom:10px; } }
+  textarea { min-height:90px; width:100%; padding:10px; resize:vertical; font-family:var(--mono); background:#fffdf6; color:var(--fg); border:1px solid #b9b7a5; border-radius:2px; }
+  @media (max-width:600px) { main { padding:12px; } .card, .intro { padding:10px; } dl { grid-template-columns:1fr; gap:6px; } dd { margin-bottom:10px; } }
 </style>
 </head>
 <body>
@@ -1368,5 +1344,9 @@ function init() {
 
 if (typeof document !== 'undefined') init();
 </script>
+<footer class="site-footer">
+  <hr class="slender">
+  <div class="credits">RISC-V 速查工具箱 · 版式取法 <a href="https://edwardtufte.github.io/tufte-css/">Tufte CSS</a></div>
+</footer>
 </body>
 </html>

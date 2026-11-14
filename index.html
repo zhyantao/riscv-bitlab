@@ -4,69 +4,41 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RISC-V 速查工具箱</title>
+<link rel="stylesheet" href="tufte.css">
 <style>
-  :root { --bg:#f6f7f9; --card:#fff; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; background:var(--bg); color:var(--fg); }
-  header { position:sticky; top:0; z-index:100; padding:10px max(24px, calc((100% - 1160px) / 2)); background:#111827; color:#fff; display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,0.25); }
-  header h1 { font-size:17px; margin:0; font-weight:700; display:flex; align-items:center; gap:8px; }
-  header h1::before { content:''; width:10px; height:10px; border-radius:3px; background:linear-gradient(135deg,#2563eb,#7c3aed); flex-shrink:0; }
-  nav { display:flex; flex-wrap:wrap; gap:4px; margin-right:auto; }
-  nav a { color:#9ca3af; text-decoration:none; padding:5px 12px; border-radius:999px; font-size:14px; transition:background .15s, color .15s; }
-  nav a:hover { color:#fff; background:rgba(255,255,255,0.1); }
-  nav a[aria-current] { background:var(--accent); color:#fff; }
-  nav a:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }
-  header select { padding:6px 10px; border-radius:6px; border:1px solid #374151; background:#1f2937; color:#fff; font-size:14px; }
-  header select { -webkit-appearance:none; appearance:none; padding-right:28px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239ca3af' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 9px center; }
-  main { max-width:1200px; margin:0 auto; padding:20px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:20px; }
+  /* 页面专属布局（基础主题见 tufte.css） */
   .card h2 { margin:0 0 4px; font-size:18px; }
-  .desc { color:var(--muted); font-size:13px; margin-bottom:12px; }
+  .desc { font-size:13px; margin-bottom:12px; }
   .bits-wrap { overflow-x:auto; padding:4px 2px 8px; }
   .bit-labels, .row { display:grid; grid-template-columns:repeat(var(--bits),minmax(0,1fr)); min-width:calc(var(--bits) * 32px); }
-  .bit-labels span { font:11px ui-monospace,monospace; text-align:center; color:var(--muted); padding:3px 0; }
   .row { margin-bottom:10px; }
-  .cell { min-width:0; min-height:68px; padding:8px 4px; border:1px solid #9ca3af; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; position:relative; }
-  .cell-label { font:600 13px/1.4 ui-monospace,monospace; white-space:nowrap; flex-shrink:0; }
+  .cell { min-width:0; min-height:68px; padding:8px 4px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; position:relative; }
+  .cell-label { font:600 13px/1.4 var(--mono); white-space:nowrap; flex-shrink:0; }
   .cell.narrow .cell-label { writing-mode:vertical-rl; font-size:12px; }
-  .cell.rsv { background:repeating-linear-gradient(45deg,#f3f4f6,#f3f4f6 4px,#e5e7eb 4px,#e5e7eb 8px); color:var(--muted); }
-  .cell.hover, .cell:hover { outline:2px solid var(--accent); outline-offset:-2px; z-index:1; }
-  .c0 { background:#dbeafe; } .c1 { background:#dcfce7; } .c2 { background:#fef3c7; } .c3 { background:#fce7f3; } .c4 { background:#ede9fe; }
-  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
-  th, td { border-bottom:1px solid var(--line); padding:4px 8px; text-align:left; vertical-align:middle; }
-  th { background:#f3f4f6; color:#4b5563; font-weight:600; border-bottom:2px solid #d1d5db; }
-  tr.hover { background:#eff6ff; }
-  code { background:#f3f4f6; padding:1px 4px; border-radius:3px; }
-  .tag { font-size:12px; padding:1px 6px; border-radius:10px; background:#e0e7ff; color:#3730a3; }
+  table { font-size:13px; margin-top:8px; }
+  th, td { padding:4px 8px; }
   .hidden { display:none; }
-  .value-panel { background:#f8fafc; border:1px solid var(--line); border-radius:6px; padding:12px; margin:12px 0; }
+  .value-panel { background:#f7f4ea; border:1px solid var(--line); border-radius:2px; padding:12px; margin:12px 0; }
   .value-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-  .value-input, .field-input { font:13px ui-monospace,monospace; padding:7px 8px; border:1px solid #9ca3af; border-radius:4px; max-width:100%; }
+  .value-input, .field-input { font:13px var(--mono); padding:7px 8px; border:1px solid #b9b7a5; border-radius:2px; max-width:100%; background:#fffdf6; color:var(--fg); }
   .value-input { width:25ch; height:34px; }
   .field-input { width:8ch; padding:7px 6px; }
-  .value-error { color:#b91c1c; font-size:13px; margin-top:2px; }
-  .value-error:empty { display:none; }
+  .value-error { font-size:13px; margin-top:2px; }
   .value-controls label { font-size:14px; }
   .value-divider { width:1px; align-self:stretch; background:var(--line); }
-  .search-input { flex:1 1 220px; min-width:180px; height:34px; font:13px ui-monospace,monospace; padding:0 10px 0 28px; border:1px solid #d1d5db; border-radius:6px; background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E") no-repeat left 9px center; }
-  input[aria-invalid="true"] { border-color:#b91c1c; }
-  .binary-value { display:block; overflow-wrap:anywhere; font:12px/1.8 ui-monospace,monospace; margin-top:8px; }
+  .search-input { flex:1 1 220px; min-width:180px; height:34px; font:13px var(--mono); padding:0 10px 0 28px; border:1px solid #b9b7a5; border-radius:2px; background:#fffdf6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a00000' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E") no-repeat left 9px center; color:var(--fg); }
+  .value-panel .hint { font-size:13px; margin:6px 0 0; }
+  .binary-value { display:block; overflow-wrap:anywhere; font:12px/1.8 var(--mono); margin-top:8px; }
   .bit-values { display:grid; grid-template-columns:repeat(var(--bits),minmax(0,1fr)); min-width:calc(var(--bits) * 32px); }
-  .bit-value { border:1px solid #d6dae1; background:#f8fafc; color:#6b7280; padding:4px 0; font:13px ui-monospace,monospace; cursor:pointer; }
-  .bit-value[aria-pressed="true"] { background:#2563eb; color:#fff; }
+  .bit-value { padding:4px 0; font:13px var(--mono); cursor:pointer; }
   .cell[role="button"] { cursor:pointer; }
-  .cell.nonzero { box-shadow:inset 0 -3px #2563eb; }
-  .cell-value { font:600 12px ui-monospace,monospace; overflow-wrap:anywhere; max-width:100%; text-align:center; }
+  .cell-value { font:600 12px var(--mono); overflow-wrap:anywhere; max-width:100%; text-align:center; }
   .cell.narrow .cell-value { writing-mode:vertical-rl; white-space:nowrap; }
-  .field-meaning { display:block; color:#3730a3; font-size:12px; line-height:1.4; }
-  .field-meaning:empty::after { content:'—'; color:#9ca3af; }
-  button:focus-visible, .cell:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-  input:focus-visible, header select:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
-  .table-wrap { overflow-x:auto; }
+  .field-meaning { display:block; color:#7c0000; font-size:12px; line-height:1.4; }
+  .field-meaning:empty::after { content:'4'; color:#b0aea0; }
   .field-details { margin-top:8px; }
-  .field-details > summary { cursor:pointer; padding:5px 0; font-size:13px; color:#6b7280; }
-  .field-details > summary:focus-visible { outline:2px solid #2563eb; outline-offset:2px; }
-  .value-reset { height:34px; padding:0 14px; border:1px solid #9ca3af; border-radius:4px; background:white; cursor:pointer; font-size:14px; }
+  .field-details > summary { cursor:pointer; padding:5px 0; font-size:13px; color:var(--muted); }
+  .value-reset { height:34px; padding:0 14px; }
 </style>
 </head>
 <body>
@@ -1118,7 +1090,7 @@ function render() {
       meaningCell.appendChild(meaning);
       const description = document.createElement('td'); description.textContent = f[3];
       tr.append(valueCell, meaningCell, description);
-      if (matches(f[0])) tr.style.background = '#fef9c3';
+      if (matches(f[0])) tr.style.background = '#f7f2e8';
       tb.appendChild(tr);
     });
     const tableWrap = document.createElement('div'); tableWrap.className = 'table-wrap';
@@ -1194,5 +1166,9 @@ if (incomingSnapshot && snapshotFocus) {
   card?.focus({ preventScroll:true });
 }
 </script>
+<footer class="site-footer">
+  <hr class="slender">
+  <div class="credits">RISC-V 速查工具箱 · 版式取法 <a href="https://edwardtufte.github.io/tufte-css/">Tufte CSS</a></div>
+</footer>
 </body>
 </html>

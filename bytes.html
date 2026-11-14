@@ -4,55 +4,36 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RISC-V 速查工具箱</title>
+<link rel="stylesheet" href="tufte.css">
 <style>
-  :root { --bg:#f6f7f9; --fg:#1f2430; --muted:#6b7280; --line:#d6dae1; --accent:#2563eb; }
-  * { box-sizing:border-box; }
-  [hidden] { display:none !important; }
-  body { margin:0; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; background:var(--bg); color:var(--fg); }
-  header { position:sticky; top:0; z-index:100; padding:10px max(24px, calc((100% - 1160px) / 2)); background:#111827; color:white; display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,0.25); }
-  h1 { font-size:17px; margin:0; font-weight:700; display:flex; align-items:center; gap:8px; }
-  h1::before { content:''; width:10px; height:10px; border-radius:3px; background:linear-gradient(135deg,#2563eb,#7c3aed); flex-shrink:0; }
-  nav { display:flex; flex-wrap:wrap; gap:4px; margin-right:auto; }
-  nav a { color:#9ca3af; text-decoration:none; padding:5px 12px; border-radius:999px; font-size:14px; transition:background .15s, color .15s; }
-  nav a:hover { color:white; background:rgba(255,255,255,0.1); }
-  nav a[aria-current] { background:var(--accent); color:white; }
-  main { max-width:1200px; margin:auto; padding:20px; }
-  .card { background:white; border:1px solid var(--line); border-radius:8px; padding:20px; margin-bottom:20px; }
-  h2 { margin:0 0 12px; font-size:20px; }
-  h3 { font-size:16px; margin:0 0 12px; }
+  /* 页面专属布局（基础主题见 tufte.css） */
+  .card h2 { margin:0 0 12px; }
+  h3 { margin:0 0 12px; }
   .section { margin-top:20px; padding-top:20px; border-top:1px solid var(--line); }
-  .desc, .tip { color:var(--muted); font-size:13px; line-height:1.7; }
+  .desc, .tip { font-size:13px; line-height:1.7; }
   .input-row { display:flex; align-items:end; gap:12px; }
   .input-field { flex:1; min-width:0; }
   label { display:block; font-size:14px; margin-bottom:6px; }
-  input, button { padding:9px 12px; border:1px solid var(--line); border-radius:6px; background:white; color:var(--fg); font:inherit; }
-  input { width:100%; font-family:ui-monospace,monospace; }
-  input[aria-invalid="true"] { border-color:#b91c1c; }
-  button { cursor:pointer; font-size:13px; }
-  button:hover { background:#eff6ff; border-color:var(--accent); }
+  input, button { padding:9px 12px; }
+  input { width:100%; }
   #clear-btn { flex-shrink:0; }
-  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-  input:focus-visible { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.15); }
-  .error { color:#b91c1c; font-size:13px; line-height:1.7; }
   .bit-grid { display:grid; grid-template-columns:1fr; gap:20px; }
   .bit-group { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:20px; }
   .bit-byte { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
   .bit-nibble { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:2px; }
   .bit-cell { min-width:0; text-align:center; }
   .bit-index { display:block; margin-bottom:3px; font-size:11px; color:var(--muted); }
-  .bit-button { width:100%; padding:5px 0; border-radius:4px; font:14px ui-monospace,monospace; }
-  .bit-button[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:white; }
+  .bit-button { width:100%; padding:5px 0; border-radius:2px; font:14px var(--mono); background:#fffdf6; color:var(--fg); border:1px solid #b9b7a5; }
+  .bit-button:hover { background:#f2f1e8; border-color:#b9b7a5; color:var(--fg); }
   .bit-button:disabled { cursor:not-allowed; opacity:0.5; }
-  table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:13px; }
-  th, td { text-align:left; padding:12px 10px; border-bottom:1px solid var(--line); vertical-align:middle; line-height:1.7; }
-  th { background:#f3f4f6; color:#4b5563; font-weight:600; border-bottom:2px solid #d1d5db; }
+  table { table-layout:fixed; }
   th:first-child { width:26%; }
-  td { font-family:ui-monospace,monospace; overflow-wrap:anywhere; }
+  td { font-family:var(--mono); overflow-wrap:anywhere; }
   td:first-child { font-family:inherit; color:var(--muted); }
   .unit-value { display:inline-block; min-width:22ch; text-align:right; }
   .unit { display:inline-block; width:3ch; text-align:left; margin-left:6px; color:var(--accent); font-size:12px; }
   @media (max-width:700px) {
-    header { padding-left:16px; padding-right:16px; } main { padding:12px; } .card { padding:14px; }
+    main { padding:12px; } .card { padding:14px; }
     .bit-grid { grid-template-columns:1fr; gap:12px; }
     .bit-group { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
     .bit-byte { gap:12px; }
@@ -207,5 +188,9 @@ document.getElementById('clear-btn').addEventListener('click', () => { input.val
 updateResults();
 PageState.bind({ render:updateResults });
 </script>
+<footer class="site-footer">
+  <hr class="slender">
+  <div class="credits">RISC-V 速查工具箱 · 版式取法 <a href="https://edwardtufte.github.io/tufte-css/">Tufte CSS</a></div>
+</footer>
 </body>
 </html>
