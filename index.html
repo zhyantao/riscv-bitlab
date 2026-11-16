@@ -947,7 +947,6 @@ function render() {
     const stateKey = `${reg.id}:${width}`;
     let value = registerValues.get(stateKey) ?? 0n;
     const bindings = [];
-    const editors = new Map();
     const panel = document.createElement('div'); panel.className = 'value-panel';
     const controls = document.createElement('div'); controls.className = 'value-controls';
     const label = document.createElement('label'); label.textContent = `${width} 位原始值`;
@@ -1041,11 +1040,9 @@ function render() {
             if (reg.readOnly) d.setAttribute('aria-disabled', 'true');
             const activate = () => {
               if (reg.readOnly) return;
-              if (c.f[1] === c.f[2]) { value ^= 1n << BigInt(c.f[2]); refresh(); }
-              else {
-                details.open = true;
-                editors.get(d.dataset.k).focus();
-              }
+              const next = readField(value, c.f[1], c.f[2]) + 1n;
+              value = writeField(value, c.f[1], c.f[2], next);
+              refresh();
             };
             d.addEventListener('click', activate);
             d.addEventListener('keydown', event => {
@@ -1080,7 +1077,6 @@ function render() {
       const editor = document.createElement('input'); editor.className = 'field-input';
       editor.type = 'text'; editor.spellcheck = false; editor.maxLength = 2 * (f[1] - f[2] + 1) + 2; editor.readOnly = !!reg.readOnly;
       editor.setAttribute('aria-label', `${reg.name} ${f[0]} [${bits}] 字段值`);
-      editors.set(tr.dataset.k, editor);
       const meaning = document.createElement('span'); meaning.className = 'field-meaning';
       const meaningCell = document.createElement('td');
       const fieldError = document.createElement('div'); fieldError.className = 'value-error';
