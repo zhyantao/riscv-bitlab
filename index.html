@@ -286,25 +286,6 @@ const REGS = [
   ]
 },
 {
-  id:"pte", name:"页表项 PTE (Sv39/48/57)", width:"64", priv:"S", addr:"—",
-  desc:"R/W/X 全为 0 表示指向下一级页表；否则为叶子。",
-  fields:[
-    ["N",63,63,"NAPOT（Svnapot）", 64],
-    ["PBMT",62,61,"页内存类型（Svpbmt）", 64],
-    ["Reserved",60,54,"保留", 64, true],
-    ["PPN",53,10,"物理页号", 64],
-    ["RSW",9,8,"软件保留", 64],
-    ["D",7,7,"Dirty", 64],
-    ["A",6,6,"Accessed", 64],
-    ["G",5,5,"Global", 64],
-    ["U",4,4,"用户可访问", 64],
-    ["X",3,3,"可执行", 64],
-    ["W",2,2,"可写", 64],
-    ["R",1,1,"可读", 64],
-    ["V",0,0,"有效", 64],
-  ]
-},
-{
   id:"fcsr", name:"fcsr / fflags / frm", width:"32", priv:"U", addr:"fflags 0x001 / frm 0x002 / fcsr 0x003",
   desc:"浮点控制状态。fflags=fcsr[4:0]，frm=fcsr[7:5]。",
   fields:[
