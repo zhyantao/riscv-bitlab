@@ -34,6 +34,21 @@
   .walk svg { display:block; width:100%; height:auto; min-width:900px; }
   .result { line-height:1.9; font-size:14px; overflow-wrap:anywhere; }
   ol { padding-left:24px; font-size:14px; line-height:1.9; }
+  .pte-scroll { overflow-x:auto; padding:4px 2px 8px; }
+  .pte-bitvalues, .pte-cells { display:grid; grid-template-columns:repeat(64,minmax(0,1fr)); min-width:1024px; }
+  .pte-bitvalues { margin-bottom:10px; }
+  .pte-bitvalues .bit-value { padding:4px 0; font:13px var(--mono); cursor:pointer; }
+  .pte-cell { min-width:0; min-height:56px; padding:6px 2px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:1px solid #b9b7a5; font:600 12px/1.4 var(--mono); cursor:pointer; }
+  .pte-cell.rsv { cursor:default; }
+  .pte-cell .pte-cell-value { font-size:11px; }
+  .pte-cell.nonzero { box-shadow:inset 0 -3px var(--accent); }
+  .pte-value-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:12px 0 6px; }
+  .pte-value-row input { width:24ch; }
+  .pte-binary { display:block; font:12px/1.8 var(--mono); margin:6px 0; overflow-wrap:anywhere; }
+  .pte-error { font-size:13px; }
+  .pte-summary { font-size:13px; color:#7c0000; margin:6px 0; }
+  .pte-meaning { color:#7c0000; font-size:12px; line-height:1.4; }
+  #pte-fields input { width:14ch; }
   @media (max-width:600px) { main { padding:12px; } .card, .intro { padding:14px; } }
 </style>
 </head>
@@ -127,6 +142,30 @@
       <p>PTE 地址 = 页表基址 + VPN[i] × PTE 字节数。它指向页表项本身，不是 VA 对应的数据地址。</p>
       <p>V = 0、保留位置位、权限非法、A/D 位不满足，或已到末级仍需下探时，产生对应的页错误，而不是继续遍历。</p>
       <p>图中的 offset 始终是 VA[11:0]；大页的低位偏移则包含较低级 VPN。本页只做地址拆解与首个 PTE 地址算术，不读内存、不解码 PTE、不模拟完整遍历。</p>
+    </div>
+  </section>
+  <section class="card" aria-labelledby="pte-title">
+    <div class="heading"><h2 id="pte-title">页表项 PTE 位域</h2><span class="tag">Sv39 / Sv48 / Sv57 · 64 位</span></div>
+    <p class="desc">PTE 是内存中的页表数据结构，不是 CSR：遍历时按 <code>satp.PPN</code> 与 VPN 算出地址后从内存读取，没有独立的 CSR 地址。R/W/X 全为 0 表示非叶子项，PPN 指向下一级页表；否则为叶子项，PPN 给出物理页号。Sv32 使用 32 位 PTE，布局不同，本卡片不覆盖。</p>
+    <div class="pte-value-row">
+      <label for="pte-value">64 位原始值</label>
+      <input id="pte-value" type="text" value="0x0000000000000000" spellcheck="false" autocomplete="off" aria-describedby="pte-error">
+      <button id="pte-reset" type="button">清零</button>
+    </div>
+    <p id="pte-error" class="error pte-error" role="alert"></p>
+    <p id="pte-summary" class="pte-summary" aria-live="polite"></p>
+    <span class="pte-binary" id="pte-binary"></span>
+    <div class="pte-scroll" tabindex="0" role="region" aria-label="PTE 位域图，可横向滚动">
+      <div id="pte-labels" class="bit-labels"></div>
+      <div id="pte-bitvalues" class="pte-bitvalues"></div>
+      <div id="pte-cells" class="pte-cells"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <caption>高位 → 低位；点击字段格递增、点击位号翻转，或直接编辑字段值，位域图同步更新。</caption>
+        <thead><tr><th scope="col">位</th><th scope="col">字段</th><th scope="col">当前值</th><th scope="col">当前值解释</th><th scope="col">说明</th></tr></thead>
+        <tbody id="pte-fields"></tbody>
+      </table>
     </div>
   </section>
   <noscript>请启用支持 BigInt 的 JavaScript 以使用计算器。页面完全离线运行，无外部依赖。</noscript>
@@ -418,6 +457,201 @@ function renderCalculator() {
   }
 }
 
+/* ---------- PTE 位域编辑器（64 位，Sv39 / Sv48 / Sv57） ---------- */
+const PTE_FIELDS = [
+  { name:'N', hi:63, lo:63, desc:'NAPOT 连续页指示（Svnapot）；未实现该扩展时为保留位' },
+  { name:'PBMT', hi:62, lo:61, desc:'页内存类型（Svpbmt）：0 按 PMA，1 非缓存一致，2 I/O 内存，3 保留' },
+  { name:'Reserved', hi:60, lo:54, desc:'保留位，必须为 0', reserved:true },
+  { name:'PPN', hi:53, lo:10, desc:'物理页号：非叶子项指向下一级页表，叶子项给出物理页号' },
+  { name:'RSW', hi:9, lo:8, desc:'软件保留，硬件翻译时忽略' },
+  { name:'D', hi:7, lo:7, desc:'Dirty：页已被写入；写入前需由硬件或软件置位' },
+  { name:'A', hi:6, lo:6, desc:'Accessed：页已被访问；首次访问前需置位' },
+  { name:'G', hi:5, lo:5, desc:'Global：全局映射，所有地址空间共享' },
+  { name:'U', hi:4, lo:4, desc:'用户可访问；为 0 时仅高特权级可访问' },
+  { name:'X', hi:3, lo:3, desc:'可执行' },
+  { name:'W', hi:2, lo:2, desc:'可写；基础编码下 W=1 要求 R=1' },
+  { name:'R', hi:1, lo:1, desc:'可读' },
+  { name:'V', hi:0, lo:0, desc:'有效位；为 0 时整个 PTE 无效，访问产生页故障' },
+];
+const PTE_ENUM = { PBMT:{ 0:'按 PMA 属性', 1:'NC 非缓存一致', 2:'IO 内存', 3:'保留' } };
+const PTE_BOOL = {
+  N:['普通 PTE','NAPOT 连续页（Svnapot）'],
+  V:['PTE 无效','PTE 有效'],
+  R:['禁止读','允许读'],
+  W:['禁止写','允许写'],
+  X:['禁止执行','允许执行'],
+  U:['仅高特权级可访问（非用户页）','用户模式可访问'],
+  G:['非全局映射','全局映射（所有地址空间共享）'],
+  A:['页未被访问，访问前需先置位','页已被访问'],
+  D:['页未被修改，写入前需先置位','页已被修改'],
+};
+let pteValue = 0n;
+const pteFieldRows = [];
+
+function pteBitMask(bits) { return (1n << BigInt(bits)) - 1n; }
+function pteReadField(hi, lo) { return (pteValue >> BigInt(lo)) & pteBitMask(hi - lo + 1); }
+function pteWriteField(hi, lo, next) {
+  const m = pteBitMask(hi - lo + 1) << BigInt(lo);
+  pteValue = (pteValue & ~m) | ((next << BigInt(lo)) & m);
+}
+function pteParseInteger(text, width) {
+  const input = text.trim();
+  if (!/^(?:0x[0-9a-f]+(?:_[0-9a-f]+)*|0b[01]+(?:_[01]+)*|[0-9]+(?:_[0-9]+)*)$/i.test(input)) {
+    throw new Error('请输入 0x 十六进制、0b 二进制或十进制非负整数；允许数字间单个下划线分组。');
+  }
+  const value = BigInt(input.replaceAll('_', ''));
+  if (value > pteBitMask(width)) throw new Error('数值超出 ' + width + ' 位范围（最大 0x' + pteBitMask(width).toString(16) + '）。');
+  return value;
+}
+function pteFieldMeaning(field, value) {
+  if (field.name === 'RSW') return '软件保留：硬件忽略，供软件使用';
+  if (PTE_ENUM[field.name]) return PTE_ENUM[field.name][value.toString()] ?? '保留 / 未定义编码';
+  if (PTE_BOOL[field.name] && (field.hi !== field.lo || value <= 1n)) return PTE_BOOL[field.name][value.toString()] ?? '';
+  return '';
+}
+function pteLeafSummary() {
+  if (!pteReadField(0, 0)) return 'V=0：PTE 无效，任何访问都产生页故障，其余字段无意义。';
+  const r = pteReadField(1, 1), w = pteReadField(2, 2), x = pteReadField(3, 3);
+  if (r === 0n && w === 0n && x === 0n) return 'V=1 且 R/W/X 全 0：非叶子（指针）项，PPN 指向下一级页表。';
+  const perms = (r ? 'R' : '-') + (w ? 'W' : '-') + (x ? 'X' : '-');
+  const illegal = w === 1n && r === 0n ? ' W=1 且 R=0 是非法组合，访问产生页故障。' : '';
+  return 'V=1 且 R/W/X=' + perms + '：叶子项，PPN 为物理页号。' + illegal;
+}
+function pteHex16(value) { return '0x' + value.toString(16).padStart(16, '0'); }
+
+function renderPte(origin) {
+  const valueInput = document.getElementById('pte-value');
+  if (origin !== valueInput) valueInput.value = pteHex16(pteValue);
+  valueInput.setAttribute('aria-invalid', 'false');
+  document.getElementById('pte-error').textContent = '';
+  document.getElementById('pte-binary').textContent = '二进制：' + pteValue.toString(2).padStart(64, '0').match(/.{1,4}/g).join(' ');
+  document.getElementById('pte-summary').textContent = pteLeafSummary();
+  document.querySelectorAll('#pte-bitvalues .bit-value').forEach((btn, i) => {
+    const bit = 63 - i;
+    const on = ((pteValue >> BigInt(bit)) & 1n) === 1n;
+    btn.textContent = on ? '1' : '0';
+    btn.setAttribute('aria-pressed', String(on));
+  });
+  document.querySelectorAll('#pte-cells .pte-cell').forEach((cell, i) => {
+    const field = PTE_FIELDS[i];
+    if (field.reserved) return;
+    const fv = pteReadField(field.hi, field.lo);
+    cell.querySelector('.pte-cell-value').textContent = field.hi === field.lo ? fv.toString() : '0x' + fv.toString(16);
+    cell.classList.toggle('nonzero', fv !== 0n);
+  });
+  pteFieldRows.forEach(({ field, editor, meaning }) => {
+    const fv = pteReadField(field.hi, field.lo);
+    if (editor !== origin) editor.value = field.hi === field.lo ? fv.toString() : '0x' + fv.toString(16);
+    editor.setAttribute('aria-invalid', 'false');
+    meaning.textContent = pteFieldMeaning(field, fv);
+  });
+}
+
+function initPteEditor() {
+  const valueInput = document.getElementById('pte-value');
+  const errorBox = document.getElementById('pte-error');
+  const labels = document.getElementById('pte-labels');
+  const bitValues = document.getElementById('pte-bitvalues');
+  const cells = document.getElementById('pte-cells');
+  const fieldBody = document.getElementById('pte-fields');
+  labels.style.setProperty('--bits', '64');
+  for (let bit = 63; bit >= 0; bit--) {
+    const label = document.createElement('span');
+    label.textContent = bit;
+    labels.appendChild(label);
+  }
+  for (let bit = 63; bit >= 0; bit--) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'bit-value';
+    btn.setAttribute('aria-label', 'PTE bit ' + bit + '，点击翻转');
+    btn.addEventListener('click', () => { pteValue ^= 1n << BigInt(bit); renderPte(); });
+    bitValues.appendChild(btn);
+  }
+  PTE_FIELDS.forEach((field, index) => {
+    const width = field.hi - field.lo + 1;
+    const cell = document.createElement('div');
+    cell.className = 'pte-cell ' + (field.reserved ? 'rsv' : 'c' + (index % 5));
+    cell.style.gridColumn = 'span ' + width;
+    const range = field.hi === field.lo ? String(field.hi) : field.hi + ':' + field.lo;
+    cell.title = field.name + ' [' + range + '] ' + field.desc;
+    cell.setAttribute('aria-label', cell.title);
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = field.name;
+    cell.appendChild(nameSpan);
+    if (!field.reserved) {
+      const valSpan = document.createElement('span');
+      valSpan.className = 'pte-cell-value';
+      cell.appendChild(valSpan);
+      cell.tabIndex = 0;
+      cell.setAttribute('role', 'button');
+      const bump = () => { pteWriteField(field.hi, field.lo, pteReadField(field.hi, field.lo) + 1n); renderPte(); };
+      cell.addEventListener('click', bump);
+      cell.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); bump(); }
+      });
+    }
+    cells.appendChild(cell);
+  });
+  PTE_FIELDS.forEach(field => {
+    if (field.reserved) return;
+    const tr = document.createElement('tr');
+    const range = field.hi === field.lo ? String(field.hi) : field.hi + ':' + field.lo;
+    const bitTd = document.createElement('td');
+    const bitCode = document.createElement('code'); bitCode.textContent = range; bitTd.appendChild(bitCode);
+    const nameTd = document.createElement('td');
+    const nameB = document.createElement('b'); nameB.textContent = field.name; nameTd.appendChild(nameB);
+    const valueTd = document.createElement('td');
+    const editor = document.createElement('input');
+    editor.type = 'text';
+    editor.spellcheck = false;
+    editor.autocomplete = 'off';
+    editor.setAttribute('aria-label', 'PTE ' + field.name + ' [' + range + '] 字段值');
+    const fieldError = document.createElement('div');
+    fieldError.className = 'error pte-error';
+    const meaning = document.createElement('span');
+    meaning.className = 'pte-meaning';
+    const meaningTd = document.createElement('td');
+    meaningTd.appendChild(meaning);
+    const descTd = document.createElement('td');
+    descTd.textContent = field.desc;
+    editor.addEventListener('input', () => {
+      try {
+        const next = pteParseInteger(editor.value, field.hi - field.lo + 1);
+        pteWriteField(field.hi, field.lo, next);
+        renderPte(editor);
+      } catch (error) {
+        fieldError.textContent = error.message;
+        editor.setAttribute('aria-invalid', 'true');
+      }
+    });
+    valueTd.append(editor, fieldError);
+    tr.append(bitTd, nameTd, valueTd, meaningTd, descTd);
+    fieldBody.appendChild(tr);
+    pteFieldRows.push({ field, editor, meaning });
+  });
+  valueInput.addEventListener('input', () => {
+    try {
+      pteValue = pteParseInteger(valueInput.value, 64);
+      renderPte(valueInput);
+    } catch (error) {
+      errorBox.textContent = error.message;
+      valueInput.setAttribute('aria-invalid', 'true');
+    }
+  });
+  document.getElementById('pte-reset').addEventListener('click', () => { pteValue = 0n; renderPte(); });
+  renderPte();
+}
+
+function syncPteFromInput() {
+  try {
+    pteValue = pteParseInteger(document.getElementById('pte-value').value, 64);
+  } catch {
+    pteValue = 0n;
+  }
+  renderPte();
+}
+
 function initCalculator() {
   document.getElementById('mode').addEventListener('change', renderCalculator);
   ['va', 'root-ppn'].forEach(id => document.getElementById(id).addEventListener('input', renderCalculator));
@@ -430,10 +664,13 @@ function initCalculator() {
     });
   });
   renderCalculator();
-  PageState.bind({ render:renderCalculator });
+  PageState.bind({ render:() => { renderCalculator(); syncPteFromInput(); } });
 }
 
-if (typeof document !== 'undefined') initCalculator();
+if (typeof document !== 'undefined') {
+  initCalculator();
+  initPteEditor();
+}
 </script>
 <footer class="site-footer">
   <hr class="slender">
