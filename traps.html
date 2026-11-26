@@ -43,6 +43,7 @@
   .diagnostic[data-state="candidate"] { border-color:#55544a; background:#f2f1e8; }
   [hidden] { display:none !important; }
   #next-step { font-weight:600; }
+  #trap-summary { font-size:14px; line-height:1.7; }
   details#extra-register-inputs { margin:10px 0 0; padding:8px 10px; border:1px solid var(--line); border-radius:2px; }
   details#extra-register-inputs > summary { cursor:pointer; font-size:13px; font-weight:600; }
   details#extra-register-inputs h3 { margin-top:10px; }
@@ -134,15 +135,14 @@
   <section id="result" class="card" aria-labelledby="result-heading" aria-live="polite" aria-atomic="true" hidden>
     <div class="heading"><h2 id="result-heading">定位链路与解读</h2><span class="tag" id="trap-kind"></span></div>
     <p id="cause-name" class="result-title"></p>
+    <p id="trap-summary" class="diagnostic"></p>
     <p id="next-step" class="diagnostic"></p>
     <section aria-labelledby="evidence-heading">
-      <h3 id="evidence-heading">链路步骤与证据</h3>
-      <p id="evidence-path" class="diagnostic"></p>
+      <h3 id="evidence-heading">证据核对清单</h3>
       <ol id="evidence-list" class="evidence-list"></ol>
       <p id="evidence-summary" class="help"></p>
     </section>
     <p id="context-note" class="desc"></p>
-    <p id="trap-summary" class="diagnostic"></p>
   </section>
   <section id="supplement-panel" class="intro" aria-labelledby="supplement-heading">
     <div class="title-actions"><h2 id="supplement-heading">按原因补充现场</h2></div>
@@ -914,7 +914,13 @@ function evidencePlan(trap, data) {
       add('translation', '访问 → 翻译阶段 → PTE / PA', translationState, translationText, guest && data.stage !== 'g' ? 'walk-stage' : data.pageMissingInput || 'page-panel');
     }
   }
-  add('external', trap.interrupt ? '中断来源与平台证据' : accessFault ? '物理访问失败原因' : '对应原因的外部证据', 'review', external, 'external-panel');
+  const externalTitle = trap.interrupt ? '中断来源与平台证据'
+    : accessFault ? '物理访问失败原因'
+    : align ? '访问宽度与平台对齐配置'
+    : pageFault ? '实际翻译记录（TLB / page walk）'
+    : ({ 2:'实际 ISA 与扩展配置', 3:'断点机制与调试配置', 16:'原始陷阱与双重陷阱控制', 18:'控制流扩展现场', 19:'平台错误记录', 22:'V 状态与陷入控制' })[Number(code)]
+    || (trap.cause.ecall ? '调用 ABI 与服务号' : trap.cause.known ? '平台与执行记录' : '目标规范与平台定义');
+  add('external', externalTitle, 'review', external, 'external-panel');
   return { items, path, external };
 }
 
@@ -922,7 +928,7 @@ function renderEvidence(trap) {
   const get = id => document.getElementById(id);
   get('evidence-list').replaceChildren();
   get('external-panel').hidden = !trap;
-  if (!trap) { get('evidence-path').textContent = ''; get('evidence-summary').textContent = ''; get('next-step').textContent = ''; return; }
+  if (!trap) { get('evidence-summary').textContent = ''; get('next-step').textContent = ''; return; }
   const errors = {};
   const read = (id, width = trap.xlen) => { try { return optionalUnsigned(get(id).value, width, get(id).labels?.[0]?.textContent || id); } catch (error) { errors[id] = error.message; return null; } };
   const data = {
@@ -935,7 +941,6 @@ function renderEvidence(trap) {
   };
   data.statusError = errors.status; data.wordError = errors['fault-instruction']; data.instructionEpcError = errors['instruction-epc'];
   const plan = evidencePlan(trap, data);
-  get('evidence-path').textContent = plan.path;
   get('external-guidance').textContent = plan.external;
   const labels = { missing:'缺少', provided:'已提供', review:'待核实', conflict:'不一致' };
   plan.items.forEach(item => {
@@ -952,8 +957,13 @@ function renderEvidence(trap) {
   const first = plan.items.find(item => item.state === 'missing' || item.state === 'conflict');
   const reviews = plan.items.filter(item => item.state === 'review');
   if (first) { next.dataset.state = 'fault'; next.textContent = '下一步：' + first.title + ' —— ' + first.text; }
-  else if (reviews.length) { next.dataset.state = 'candidate'; next.textContent = '输入已基本齐全；下一步：核实 ' + reviews.map(item => item.title).join('、') + '，并结合外部执行记录确认。'; }
-  else { next.dataset.state = 'candidate'; next.textContent = '关键输入都齐了；下一步：对照真实执行记录 / 控制器现场做最终确认。填满表单不等于找到根因。'; }
+  else {
+    next.dataset.state = 'candidate';
+    const specific = reviews.filter(item => item.id !== 'external');
+    if (specific.length) next.textContent = '输入已基本齐全；下一步：核实 ' + specific.map(item => item.title).join('、') + '。';
+    else if (reviews.length) next.textContent = '输入已基本齐全；下一步：按下方清单中平台证据项的说明补充现场。';
+    else next.textContent = '关键输入都齐了。';
+  }
 }
 
 let currentTrap = null;
