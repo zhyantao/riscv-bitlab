@@ -17,7 +17,6 @@
   .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:stretch; font-size:14px; }
   .input-group :is(input, select) { flex:1; }
   .input-group { display:flex; flex:1 1 240px; flex-direction:column; gap:6px; font-size:14px; min-width:0; }
-  .width-group { flex:0 1 130px; }
   .optional { font-size:12px; font-weight:400; color:var(--muted); }
   select { padding:9px 30px 9px 12px; }  /* 右侧 30px 留给下拉箭头 */
   input, button { padding:9px 12px; }
@@ -38,31 +37,38 @@
   dd p { margin:6px 0 0; }
   .context-grid, .gpr-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:14px; }
   .gpr-grid { grid-template-columns:repeat(auto-fit,minmax(175px,1fr)); }
-  .gpr-source { background:#f7f0e6; border-radius:2px; outline:2px solid #d8b3a8; padding:6px; }
+  .gpr-source { background:#e9eff4; border-radius:2px; outline:2px solid #7a94ad; padding:6px; }
   .diagnostic { padding:8px 10px; border-left:3px solid #b0aea0; background:#f7f4ea; margin:6px 0; font-size:13px; line-height:1.5; overflow-wrap:anywhere; white-space:pre-line; }
   .diagnostic[data-state="fault"] { border-color:#b91c1c; background:#f9ecec; }
   .diagnostic[data-state="candidate"] { border-color:#55544a; background:#f2f1e8; }
+  [hidden] { display:none !important; }
+  #next-step { font-weight:600; }
+  details#extra-register-inputs { margin:10px 0 0; padding:8px 10px; border:1px solid var(--line); border-radius:2px; }
+  details#extra-register-inputs > summary { cursor:pointer; font-size:13px; font-weight:600; }
+  details#extra-register-inputs h3 { margin-top:10px; }
   #input-panel { padding:14px; }
   #input-panel > p { margin:6px 0 10px; font-size:13px; }
   #input-panel .controls, #snapshot-input-sections { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:6px 10px; align-items:end; }
+  #input-panel .controls .width-pair { display:flex; gap:6px 10px; align-items:end; min-width:0; }
+  #input-panel .controls .width-pair .input-group { flex:1 1 0; min-width:0; }
   #snapshot-input-sections .input-section { display:grid; grid-column:1 / -1; grid-template-columns:subgrid; gap:6px 10px; align-items:end; }
-  #snapshot-input-sections .context-grid { display:contents; }
+  #snapshot-input-sections .input-section .context-grid { display:contents; }
   #snapshot-input-sections .gpr-grid { display:grid; grid-column:1 / -1; grid-template-columns:subgrid; gap:6px 10px; margin-top:0; }
-  #snapshot-input-sections h3, #snapshot-input-sections .help, #snapshot-input-sections .actions, #external-inputs { grid-column:1 / -1; }
+  #snapshot-input-sections > details#extra-register-inputs { grid-column:1 / -1; min-width:0; }
+  #snapshot-input-sections h3, #snapshot-input-sections .help, #snapshot-input-sections .actions { grid-column:1 / -1; }
   #snapshot-input-sections h3 { margin:10px 0 0; font-size:13px; }
   #snapshot-input-sections .help { margin:0; font-size:12px; line-height:1.4; }
-  #input-panel .input-group { gap:3px; font-size:12px; }
-  #input-panel .input-group label { line-height:1.4; overflow-wrap:anywhere; }
+  #input-panel .input-group, #supplement-panel .input-group { gap:3px; font-size:12px; }
+  #input-panel .input-group label, #supplement-panel .input-group label { line-height:1.4; overflow-wrap:anywhere; }
   .register-input-row { display:flex; gap:4px; align-items:center; min-width:0; }
-  #input-panel .register-input-row input { flex:1; width:0; min-width:0; }
-  #input-panel .register-input-row button { flex:none; padding:4px 5px; font-size:11px; }
-  #input-panel :is(input, select) { flex:none; height:32px; padding:5px 8px; font-size:12px; }
-  #input-panel select { padding-right:26px; }
-  #input-panel textarea { min-height:56px; padding:6px 8px; font-size:12px; }
-  #input-panel .actions { margin:6px 0; font-size:12px; }
-  #input-panel button { padding:5px 8px; font-size:12px; }
+  #input-panel .register-input-row input, #supplement-panel .register-input-row input { flex:1; width:0; min-width:0; }
+  #input-panel .register-input-row button, #supplement-panel .register-input-row button { flex:none; padding:4px 5px; font-size:11px; }
+  #input-panel :is(input, select), #supplement-panel :is(input, select) { flex:none; height:32px; padding:5px 8px; font-size:12px; }
+  #input-panel select, #supplement-panel select { padding-right:26px; }
+  #input-panel .actions, #supplement-panel .actions { margin:6px 0; font-size:12px; }
+  #input-panel button, #supplement-panel button { padding:5px 8px; font-size:12px; }
   #input-panel .notes { margin:8px 0; padding:6px 10px; font-size:12px; line-height:1.5; }
-  #input-panel .gpr-source { padding:0; }
+  #input-panel .gpr-source, #supplement-panel .gpr-source { padding:0; }
   @media (max-width:600px) { #input-panel .controls, #snapshot-input-sections { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 8px; } }
   @media (max-width:360px) { #input-panel .controls, #snapshot-input-sections { grid-template-columns:minmax(0,1fr); } }
   .pte-input { min-width:0; }
@@ -80,8 +86,8 @@
   .title-actions h2 { margin:0; margin-right:auto; }
   #snapshot-input-sections h3 { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
   #snapshot-input-sections h3 button { margin-left:auto; font-weight:400; }
-  [id] { scroll-margin-top:90px; }
-  #external-inputs pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; }
+  [id] { scroll-margin-top:200px; }
+  #external-panel pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; }
   textarea { min-height:90px; width:100%; padding:10px; resize:vertical; font-family:var(--mono); background:#fffdf6; color:var(--fg); border:1px solid #b9b7a5; border-radius:2px; }
   @media (max-width:600px) { main { padding:12px; } .card, .intro { padding:10px; } dl { grid-template-columns:1fr; gap:6px; } dd { margin-bottom:10px; } }
 </style>
@@ -108,72 +114,74 @@
 </header>
 <main>
   <section id="input-panel" class="intro" aria-labelledby="page-heading">
-    <div class="title-actions"><h2 id="page-heading">异常与中断</h2><button id="load-fault-example" type="button">加载故障示例（覆盖当前输入）</button><button id="clear-all" class="secondary" type="button">清空全部</button></div>
-    <p>先解读陷阱原因，再按需补充状态 CSR、通用寄存器现场和逐级 PTE。选择实际接收陷阱的模式；XLEN 指所选陷阱寄存器的宽度。所有计算在本地完成，不上传现场。</p>
+    <div class="title-actions"><h2 id="page-heading">异常与中断</h2><button id="load-fault-example" type="button">加载完整示例（覆盖当前输入）</button><button id="clear-all" class="secondary" type="button">清空全部</button></div>
     <div class="trap-panel">
       <div class="controls">
-        <div class="input-group width-group"><label for="trap-target">陷入目标</label><select id="trap-target"><option value="M">M</option><option value="S">S / HS</option><option value="VS">VS</option></select></div>
-        <div class="input-group width-group">
-          <label for="xlen">寄存器宽度</label>
-          <select id="xlen"><option value="32">RV32</option><option value="64" selected>RV64</option></select>
+        <div class="width-pair">
+          <div class="input-group"><label for="trap-target">陷入目标</label><select id="trap-target"><option value="M">M</option><option value="S">S / HS</option><option value="VS">VS</option></select></div>
+          <div class="input-group"><label for="xlen">寄存器宽度</label><select id="xlen"><option value="32">RV32</option><option value="64" selected>RV64</option></select></div>
         </div>
         <div class="input-group"><label for="cause-choice" id="cause-choice-label">mcause 原因选项</label><select id="cause-choice" aria-describedby="input-help"></select></div>
         <div class="input-group"><label for="mcause">mcause</label><input id="mcause" type="text" value="" placeholder="请选择原因或填写原始值" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
         <div class="input-group"><label for="mepc">mepc</label><input id="mepc" type="text" value="" placeholder="未知 / 未采集" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
-        <div class="input-group"><label for="mtval">mtval</label><input id="mtval" type="text" value="" placeholder="未知 / 未采集" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
+        <div class="input-group" id="mtval-group"><label for="mtval">mtval</label><input id="mtval" type="text" value="" placeholder="未知 / 未采集" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
         <div class="input-group" id="mtval2-group" hidden><label for="mtval2">mtval2 <span class="optional">仅 guest-page fault</span></label><input id="mtval2" type="text" value="" placeholder="未知 / 未采集" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
       </div>
-      <p class="help" id="input-help">原因可从下拉框选择，也可在原因寄存器中填写自定义编码；下拉选择中断时自动设置 XLEN 最高位。原因寄存器必填；epc、tval 和其他现场可留空，表示未知而不是零。支持十进制、0x、0b、0o 及数字间下划线分组（如 0x0000_0001_0000_0000），只接受 XLEN 范围内完整非负整数，切换位宽不截断输入。默认现场留空；可主动加载 example.tc 的 Loop 72 故障示例，缺失字段不补零。</p>
       <p id="input-error" class="error" role="alert"></p>
     </div>
-    <div class="notes warning"><strong>这是基于快照的辅助分析，不是硬件执行记录。</strong> 请使用同一次陷阱、同一 hart 的现场。PTE 内存快照可能不同于触发异常时的 TLB / 页表状态，不能仅凭当前映射判定硬件错误。</div>
-    <p class="help" id="default-fault-note" hidden>已加载示例：example.tc · seed 0xb7f1e2d4766c3919 · THREAD_ID=3。原日志 X0 非零，架构 x0 仍固定为零；STATUS 与 MSTATUS 不同，来源/时点待核实。SSTATUS 填在“HS sstatus”。已从 thread3.asm:12 补入 0x020ce827（vse32.v v16,(s9)），同 seed 归属仍需核实。反汇编与地址不一致分析见外部证据备注。</p>
-    <p id="example-sync-status" class="help" role="status"></p>
-    <div id="snapshot-input-sections"></div>
-    <div class="actions"><a class="action-button" href="#result">查看诊断结果与定位链路</a><button id="sync-registers" type="button">同步已填写值并打开寄存器位域</button></div>
-    <p class="help">仅传递已填写且有效的寄存器 / PTE；寄存器位域页保留完整目录，并标明本次同步的现场值。数据仅通过当前标签页临时存储传递，不上传、不写入链接。</p>
-    <p id="sync-error" class="error" role="alert"></p>
+    <div class="notes warning"><strong>本页按你填写的快照做辅助分析，不是硬件执行记录。</strong> 所有输入必须来自同一次陷阱、同一个 hart。内存里的 PTE 快照不一定等于触发异常时 TLB / 页表正在使用的值，不要只凭当前映射断定硬件出错。</div>
   </section>
   <section id="result" class="card" aria-labelledby="result-heading" aria-live="polite" aria-atomic="true" hidden>
-    <div class="heading"><h2 id="result-heading">解读结果</h2><span class="tag" id="trap-kind"></span></div>
+    <div class="heading"><h2 id="result-heading">定位链路与解读</h2><span class="tag" id="trap-kind"></span></div>
     <p id="cause-name" class="result-title"></p>
-    <p id="context-note" class="desc"></p>
+    <p id="next-step" class="diagnostic"></p>
     <section aria-labelledby="evidence-heading">
-      <h3 id="evidence-heading">定位链路与缺失证据</h3>
+      <h3 id="evidence-heading">链路步骤与证据</h3>
       <p id="evidence-path" class="diagnostic"></p>
-      <p id="evidence-summary" class="help"></p>
       <ol id="evidence-list" class="evidence-list"></ol>
+      <p id="evidence-summary" class="help"></p>
     </section>
+    <p id="context-note" class="desc"></p>
     <p id="trap-summary" class="diagnostic"></p>
   </section>
-  <section class="card" aria-labelledby="context-heading">
+  <section id="supplement-panel" class="intro" aria-labelledby="supplement-heading">
+    <div class="title-actions"><h2 id="supplement-heading">按原因补充现场</h2></div>
+    <p class="help" id="layout-hint">先填写 mcause，或从下拉框选择原因：页面只会显示排查这个原因所需的寄存器和分析结果。</p>
+    <p class="help" id="default-fault-note" hidden>已加载模拟完整示例：RV64 · M 目标 · 存储页故障（mcause=15）。sw a1,16(s1) 指令、EPC / tval、s1 / a1 现场、入口 mstatus、medeleg、satp 与 Sv39 三级 PTE 均已填齐，逐级寻址与基础权限检查可完整走通（候选 PA=0x300000c0）。该现场为演示数据，不代表任何真实硬件；medeleg=0 表示异常未委托，故落入 M。</p>
+    <p id="example-sync-status" class="help" role="status"></p>
+    <div id="snapshot-input-sections"></div>
+    <div class="actions" id="supplement-actions" hidden><a class="action-button" href="#context">查看分析明细</a><button id="sync-registers" type="button">同步已填写值并打开寄存器位域</button></div>
+    <p class="help">只传递已填写且格式有效的寄存器和 PTE；寄存器位域页会保留完整字段目录，并标出本次带过去的现场值。数据只在当前标签页的临时存储里传递，不上传、不进链接。</p>
+    <p id="sync-error" class="error" role="alert"></p>
+  </section>
+  <section id="context" class="card" aria-labelledby="context-heading" hidden>
     <div>
       <h2 id="context-heading">状态与路由上下文 <span class="optional">可选</span></h2>
       <div class="context-grid" id="status-inputs">
-        <div class="input-group"><label for="snapshot-time">状态 CSR 采样时点</label><select id="snapshot-time"><option value="unknown">未知 / handler 已修改</option><option value="entry">陷入后，handler 修改前</option><option value="before">陷入前</option></select></div>
+        <div class="input-group"><label for="snapshot-time">状态 CSR 采样时点</label><select id="snapshot-time"><option value="unknown">未知 / 可能已被 handler 修改</option><option value="entry">陷入后、handler 修改前</option><option value="before">陷入前</option></select></div>
         <div class="input-group"><label for="status" id="status-label">mstatus</label><input id="status" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
         <div class="input-group" id="mstatush-group" hidden><label for="mstatush">mstatush（RV32）</label><input id="mstatush" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
-        <div class="input-group"><label for="hstatus">hstatus（H 扩展）</label><input id="hstatus" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
-        <div class="input-group"><label for="vsstatus">vsstatus（两阶段权限）</label><input id="vsstatus" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
-        <div class="input-group"><label for="hsstatus">HS sstatus（两阶段 MXR）</label><input id="hsstatus" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
-        <div class="input-group"><label for="trap-inst" id="trap-inst-label">mtinst（H 扩展）</label><input id="trap-inst" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
+        <div class="input-group" id="hstatus-group"><label for="hstatus">hstatus（H 扩展）</label><input id="hstatus" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
+        <div class="input-group" id="vsstatus-group"><label for="vsstatus">vsstatus（两阶段权限）</label><input id="vsstatus" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
+        <div class="input-group" id="hsstatus-group"><label for="hsstatus">HS sstatus（两阶段 MXR）</label><input id="hsstatus" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
+        <div class="input-group" id="trap-inst-group"><label for="trap-inst" id="trap-inst-label">mtinst（H 扩展）</label><input id="trap-inst" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
       </div>
       <div id="status-analysis" class="diagnostic" aria-live="polite"></div>
-      <div><h3>中断使能、挂起与委托 <span class="optional">按需提供</span></h3>
+      <div><h3 id="routing-analysis-heading"><span id="routing-analysis-title">中断使能、挂起与委托</span> <span class="optional">按需提供</span></h3>
         <div id="routing-inputs" class="context-grid"></div>
         <div id="routing-analysis" class="diagnostic" aria-live="polite"></div>
       </div>
-      <p class="help">异常后 MPP / SPP、MPV / SPV 和 xPIE 已由硬件更新；陷入后的 MIE / SIE=0 不能证明异常前未开中断。M 态 MPRV 访问的原始 MPP / MPV 可能已被覆盖，需结合异常前记录。外部中断设备还需 PLIC / AIA 等控制器现场。</p>
+      <p class="help">陷入时硬件会更新 MPP / SPP、MPV / SPV 和 xPIE，所以陷入后读到 MIE / SIE=0，并不能说明异常前没开中断。若曾用 MPRV 做过访问，它用到的 MPP / MPV 在本次陷入时已被覆盖，需要结合异常前的记录。外部中断还要 PLIC / AIA 等中断控制器的现场。</p>
     </div>
   </section>
-  <section class="card" aria-labelledby="gpr-heading">
+  <section id="gpr-card" class="card" aria-labelledby="gpr-heading" hidden>
     <div>
       <h2 id="gpr-heading">故障指令与通用寄存器分析 <span class="optional">x0–x31</span></h2>
-      <p class="help">填写 trap 入口汇编保存的被中断程序现场，不是 C handler 当前寄存器。x0 固定为 0；空白表示未知。当前自动计算仅支持基础整数 load / store；压缩、AMO、浮点和向量访存需另行分析。</p>
+      <p class="help">填 trap 入口汇编保存下来的被中断程序现场，不是 C handler 当前的寄存器值。x0 固定为 0；留空表示未知。填好机器码后，这里只显示计算地址需要的源寄存器，蓝色高亮的输入框就是这条指令用到的；自动计算支持整数和浮点 / 向量访存的基址，向量访存范围、压缩指令和 AMO 需要另行分析。</p>
       <div class="context-grid" id="instruction-inputs">
         <div class="input-group"><label for="fault-instruction">故障指令原始机器码（32 位）</label><div class="register-input-row"><input id="fault-instruction" placeholder="例如 0x0185b503 · ld a0, 24(a1)" autocomplete="off" spellcheck="false"><button id="view-instruction" class="secondary" type="button">查看指令</button></div><span id="instruction-link-error" class="error" role="alert"></span></div>
-        <div class="input-group"><label for="instruction-epc">机器码对应的 EPC（核对同一次现场）</label><input id="instruction-epc" placeholder="未知 / 尚未核对" autocomplete="off" spellcheck="false"></div>
-        <div class="input-group"><label for="gpr-snapshot">通用寄存器来源</label><select id="gpr-snapshot"><option value="unknown">未知 / 未确认</option><option value="saved">入口汇编保存，尚未被覆盖</option><option value="handler">handler 当前值（不能还原）</option></select></div>
+        <div class="input-group"><label for="instruction-epc">机器码所在的 EPC（用于核对是不是同一次现场）</label><input id="instruction-epc" placeholder="未知 / 尚未核对" autocomplete="off" spellcheck="false"></div>
+        <div class="input-group" id="gpr-snapshot-group"><label for="gpr-snapshot">GPR 现场来源</label><select id="gpr-snapshot"><option value="unknown">未知 / 未确认</option><option value="saved">入口汇编保存的，还没被覆盖</option><option value="handler">handler 当前值（不能还原）</option></select></div>
       </div>
       <div id="instruction-analysis" class="diagnostic" aria-live="polite"></div>
       <div id="gpr-inputs" class="gpr-grid"></div>
@@ -181,7 +189,7 @@
   </section>
   <section id="page-panel" class="card" aria-labelledby="page-heading-analysis" hidden>
     <h2 id="page-heading-analysis">页故障 · 逐级 PTE 分析</h2>
-    <p class="help">输入真实 PTE 快照后才向下寻址，遇到缺失即停止。支持 Sv32 / Sv39 / Sv48 / Sv57 及对应 G-stage x4 模式；不模拟两阶段嵌套内存读取。</p>
+    <p class="help">只有填了真实 PTE 快照才会继续向下寻址，遇到空位就停。支持 Sv32 / Sv39 / Sv48 / Sv57 和对应的 G-stage x4 模式；不模拟两阶段嵌套的访存过程。</p>
     <div class="context-grid" id="walk-inputs">
       <div class="input-group"><label for="walk-stage">本次检查的翻译阶段</label><select id="walk-stage"><option value="s">普通 S-stage（satp）</option><option value="vs">VS-stage（vsatp）</option><option value="g">G-stage（hgatp）</option></select></div>
       <div class="input-group"><label for="walk-address">待翻译地址（VA / GPA）</label><input id="walk-address" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
@@ -191,47 +199,32 @@
       <div class="input-group"><label for="walk-sum">该阶段有效 SUM</label><select id="walk-sum"><option value="unknown">未知</option><option value="0">0</option><option value="1">1</option></select></div>
       <div class="input-group"><label for="walk-mxr">该阶段有效 MXR</label><select id="walk-mxr"><option value="unknown">未知</option><option value="0">0</option><option value="1">1</option></select></div>
       <div class="input-group"><label for="walk-ad">A/D 更新机制</label><select id="walk-ad"><option value="unknown">未知</option><option value="fault">软件管理：A/D 缺失触发页故障</option><option value="hardware">硬件更新 A/D</option></select></div>
-      <div class="input-group"><label for="walk-profile">PTE 格式约束</label><select id="walk-profile"><option value="unknown">扩展未知：特殊编码不下定论</option><option value="base">确认使用基础 PTE（无扩展语义）</option></select></div>
+      <div class="input-group"><label for="walk-profile">PTE 格式约束</label><select id="walk-profile"><option value="unknown">是否启用扩展未知：遇到特殊编码不下结论</option><option value="base">确认使用基础 PTE（无扩展语义）</option></select></div>
     </div>
     <div class="actions" id="walk-actions"><button id="use-tval" type="button">使用 tval 地址</button><button id="page-example" type="button">填入独立缺页示例（覆盖页表输入）</button></div>
     <div id="page-context" class="diagnostic"></div>
-    <p class="help">SUM / MXR 填访问时的有效值，而不是无条件复制当前 status：VS-stage MXR = HS.MXR OR VS.MXR；G-stage 仅使用 HS.MXR，且按 U 权限检查、不使用 SUM。这里的“写 / AMO”检查页表写权限，不模拟原子访问的其他约束。</p>
-    <div class="scroll"><table><caption>顶部 PTE 输入的寻址结果与原值回显；未采集时停止遍历。</caption><thead><tr><th>级别</th><th>索引与 PTE 寻址</th><th>PTE 原始值</th><th>字段与检查结果</th></tr></thead><tbody id="pte-rows"></tbody></table></div>
+    <p class="help">SUM / MXR 要填访问发生时的有效值，别直接抄当前 status：VS-stage 的 MXR = HS.MXR OR VS.MXR；G-stage 只用 HS.MXR，且按 U 权限检查、不使用 SUM。“写 / AMO”只检查页表的写权限，不模拟原子操作的其他约束。</p>
+    <div class="scroll"><table><caption>逐级 PTE 的寻址结果与原值回显；从没填的那一级开始停止遍历。</caption><thead><tr><th>级别</th><th>索引与 PTE 寻址</th><th>PTE 原始值</th><th>字段与检查结果</th></tr></thead><tbody id="pte-rows"></tbody></table></div>
     <div id="page-analysis" class="diagnostic" aria-live="polite"></div>
-    <p class="help">已知条件仅覆盖基础页表规则，不覆盖 PMP / PMA、扩展权限、TLB 陈旧或 SFENCE.VMA / HFENCE 时序。读取 PTE 本身失败不能自动归为页故障，需要区分访问故障和两阶段翻译失败。</p>
+    <p class="help">这里只按基础页表规则检查，不覆盖 PMP / PMA、扩展权限、TLB 陈旧或 SFENCE.VMA / HFENCE 时序。PTE 本身读失败不能直接算作页故障，要区分访问故障和两阶段翻译失败。</p>
   </section>
   <section id="external-panel" class="card" aria-labelledby="external-heading" hidden>
     <h2 id="external-heading">外部证据与平台检查</h2>
     <p id="external-guidance" class="diagnostic"></p>
-    <div class="input-group" id="external-inputs"><label for="external-evidence">结构化证据 JSON（version 1）</label><textarea id="external-evidence" placeholder='{"version":1,"xlen":64,"target":"M","registers":{"mcause":"0x7"}}'></textarea>
-      <div class="actions"><button id="import-evidence" type="button">校验并载入现场（替换输入）</button><button id="export-evidence" type="button" class="secondary">从当前输入生成 JSON</button><a class="action-button" href="parse-trap-log.cjs" download>下载日志转换脚本</a><a class="action-button" href="trap-evidence.js" download>下载解析库</a><a class="action-button" href="trap-registers.js" download>下载寄存器定义</a></div>
-      <p class="help">三个脚本放同一目录：<code>node parse-trap-log.cjs trap.log --xlen 64 --target M --asm thread3.asm --output evidence.json</code>；多份现场用 <code>--record 1</code> 选择。</p>
-      <details><summary>JSON 格式说明与示例</summary><p class="help">必填 version=1、xlen、target、registers。所有寄存器、地址和种子使用字符串，空缺字段省略，不用零代替未知。寄存器名使用小写；原日志 STATUS / 非零 X0 使用 log-status / log-x0。source 为来源，instruction 为原始机器码，snapshot 声明采样时点，translation 为一次独立页表遍历，physical 为物理访问证据，notes 保存补充说明。未知字段和超宽数值会报错。</p><pre>{
-  "version": 1, "xlen": 64, "target": "M",
-  "source": {"file":"trap.log", "hart":"3", "seed":"0x1234"},
-  "registers": {"mcause":"0x7", "mepc":"0x9c600010", "mtval":"0x1158095", "mstatus":"0x8a00282b80", "x25":"0x8ac04ae0"},
-  "instruction": {"epc":"0x9c600010", "word":"0x020ce827", "assembly":"vse32.v v16,(s9)"},
-  "snapshot": {"timing":"unknown", "gprSource":"unknown"},
-  "translation": {"stage":"g", "root":"0x901610000008bc00", "access":"write", "ptes":{}},
-  "physical": {"trace":"请填写真实 trace 出处；未知 PA 不要猜填"},
-  "notes":"来源是否同一轮仍待核实"
-}</pre></details>
-      <p id="external-parse-status" role="status" class="help"></p></div>
-    <p class="help">填写备注仅表示已记录线索，不表示这些证据已核实，更不代表根因已经确定。</p>
+    <p class="help">补充外部记录（中断控制器状态、PMP / PMA、总线 trace、执行记录等）时，请保留来源和采样时点，并与陷阱现场分开保存。这里的核对结论只是线索记录，不代表根因已经确定。</p>
   </section>
   <noscript><div class="card">请启用 JavaScript 以使用本地解码和原因码表。页面无需联网。</div></noscript>
 </main>
 <script src="page-state.js"></script>
 <script src="riscv-codec.js"></script>
 <script src="trap-registers.js"></script>
-<script src="trap-evidence.js"></script>
 <script>
 'use strict';
 
 const EXCEPTIONS = [
-  { code:0n, name:'指令地址未对齐', english:'Instruction address misaligned', scope:'取指目标不满足 IALIGN；跳转 / 分支导致时 mepc 指向该跳转 / 分支。', tval:'address' },
-  { code:1n, name:'指令访问故障', english:'Instruction access fault', scope:'取指访问故障；不能仅凭此码区分访问保护或存储系统原因。', tval:'instructionAddress' },
-  { code:2n, name:'非法指令', english:'Illegal instruction', scope:'指令在当前 ISA / 特权状态下非法；不等同于已确定的“不支持某扩展”。', tval:'instructionBits' },
+  { code:0n, name:'指令地址未对齐', english:'Instruction address misaligned', scope:'取指目标不满足 IALIGN；由跳转 / 分支导致时，mepc 指向的是这条跳转 / 分支本身。', tval:'address' },
+  { code:1n, name:'指令访问故障', english:'Instruction access fault', scope:'取指访问失败；只有这个原因码，分不清是访问保护还是存储系统的问题。', tval:'instructionAddress' },
+  { code:2n, name:'非法指令', english:'Illegal instruction', scope:'指令在当前 ISA / 特权状态下非法；这并不等于“不支持某个扩展”。', tval:'instructionBits' },
   { code:3n, name:'断点', english:'Breakpoint', scope:'例如 EBREAK / C.EBREAK 或配置为异常的触发器；需查触发机制。', tval:'breakpoint' },
   { code:4n, name:'加载地址未对齐', english:'Load address misaligned', scope:'加载地址未对齐；是否支持非对齐访问依执行环境而定。', tval:'address' },
   { code:5n, name:'加载访问故障', english:'Load access fault', scope:'加载访问故障；需结合保护、总线与平台信息。', tval:'address' },
@@ -244,12 +237,12 @@ const EXCEPTIONS = [
   { code:12n, name:'指令页故障', english:'Instruction page fault', scope:'取指地址翻译 / 页权限相关异常；可在下方补充逐级 PTE。', tval:'instructionAddress' },
   { code:13n, name:'加载页故障', english:'Load page fault', scope:'加载地址翻译 / 页权限相关异常。', tval:'address' },
   { code:15n, name:'存储 / AMO 页故障', english:'Store/AMO page fault', scope:'存储 / 原子操作地址翻译或页权限相关异常。', tval:'address' },
-  { code:16n, name:'双重陷阱', english:'Double trap', scope:'Ssdbltrp：S 模式双重陷阱转交 M 模式；需结合原始陷阱状态及 mtval2。', tval:'doubleTrap' },
-  { code:18n, name:'软件检查异常', english:'Software check', scope:'例如 Zicfilp / Zicfiss 控制流完整性检查；mtval 可携带子原因。', tval:'softwareCheck' },
-  { code:19n, name:'硬件错误异常', english:'Hardware error', scope:'Ssccptr 等规范涉及的硬件错误；单凭编号不能确定错误部件或可恢复性。', tval:'hardwareError' },
+  { code:16n, name:'双重陷阱', english:'Double trap', scope:'Ssdbltrp：S 模式处理陷阱时再次陷入，转交 M 模式；需结合原始陷阱现场和 mtval2。', tval:'doubleTrap' },
+  { code:18n, name:'软件检查异常', english:'Software check', scope:'例如 Zicfilp / Zicfiss 的控制流完整性检查；mtval 可携带具体子原因。', tval:'softwareCheck' },
+  { code:19n, name:'硬件错误异常', english:'Hardware error', scope:'Ssccptr 等规范定义的硬件错误；只有编号，无法确定故障部件或能否恢复。', tval:'hardwareError' },
   { code:20n, name:'指令客户机页故障', english:'Instruction guest-page fault', scope:'H 扩展：取指相关 G-stage 地址翻译 / 权限异常。', tval:'guestAddress' },
   { code:21n, name:'加载客户机页故障', english:'Load guest-page fault', scope:'H 扩展：加载相关 G-stage 异常，也可能涉及隐式页表访问。', tval:'guestAddress' },
-  { code:22n, name:'虚拟指令', english:'Virtual instruction', scope:'H 扩展：虚拟执行环境中的特定指令陷入；不等同于普通非法指令。', tval:'instructionBits' },
+  { code:22n, name:'虚拟指令', english:'Virtual instruction', scope:'H 扩展：虚拟执行环境中的特定指令被截获陷入；它不是普通的非法指令。', tval:'instructionBits' },
   { code:23n, name:'存储 / AMO 客户机页故障', english:'Store/AMO guest-page fault', scope:'H 扩展：存储 / 原子操作相关 G-stage 异常。', tval:'guestAddress' }
 ];
 
@@ -277,7 +270,7 @@ function parseUnsigned(text, xlen, label = '输入') {
   if (typeof text !== 'string') throw new TypeError(label + ' 必须以字符串输入，以免丢失精度。');
   const valueText = text.trim();
   if (!/^(?:[0-9]+(?:_[0-9]+)*|0[xX][0-9a-fA-F]+(?:_[0-9a-fA-F]+)*|0[bB][01]+(?:_[01]+)*|0[oO][0-7]+(?:_[0-7]+)*)$/.test(valueText)) {
-    throw new SyntaxError(label + '：请输入完整的非负整数（十进制 / 0x / 0b / 0o），允许数字间单个下划线，不允许符号、连续下划线或尾随字符。');
+    throw new SyntaxError(label + '：请输入完整的非负整数（十进制 / 0x / 0b / 0o），数字间可以用单个下划线分组；不允许符号、连续下划线或多余字符。');
   }
   const value = BigInt(valueText.replaceAll('_', ''));
   if (value >= (1n << BigInt(xlen))) throw new RangeError(label + '：超出 RV' + xlen + ' 无符号范围 0 … ' + ((1n << BigInt(xlen)) - 1n).toString() + '。');
@@ -299,35 +292,35 @@ function lookupCause(interrupt, code) {
 }
 
 function interpretMtval(cause, interrupt, mtval) {
-  if (interrupt) return '标准中断不通过 mtval 提供信息，架构值为 0。' + (mtval !== 0n ? ' 当前值非零：属实现定义，请查平台规范。' : '');
-  if (!cause.known) return '未知 / 自定义原因码：mtval 含义依实现而定，仅保留原值。';
+  if (interrupt) return '标准中断不用 mtval 携带信息，架构值为 0。' + (mtval !== 0n ? ' 当前值非零：属于实现定义行为，请查平台规范。' : '');
+  if (!cause.known) return '未知 / 自定义原因码：mtval 的含义由实现决定，这里只保留原值。';
   if (cause.tval === 'instructionBits')
-    return '可选携带引发异常的指令位（右对齐、高位清零，长度为 ILEN 与 XLEN 的较小值）。' + (mtval === 0n ? '当前为 0：可能未提供。' : '当前非零：按指令位候选解读，不是地址。');
+    return '可能携带引发异常的指令编码（右对齐，长度为 ILEN 与 XLEN 的较小值）。' + (mtval === 0n ? '当前为 0：可能未提供。' : '当前非零：按指令编码解读，不是地址。');
   if (cause.tval === 'softwareCheck') {
     const subtype = mtval === 2n ? 'landing pad fault（Zicfilp）' : mtval === 3n ? 'shadow stack fault（Zicfiss）' : '未识别 / 保留子原因';
     return '携带检查子原因：当前 ' + mtval.toString() + ' · ' + subtype + '。';
   }
   if (cause.tval === 'zero')
-    return '此类异常的 mtval 标准值为 0，不是故障地址。' + (mtval !== 0n ? ' 当前非零，与标准语义不符，请核对快照。' : '');
+    return '这类异常的 mtval 标准值为 0，不是故障地址。' + (mtval !== 0n ? ' 当前非零，与标准语义不符，请核对快照。' : '');
   if (cause.tval === 'hardwareError' || cause.tval === 'doubleTrap')
-    return '含义由适用规范决定（双重陷阱需结合 mtval2 与 Ssdbltrp 状态），不能直接当作地址或指令。';
-  return '若提供信息，则为故障虚拟地址；0 也可能表示未提供。' + (mtval !== 0n ? ' 当前非零，可结合权限 / 总线错误进一步定位。' : '') + (cause.tval === 'guestAddress' ? ' G-stage 信息需结合 mtval2 / mtinst。' : '');
+    return '含义由对应规范决定（双重陷阱还要结合 mtval2 和 Ssdbltrp 状态），不能直接当成地址或指令。';
+  return '如果有值，就是故障虚拟地址；0 可能表示未提供。' + (mtval !== 0n ? ' 当前非零，可结合权限 / 总线错误继续定位。' : '') + (cause.tval === 'guestAddress' ? ' G-stage 信息还要结合 mtval2 / mtinst。' : '');
 }
 
 function interpretMtval2(mtval2) {
-  if (mtval2 === null) return '未知：未采集 GPA 附加信息。';
-  return '若提供 GPA 信息，编码为 GPA >> 2；左移两位 = 0x' + (mtval2 << 2n).toString(16) + '（低两位待结合访问类型恢复，不是完整 GPA）。' +
-    (mtval2 === 0n ? ' 零也可能表示未提供信息或地址为零。' : '') +
-    ' 可能是最终访问，也可能是 VS 页表遍历的隐式访问；需结合 mtinst / htinst。';
+  if (mtval2 === null) return '未知：没采集到 GPA 附加信息。';
+  return '如果提供了 GPA 信息，编码是 GPA >> 2；左移两位得到 0x' + (mtval2 << 2n).toString(16) + '（低两位要根据访问类型恢复，所以这不是完整 GPA）。' +
+    (mtval2 === 0n ? ' 0 可能表示未提供，也可能地址就是 0。' : '') +
+    ' 这可能是最终访问，也可能是 VS 页表遍历时的隐式访问，需结合 mtinst / htinst 判断。';
 }
 
 function interpretMepc(cause, interrupt, mepc) {
   let text;
-  if (interrupt) text = '保存被中断处的恢复 PC；中断异步，不是“故障指令地址”。';
-  else if (cause.ecall) text = '保存 ECALL 自身的 PC；若继续执行，软件通常将其 +4（ECALL 为 32 位），硬件不自动加。';
-  else if (cause.code === 16n) text = '双重陷阱的 PC 需结合原始陷阱与 Ssdbltrp 状态解释，不能据此定位根因。';
-  else text = '保存遇到异常的指令 PC；跳转 / 分支目标未对齐时，指向该跳转 / 分支而非目标。';
-  if ((mepc & 1n) !== 0n) text += ' 注意：bit 0 = 1 与 mepc[0] 恒为 0 不符，请核对快照。';
+  if (interrupt) text = '保存被中断位置的恢复 PC；中断是异步的，这不是“故障指令地址”。';
+  else if (cause.ecall) text = '保存的是 ECALL 指令本身的 PC；要继续执行，软件一般要把它 +4（ECALL 固定 32 位），硬件不会自动加。';
+  else if (cause.code === 16n) text = '双重陷阱的 PC 要结合原始陷阱和 Ssdbltrp 状态解读，不能靠它定位根因。';
+  else text = '保存触发异常的指令 PC；跳转 / 分支目标未对齐时，指向这条跳转 / 分支本身，而不是目标地址。';
+  if ((mepc & 1n) !== 0n) text += ' 注意：bit 0 = 1 不符合 mepc[0] 恒为 0 的规则，请核对快照。';
   return text;
 }
 
@@ -482,45 +475,51 @@ function targetText(text, target) {
 
 function statusSummary(status, target, timing, xlen, high = null) {
   const statusName = { M:'mstatus', S:'sstatus', VS:'vsstatus' }[target];
-  if (status === null) return '缺少 ' + statusName + '（当前陷入目标 ' + target + '）：状态未知；请填写顶部“' + statusName + '”，并确认“状态 CSR 采样时点”。';
+  if (status === null) return '缺少 ' + statusName + '：状态未知。请在上方填入 ' + statusName + '，并确认“状态 CSR 采样时点”。';
   const bit = n => Number((status >> BigInt(n)) & 1n);
-  const lines = ['SUM=' + bit(18) + ' · MXR=' + bit(19) + '（仅为此快照中的字段值）'];
+  const lines = ['SUM=' + bit(18) + ' · MXR=' + bit(19) + '（以下都是这个快照里的字段值）'];
   if (target === 'M') {
     const mpp = Number((status >> 11n) & 3n);
     const mpv = xlen === 64 ? bit(39) : high === null ? '未知' : Number((high >> 7n) & 1n);
     lines.push('MIE=' + bit(3) + ' · MPIE=' + bit(7) + ' · MPP=' + ['U', 'S', '保留编码', 'M'][mpp] + ' · MPRV=' + bit(17) + ' · MPV=' + mpv);
-    if (timing === 'entry') lines.push('MPP / MPIE 保存陷入前特权级 / MIE；MPV（实现 H 时）保存原 V 状态，但从 M 陷入时不能还原原先 MPRV 使用的 MPP / MPV。');
+    if (timing === 'entry') lines.push('MPP / MPIE 是陷入前特权级 / MIE 的存档；MPV（实现 H 扩展时）存档原 V 状态。若曾使用 MPRV，其用到的 MPP / MPV 在本次陷入时已被覆盖，无法还原。');
   } else {
     lines.push('SIE=' + bit(1) + ' · SPIE=' + bit(5) + ' · SPP=' + (bit(8) ? 'S' : 'U'));
-    if (timing === 'entry') lines.push('SPP / SPIE 保存陷入前特权级 / SIE；VS 目标对应虚拟监管状态。');
+    if (timing === 'entry') lines.push('SPP / SPIE 存档陷入前的特权级和 SIE；VS 目标对应的是虚拟监管状态。');
   }
-  if (timing === 'before') lines.push('这是陷入前快照：xPP / xPIE 属于先前保存状态，不能据此确定当前执行级别。');
-  if (timing === 'unknown') lines.push('采样时点未知：只解码字段，不恢复陷入前状态。');
-  if (timing === 'entry') lines.push('陷入会清除目标级 xIE；当前 xIE=0 不代表异常前未开启中断。');
+  if (timing === 'before') lines.push('这是陷入前的快照：xPP / xPIE 是更早一次陷入留下的存档，不能用来确定当前执行级别。');
+  if (timing === 'unknown') lines.push('采样时点未知：只按位解码，不推断陷入前的状态。');
+  if (timing === 'entry') lines.push('陷入时硬件会清零目标级的 xIE，所以现在读到 xIE=0 不代表异常前没开中断。');
   return lines.join('\n');
 }
 
 function analyzeInstruction(word, xlen, registers) {
-  const decoded = RISCVCodec.decode(word, { xlen });
+  const decoded = RISCVCodec.decode(word, { xlen, extensions:['M', 'A', 'F', 'D', 'V', 'Zicsr', 'Zifencei'] });
   const opcode = word & 0x7fn;
-  if (opcode !== 3n && opcode !== 0x23n) return { text:decoded.assembly + '\n不是本工具支持的整数 load / store，不计算数据地址。', sources:[] };
+  const vector = decoded.extension === 'V';
+  const fpMem = decoded.kind === 'fload' || decoded.kind === 'fstore';
+  const mem = opcode === 3n || opcode === 0x23n || opcode === 0x07n || opcode === 0x27n || fpMem;
+  if (!mem) return { text:decoded.assembly + '\n不是内存访问指令，不计算数据地址。', sources:[] };
   const rs1 = Number((word >> 15n) & 31n);
-  const rs2 = Number((word >> 20n) & 31n);
-  const store = opcode === 0x23n;
-  const raw = store ? ((word >> 25n) << 5n) | ((word >> 7n) & 31n) : word >> 20n;
-  const offset = BigInt.asIntN(12, raw);
-  const sources = store ? [rs1, rs2] : [rs1];
+  const store = opcode === 0x23n || opcode === 0x27n || decoded.kind === 'fstore';
+  const raw = opcode === 0x23n ? ((word >> 25n) << 5n) | ((word >> 7n) & 31n) : word >> 20n;
+  const offset = vector ? 0n : BigInt.asIntN(12, raw);  // 向量访存无立即数偏移，高位是 nf/mew/mop/vm
+  const sources = store && !vector && !fpMem ? [rs1, Number((word >> 20n) & 31n)] : [rs1];
   const name = n => 'x' + n + '/' + ABI_NAMES[n];
   const base = rs1 === 0 ? 0n : registers[rs1];
-  let text = decoded.assembly + '\n地址基址 ' + name(rs1) + ' = ' + (base === null ? '未知' : formatHex(base, xlen)) + '；偏移 = ' + offset;
+  let text = decoded.assembly + (vector ? '（向量访存）' : fpMem ? '（浮点访存）' : '') + '\n地址基址 ' + name(rs1) + ' = ' + (base === null ? '未知' : formatHex(base, xlen)) + '；偏移 = ' + offset;
   const address = base === null ? null : BigInt.asUintN(xlen, base + offset);
   if (address !== null) text += '\n有效地址（按 XLEN 回绕）= ' + formatHex(address, xlen);
   if (store) {
-    const data = rs2 === 0 ? 0n : registers[rs2];
-    const size = 1 << Number((word >> 12n) & 7n);
-    text += '\n待写数据 ' + name(rs2) + ' = ' + (data === null ? '未知' : formatHex(data, xlen)) + '；使用低 ' + size + ' 字节。';
-  } else text += '\n加载目标寄存器的现场值不是本次故障加载的结果。';
-  return { text, sources, address, access:store ? 'write' : 'read' };
+    if (vector || fpMem) text += '\n要写的数据在向量 / 浮点寄存器里（不是 GPR），请补上对应寄存器的现场。';
+    else {
+      const data = sources[1] === 0 ? 0n : registers[sources[1]];
+      const size = 1 << Number((word >> 12n) & 7n);
+      text += '\n待写数据 ' + name(sources[1]) + ' = ' + (data === null ? '未知' : formatHex(data, xlen)) + '；使用低 ' + size + ' 字节。';
+    }
+  } else text += '\n目标寄存器的现场值是故障前的旧值，不是本次加载的结果。';
+  if (vector) text += '\n向量访存：元素宽度和数量由 vtype / vl / vstart 决定，完整地址范围要按 SEW / LMUL 展开；请补上 vtype、vl、vstart 等向量 CSR（下方已展开并高亮）。';
+  return { text, sources, address, access:store ? 'write' : 'read', vector };
 }
 
 function inputValue(id, xlen) {
@@ -546,13 +545,13 @@ function renderContext(result) {
     const high = target === 'M' && xlen === 32 ? inputValue('mstatush', 32) : null;
     const lines = [statusSummary(inputValue('status', xlen), target, get('snapshot-time').value, xlen, high)];
     const hstatus = inputValue('hstatus', xlen);
-    if (hstatus !== null) lines.push('hstatus：SPV=' + ((hstatus >> 7n) & 1n) + ' · SPVP=' + ((hstatus >> 8n) & 1n) + ' · GVA=' + ((hstatus >> 6n) & 1n) + '（SPVP 并非每次陷入都更新，需结合原 V 状态）');
+    if (hstatus !== null) lines.push('hstatus：SPV=' + ((hstatus >> 7n) & 1n) + ' · SPVP=' + ((hstatus >> 8n) & 1n) + ' · GVA=' + ((hstatus >> 6n) & 1n) + '（SPVP 不是每次陷入都会更新，需结合原来的 V 状态判断）');
     for (const id of ['vsstatus', 'hsstatus']) {
       const value = inputValue(id, xlen);
       if (value !== null) lines.push((id === 'hsstatus' ? 'HS sstatus' : id) + '：SUM=' + ((value >> 18n) & 1n) + ' · MXR=' + ((value >> 19n) & 1n));
     }
     const inst = inputValue('trap-inst', xlen);
-    if (inst !== null) lines.push(get('trap-inst-label').textContent + ' = ' + formatHex(inst, xlen) + '；可能是转换后的指令或特殊伪指令，不当作原始机器码。');
+    if (inst !== null) lines.push(get('trap-inst-label').textContent + ' = ' + formatHex(inst, xlen) + '；这可能是转换后的指令或特殊伪指令，别当作原始机器码。');
     get('status-analysis').textContent = lines.join('\n');
   } catch (error) { get('status-analysis').textContent = error.message; }
   try {
@@ -573,8 +572,8 @@ function renderContext(result) {
     const prefix = target === 'M' ? 'm' : target === 'S' ? 's' : 'vs';
     const relevantInputs = result?.interrupt ? [prefix + 'ie', prefix + 'ip', 'mideleg', ...(target === 'VS' ? ['hideleg'] : [])] : ['medeleg', ...(target === 'VS' ? ['hedeleg'] : [])];
     const missing = relevantInputs.filter(id => absent.includes(id));
-    if (missing.length) lines.unshift('分析当前' + (result?.interrupt ? '中断' : '异常') + '路由需补充：' + missing.join('、') + '。');
-    lines.push('这里只展示快照位值，不据此断言中断应被递送。挂起位可能已被清除；VS 中断委托前后编号可能转换（2/6/10 → 1/5/9），不能直接跨 CSR 对比同一位。');
+    if (missing.length) lines.unshift('要判断当前' + (result?.interrupt ? '中断' : '异常') + '的递送路径，还需要：' + missing.join('、') + '。');
+    lines.push('上面只是快照里的位值，不代表中断一定被递送：挂起位可能已被 handler 清除；VS 中断在委托前后编号会变（2/6/10 → 1/5/9），别跨 CSR 直接对比同一位。');
     get('routing-analysis').textContent = lines.join('\n');
   } catch (error) { get('routing-analysis').textContent = error.message; }
   document.querySelectorAll('.gpr-source').forEach(node => node.classList.remove('gpr-source'));
@@ -582,23 +581,80 @@ function renderContext(result) {
     const registers = ABI_NAMES.map((_, index) => index === 0 ? 0n : inputValue('gpr-' + index, xlen));
     const word = inputValue('fault-instruction', 32);
     if (word === null) {
-      get('instruction-analysis').textContent = result?.interrupt ? '当前为异步中断，不要求故障指令；若需分析恢复 PC 处代码，可填写“故障指令原始机器码”。' : '缺少“故障指令原始机器码（32 位）”；请提供 ' + registerName('mepc', target) + (result && result.mepc !== null ? '=' + formatHex(result.mepc, xlen) : '（尚未采集）') + ' 处的机器码，并填写“机器码对应的 EPC”核对现场。';
+      ABI_NAMES.forEach((_, index) => { const group = get('gpr-' + index).closest('.input-group'); if (group) group.hidden = true; });
+      get('instruction-analysis').textContent = result?.interrupt ? '当前是异步中断，不存在“故障指令”；如果想分析恢复 PC 处的代码，也可以填机器码。' : '缺少“故障指令原始机器码（32 位）”：请填入 ' + registerName('mepc', target) + (result && result.mepc !== null ? '=' + formatHex(result.mepc, xlen) : '（尚未采集）') + ' 指向的那条指令的机器码，并填写“机器码所在的 EPC”用于核对是不是同一次现场。';
       return;
     }
     const analysis = analyzeInstruction(word, xlen, registers);
-    analysis.sources.forEach(index => get('gpr-' + index).parentElement.classList.add('gpr-source'));
+    analysis.sources.forEach(index => { const group = get('gpr-' + index).closest('.input-group'); if (group) group.classList.add('gpr-source'); });
+    layoutGprInputs(analysis, result);
     const lines = [analysis.text];
-    if (get('gpr-snapshot').value !== 'saved') lines.push('现场来源未确认或已被 handler 覆盖：以上仅为输入值演算，不能还原故障地址。');
-    if (result?.interrupt) lines.push('当前是异步中断，epc 不是故障指令地址。');
+    const memoryCause = result && !result.interrupt && [0n, 1n, 4n, 5n, 6n, 7n, 12n, 13n, 15n, 20n, 21n, 23n].includes(result.code);
+    if (memoryCause && get('gpr-snapshot').value !== 'saved') lines.push('GPR 来源未确认或可能已被 handler 覆盖：上面的地址只是按输入值算出来的，不能当作故障时的真实值。');
+    if (result?.interrupt) lines.push('当前是异步中断，epc 是恢复地址，不是故障指令地址。');
     else if (result && result.mtval !== null && analysis.address !== null && analysis.address !== undefined) {
       if ([4n, 5n, 6n, 7n, 13n, 15n, 21n, 23n].includes(result.code)) {
-        lines.push('与 tval 对照：' + (analysis.address === result.mtval ? '数值相同。' : '数值不同；跨页后半段故障、指针屏蔽、tval 未提供或现场不匹配均需进一步核实。'));
+        lines.push('与 tval 对照：' + (analysis.address === result.mtval ? '两者一致。' : '两者不同。可能是跨页访问的后半段失败、指针屏蔽、tval 未提供或现场不匹配，需要进一步核实。'));
         const expected = [4n, 5n, 13n, 21n].includes(result.code) ? 'read' : 'write';
-        if (analysis.access !== expected) lines.push('注意：指令读写类型与原因码不一致，请核对现场。');
+        if (analysis.access !== expected) lines.push('注意：这条指令的读写方向和原因码对不上，请核对现场。');
       }
     }
     get('instruction-analysis').textContent = lines.join('\n');
   } catch (error) { get('instruction-analysis').textContent = error.message; }
+}
+
+function layoutGprInputs(analysis, trap) {
+  const get = id => document.getElementById(id);
+  const group = id => get(id)?.closest('.input-group');
+  const memory = trap && !trap.interrupt && [0n, 1n, 4n, 5n, 6n, 7n, 12n, 13n, 15n, 20n, 21n, 23n].includes(trap.code);
+  ABI_NAMES.forEach((_, index) => { group('gpr-' + index).hidden = !memory || !analysis || !analysis.sources.includes(index); });
+  const vector = analysis && analysis.vector === true;
+  get('extra-register-inputs').open = get('extra-register-inputs').open || vector;
+  ['vtype', 'vl', 'vstart', 'vxrm', 'vxsat'].forEach(id => {
+    const node = group(id);
+    if (!node) return;
+    if (vector) node.classList.add('gpr-source');
+  });
+}
+
+function relevantRoutingCSRs(trap) {
+  if (!trap) return [];
+  if (!trap.interrupt) return trap.target === 'VS' ? ['medeleg', 'hedeleg'] : ['medeleg'];
+  const prefix = trap.target === 'M' ? 'm' : trap.target === 'S' ? 's' : 'vs';
+  const set = [prefix + 'ie', prefix + 'ip', 'mideleg'];
+  if (trap.target === 'VS') set.push('hideleg');
+  if ([2n, 6n, 10n].includes(trap.code)) set.push('hie', 'hip', 'hvip');
+  if (trap.code === 12n) set.push('hgeie', 'hgeip');
+  return set;
+}
+
+function applyCauseLayout(trap) {
+  const get = id => document.getElementById(id);
+  const memory = trap && !trap.interrupt && [0n, 1n, 4n, 5n, 6n, 7n, 12n, 13n, 15n, 20n, 21n, 23n].includes(trap.code);
+  const guest = trap && !trap.interrupt && [20n, 21n, 23n].includes(trap.code);
+  const pageFault = trap && !trap.interrupt && [12n, 13n, 15n].includes(trap.code);
+  const hstatusShown = trap && (guest || (!trap.interrupt && [10n, 22n].includes(trap.code)) || (trap.interrupt && [2n, 6n, 10n, 12n].includes(trap.code)));
+  const twoStageShown = trap && (guest || (pageFault && get('walk-stage').value === 'vs'));
+  const trapInstShown = trap && !trap.interrupt && (guest || [2n, 22n].includes(trap.code));
+  get('mtval-group').hidden = !!trap && trap.interrupt;
+  get('hstatus-group').hidden = !hstatusShown;
+  get('vsstatus-group').hidden = !twoStageShown;
+  get('hsstatus-group').hidden = !twoStageShown;
+  get('trap-inst-group').hidden = !trapInstShown;
+  const relevant = relevantRoutingCSRs(trap);
+  ROUTING_CSRS.forEach(id => { const group = get(id)?.closest('.input-group'); if (group) group.hidden = !relevant.includes(id); });
+  const routingTitle = trap?.interrupt ? '中断使能、挂起与委托' : '异常委托与目标级';
+  get('routing-input-section-heading').textContent = routingTitle;
+  get('routing-analysis-title').textContent = routingTitle;
+  get('layout-hint').hidden = !!trap;
+  get('status-input-section').hidden = !trap;
+  get('routing-input-section').hidden = !trap;
+  get('gpr-input-section').hidden = !trap || trap.interrupt;
+  get('gpr-card').hidden = !trap || trap.interrupt;
+  get('context').hidden = !trap;
+  get('gpr-snapshot-group').hidden = !memory;
+  get('gpr-inputs').hidden = !memory;
+  get('supplement-actions').hidden = !trap;
 }
 
 function walkPage(options) {
@@ -607,9 +663,9 @@ function walkPage(options) {
   const result = (state, message, extra = {}) => ({ rows, state, message, ...extra });
   const rootName = { s:'satp', vs:'vsatp', g:'hgatp' }[stage];
   const stageName = { s:'普通 S-stage', vs:'VS-stage', g:'G-stage' }[stage];
-  if (root === null) return result('unknown', '缺少 ' + rootName + '（' + stageName + ' 分页 CSR）：请填写顶部“' + rootName + '”完整值（含 MODE / PPN），否则无法确定模式和根页表。', { missingInput:'walk-root' });
+  if (root === null) return result('unknown', '缺少 ' + rootName + '（' + stageName + ' 用的分页 CSR）：请在上方填上完整值（含 MODE / PPN），否则无法确定模式和根页表。', { missingInput:'walk-root' });
   const mode = xlen === 32 ? Number(root >> 31n) : Number(root >> 60n);
-  if (mode === 0) return result('unknown', 'MODE=Bare：本阶段不做分页翻译。请核对访问时的 CSR、有效特权级与实际故障阶段。');
+  if (mode === 0) return result('unknown', 'MODE=Bare：这一阶段没有开启分页。请核对访问发生时实际的 CSR、特权级和故障阶段。');
   const levels = xlen === 32 ? (mode === 1 ? 2 : 0) : ({ 8:3, 9:4, 10:5 }[mode] || 0);
   if (!levels) return result('unknown', '未知 / 不支持的 MODE=' + mode + '，不猜测页表格式。');
   const indexBits = xlen === 32 ? 10 : 9;
@@ -623,7 +679,7 @@ function walkPage(options) {
   if (stage === 'g' && ((xlen === 64 && ((root >> 58n) & 3n) !== 0n) || (xlen === 32 && ((root >> 29n) & 3n) !== 0n))) {
     return result('unknown', 'hgatp 保留字段非零，请核对 CSR 或所用扩展规范。', { levels, modeName });
   }
-  if (address === null) return result('unknown', modeName + ' · 缺少待翻译地址 ' + (stage === 'g' ? 'GPA（已确认的完整 guest 物理地址）' : 'VA（故障虚拟地址）') + '；请填写顶部“待翻译地址（VA / GPA）”。', { levels, modeName, missingInput:'walk-address' });
+  if (address === null) return result('unknown', modeName + ' · 缺少待翻译地址 ' + (stage === 'g' ? 'GPA（已确认的完整 guest 物理地址）' : 'VA（故障虚拟地址）') + '；请在上方填写“待翻译地址（VA / GPA）”。', { levels, modeName, missingInput:'walk-address' });
   if (stage === 'g') {
     if (address >= (1n << BigInt(width))) return result('fault', 'GPA 超过 ' + modeName + ' 的零扩展地址范围。', { levels, modeName });
   } else {
@@ -642,7 +698,7 @@ function walkPage(options) {
       return result(state, modeName + ' · L' + level + '：' + text, { levels, modeName, ...extra });
     };
     const text = ptes[level]?.trim() || '';
-    if (!text) return stop('unknown', '未采集 L' + level + ' PTE 原始值（' + (stage === 'vs' ? 'GPA' : 'PA') + '=0x' + pteAddress.toString(16) + '）；请填写顶部“L' + level + ' PTE 原始值”。停止遍历，下级地址未知。', { missingInput:'pte-' + level });
+    if (!text) return stop('unknown', '还没有 L' + level + ' 的 PTE 原始值（' + (stage === 'vs' ? 'GPA' : 'PA') + '=0x' + pteAddress.toString(16) + '）：请填入上方“L' + level + ' PTE 原始值”。寻址到这里停止，下级地址未知。', { missingInput:'pte-' + level });
     if (text.toLowerCase() === 'unreadable') return stop('unknown', 'PTE 读取失败：需结合 PMP / PMA、总线或 G-stage 记录，不能直接判为 V=0。');
     let pte;
     try { pte = parseUnsigned(text, xlen === 32 ? 32 : 64, 'L' + level + ' PTE'); }
@@ -683,16 +739,16 @@ function walkPage(options) {
       }
     } else missing.push('“访问时有效特权级”（S / VS 或 U / VU，不是 handler 当前级别）');
     if (!a || (access === 'write' && !d)) {
-      if (ad === 'fault') return stop('fault', !a ? 'A=0，软件管理 A/D 模式下触发页故障。' : '写访问 D=0，软件管理 A/D 模式下触发页故障。');
-      missing.push(ad === 'hardware' ? '硬件 A/D 更新是否成功（不能仅凭零位判故障）' : '“A/D 更新机制”（软件管理或硬件更新；核对实现的 Svade / Svadu 及适用的 menvcfg.ADUE / henvcfg.ADUE）');
+      if (ad === 'fault') return stop('fault', !a ? 'A=0：在软件管理 A/D 的实现上会触发页故障。' : '写访问遇到 D=0：在软件管理 A/D 的实现上会触发页故障。');
+      missing.push(ad === 'hardware' ? '硬件 A/D 更新是否成功（不能仅凭零位判故障）' : '“A/D 更新机制”（软件管理还是硬件更新；核对实现的 Svade / Svadu 及适用的 menvcfg.ADUE / henvcfg.ADUE）');
     }
     const pageBits = BigInt(12 + level * indexBits);
     const output = (ppn << 12n) | (address & ((1n << pageBits) - 1n));
     const outputKind = stage === 'vs' ? 'GPA' : 'PA';
     row.detail += '\n叶子：页大小 2^' + pageBits + ' 字节；候选 ' + outputKind + '=0x' + output.toString(16);
-    if (profile === 'unknown') missing.push('“PTE 格式约束”（基础 PTE 或目标实现的 Svnapot / Svpbmt / 影子栈等扩展配置）');
-    if (missing.length) return stop('unknown', '尚不能确认可访问，缺少 / 待核实：' + missing.join('、') + '。', { output });
-    return stop('candidate', '已提供条件下基础页表检查通过；不是原故障已排除。仍需检查扩展、TLB、PMP / PMA 与现场时序。', { output });
+    if (profile === 'unknown') missing.push('“PTE 格式约束”（基础 PTE，还是目标实现用了 Svnapot / Svpbmt / 影子栈等扩展）');
+    if (missing.length) return stop('unknown', '还不能确认可访问，缺 / 待核实：' + missing.join('、') + '。', { output });
+    return stop('candidate', '按已填的条件，基础页表检查通过——但这不代表原始故障已经排除。还要检查扩展、TLB、PMP / PMA 和现场时序。', { output });
   }
 }
 
@@ -714,16 +770,16 @@ function renderPage(trap) {
   const misaligned = [0n, 4n, 6n].includes(trap.code);
   get('page-heading-analysis').textContent = accessFault ? '访问故障 · 地址翻译辅助检查' : misaligned ? '未对齐异常 · 地址翻译辅助检查' : '页故障 · 逐级 PTE 分析';
   const notes = [];
-  if (accessFault) notes.push('当前是 access fault，不是 page fault。即使找到 PTE 违规也不能直接解释此原因码；需核对实际故障类型，并检查页表读取 / 更新或最终 PA 的 PMP、PMA 和总线错误。');
-  if (misaligned) notes.push('当前是地址未对齐异常，先核对指令访问宽度、目标地址和 IALIGN；页表检查只是辅助，不替代对齐分析。');
-  if (guest) notes.push('当前是 guest-page fault，指向 G-stage。VS-stage 页表遍历也可能触发它；请明确此次检查是最终访问，还是 VS PTE 的隐式读 / 更新。');
-  if (guest && stage !== 'g') notes.push('当前所选不是故障的 G-stage；这里只能辅助追溯 VS 地址或比较普通翻译，不能据此解释 guest-page fault。');
-  if (!guest && !accessFault && !misaligned && stage === 'g') notes.push('当前原因码是普通页故障，不是 guest-page fault；G-stage 检查仅作辅助，请核对故障阶段。');
-  if (stage === 'vs') notes.push('本表的 PTE 地址是 GPA，不是 PA；每次读取 VS PTE 都还需经过 G-stage。最终输出也是 GPA。');
+  if (accessFault) notes.push('当前原因码是访问故障，不是页故障。就算发现 PTE 违规，也不能直接解释这个原因码；需要核对实际故障类型，并检查页表读取 / 更新路径、最终 PA 上的 PMP / PMA 和总线错误。');
+  if (misaligned) notes.push('当前是地址未对齐异常：先核对访问宽度、目标地址和 IALIGN。页表检查只是辅助，不能替代对齐分析。');
+  if (guest) notes.push('当前是 guest-page fault，对应 G-stage。VS-stage 的页表遍历也可能触发它：请确认这次要检查的是最终访问，还是 VS PTE 的隐式读 / 更新。');
+  if (guest && stage !== 'g') notes.push('当前选的不是故障所在的 G-stage：这里只能辅助追溯 VS 地址或对比普通翻译，不能用来解释 guest-page fault。');
+  if (!guest && !accessFault && !misaligned && stage === 'g') notes.push('当前原因码是普通页故障，不是 guest-page fault：G-stage 检查只作辅助，请核对故障发生的阶段。');
+  if (stage === 'vs') notes.push('本表的 PTE 地址是 GPA，不是 PA；每次读取 VS PTE 都还要经过 G-stage。最终输出也是 GPA。');
   else notes.push('本表的 PTE 地址是 PA。');
   if (guest) notes.push(interpretMtval2(trap.mtval2));
-  if (stage === 'g') notes.push('G-stage 地址请填写已确认的完整 GPA，不把 tval 当 GPA，也不擅自补齐 htval / mtval2 的低两位。G-stage 访问类型需显式选择。');
-  notes.push('tval 与手动输入地址不自动绑定；修改 CSR、阶段或地址后，请同步替换 PTE 现场。');
+  if (stage === 'g') notes.push('G-stage 要填已确认的完整 GPA：不要把 tval 直接当 GPA，也不要自己补 htval / mtval2 的低两位。G-stage 的访问类型需要手动选择。');
+  notes.push('tval 不会自动带入“待翻译地址”；改了 CSR、阶段或地址后，请同步更新 PTE 现场。');
   get('page-context').textContent = targetText(notes.join('\n'), trap.target);
   for (let level = 0; level <= 4; level++) {
     get('pte-row-' + level).hidden = true;
@@ -776,89 +832,89 @@ function evidencePlan(trap, data) {
   let path, external;
   if (trap.interrupt) {
     path = '中断原因 → 来源挂起 → 局部 / 全局使能 → 委托与目标级 → 控制器 / 事件源';
-    external = [9n, 10n, 11n, 12n].includes(code) ? '外部中断：补充 PLIC / AIA / IMSIC 的中断源 ID、优先级、阈值与 claim/complete 记录；仅有 cause 无法识别设备。'
-      : [5n, 6n, 7n].includes(code) ? '定时器中断：补充 time / mtime、mtimecmp / stimecmp / vstimecmp（按实现）及采样时序，检查比较条件。'
-      : [1n, 2n, 3n].includes(code) ? '软件中断：补充 IPI 发送方、目标 hart、软件挂起位设置与清除记录。'
-      : code === 13n ? '计数器溢出中断：补充溢出计数器标识、溢出位及使能配置。' : '补充平台中断定义、事件源及实际递送记录；不猜测未知编号。';
+    external = [9n, 10n, 11n, 12n].includes(code) ? '外部中断：补 PLIC / AIA / IMSIC 的中断源 ID、优先级、阈值和 claim/complete 记录；只有 cause 无法判断是哪个设备。'
+      : [5n, 6n, 7n].includes(code) ? '定时器中断：补 time / mtime、mtimecmp / stimecmp / vstimecmp（按实现）及采样时序，检查比较条件。'
+      : [1n, 2n, 3n].includes(code) ? '软件中断：补 IPI 发送方、目标 hart、软件挂起位的置位和清除记录。'
+      : code === 13n ? '计数器溢出中断：补溢出计数器的标识、溢出位和使能配置。' : '补平台中断定义、事件源及实际递送记录；不猜测未知编号。';
   } else if (memory) {
     path = accessFault ? '故障 PC / 指令 → 有效访问地址 → 翻译 / 页表物理访问 → 最终 PA → PMP / PMA / 总线'
       : guest ? '故障 PC / 访问 → VS 上下文 → 最终 GPA 或 VS PTE 的 GPA → G-stage → 失败级别'
       : align ? '故障指令 → 目标地址 / 访问宽度 → 对齐约束 → 平台支持'
       : '故障 PC / 访问 → 有效权限 → 翻译阶段与根表 → 逐级 PTE → 权限 / A/D / 对齐';
-    external = accessFault ? '当前是访问故障而非缺页：补充实际 PA、访问宽度、pmpcfg* / pmpaddr*、PMA / 内存映射及总线错误；区分页表读取 / 更新失败与最终访问失败。'
-      : align ? '补充访问宽度、IALIGN / 压缩指令配置和平台非对齐访问支持；奇数地址不一定错误，字节访问无需多字节对齐。'
-      : '核对同一 hart、同一 seed 的实际 page walk / TLB 记录与 SFENCE.VMA / HFENCE 时序。当前内存 PTE 不一定等于故障发生时被使用的 PTE。';
+    external = accessFault ? '当前是访问故障而不是缺页：补实际 PA、访问宽度、pmpcfg* / pmpaddr*、PMA / 内存映射和总线错误；并区分是页表读取 / 更新失败，还是最终访问失败。'
+      : align ? '补访问宽度、IALIGN / 压缩指令配置和平台对非对齐访问的支持；奇数地址不一定有错，字节访问本来就不需要多字节对齐。'
+      : '核对同一 hart、同一轮测试的实际 page walk / TLB 记录与 SFENCE.VMA / HFENCE 时序。内存里现在的 PTE，不一定等于故障发生时被使用的那个。';
   } else {
     const guides = {
-      2:['原始指令 → ISA / 扩展 → 特权级与状态门控', '非法指令：补充实际 ISA / 扩展版本、misa 及相关使能 / stateen / envcfg；区分不支持编码与当前状态禁止执行。'],
-      22:['原始指令 → V 状态 → H 扩展陷入控制', '虚拟指令异常：核对 V 状态、hstatus.VTVM / VTW / VTSR 等适用控制，不等同于指令未实现。'],
+      2:['原始指令 → ISA / 扩展 → 特权级与状态门控', '非法指令：补实际 ISA / 扩展版本、misa 和相关使能位（stateen / envcfg）；区分“编码不支持”和“当前状态禁止执行”。'],
+      22:['原始指令 → V 状态 → H 扩展陷入控制', '虚拟指令异常：核对 V 状态、hstatus.VTVM / VTW / VTSR 等适用的控制位；它不代表指令未实现。'],
       3:['断点现场 → EBREAK 或触发器 → 调试策略', '断点：核对 EBREAK / C.EBREAK、触发器 tselect / tdata* 和调试配置。'],
-      16:['原始陷阱 → 再次陷入 → 双重陷阱控制', '双重陷阱：补充原始陷阱现场、mtval2 和 MDT / SDT 状态；本页 guest GPA 面板不能替代双重陷阱解读。'],
+      16:['原始陷阱 → 再次陷入 → 双重陷阱控制', '双重陷阱：补原始陷阱现场、mtval2 和 MDT / SDT 状态；本页的 guest GPA 面板不能替代双重陷阱解读。'],
       18:['软件检查子原因 → 对应控制流扩展 → 违规现场', '软件检查异常：根据 tval 子原因核对 Zicfilp / Zicfiss 等扩展及 landing pad / 影子栈现场。'],
-      19:['硬件错误 → 平台错误记录 → 故障部件', '硬件错误：补充平台错误寄存器、RAS / ECC / 总线日志；cause 不能确定故障部件。']
+      19:['硬件错误 → 平台错误记录 → 故障部件', '硬件错误：补平台错误寄存器、RAS / ECC / 总线日志；cause 不能确定故障部件。']
     };
     [path, external] = guides[Number(code)] || (trap.cause.ecall
-      ? ['ECALL 现场 → 调用 ABI / 服务号 → 委托 / handler', 'ECALL：补充调用 ABI、服务号、参数和预期 handler；ECALL 本身可能是正常流程，不自动判作故障。']
-      : ['原因编码 → 目标规范 / 平台定义 → 原始现场', '保留 / 自定义原因码：先取得目标 ISA 版本或平台定义，不套用缺页或访存解释。']);
+      ? ['ECALL 现场 → 调用 ABI / 服务号 → 委托 / handler', 'ECALL：补调用 ABI、服务号、参数和预期 handler；ECALL 本身可能是正常流程，别自动当成故障。']
+      : ['原因编码 → 目标规范 / 平台定义 → 原始现场', '保留 / 自定义原因码：先拿到目标 ISA 版本或平台定义，别套用缺页或访存的解释。']);
   }
   const statusReady = data.status !== null && !data.statusError && data.timing !== 'unknown';
   const statusName = { M:'mstatus', S:'sstatus', VS:'vsstatus' }[trap.target];
-  let contextText = data.statusError || (data.status === null ? '缺少 ' + statusName + '（陷入目标 ' + trap.target + '）。' : '已提供 ' + statusName + '。');
-  contextText += data.timing === 'unknown' ? ' 采样时点未确认：请设置“状态 CSR 采样时点”，不能把当前字段当作异常前状态。' : ' 已标注采样时点，仍需确认保存 / 打印路径。';
-  if (!trap.interrupt) contextText += data.gprSource === 'saved' ? ' GPR 已声明为入口保存现场。' : ' “通用寄存器来源”未确认或已被 handler 覆盖；请确认是否入口汇编保存。';
+  let contextText = data.statusError || (data.status === null ? '缺少 ' + statusName + '。' : '已提供 ' + statusName + '。');
+  contextText += data.timing === 'unknown' ? ' 采样时点未确认：请在上方设置“状态 CSR 采样时点”，否则不能把字段值当作异常前的状态。' : ' 已标注采样时点；保存 / 打印这条值的代码路径仍需确认。';
+  if (!trap.interrupt) contextText += data.gprSource === 'saved' ? ' GPR 已声明为入口保存现场。' : ' “GPR 现场来源”未确认或可能已被 handler 覆盖；请确认是不是入口汇编保存的。';
   if (trap.target === 'M' && statusReady && data.timing === 'entry') {
     const mpp = Number((data.status >> 11n) & 3n);
     const mpv = trap.xlen === 64 ? Number((data.status >> 39n) & 1n) : data.high === null ? null : Number((data.high >> 7n) & 1n);
     if (mpp === 1 && mpv === 1) contextText += ' MPP=S、MPV=1：若为真实入口状态且实现 H，指向原 VS 上下文；VSATP=Bare 仍不能排除 HGATP 翻译。';
   }
-  add('context', '现场来源与采样时点', statusReady && (trap.interrupt || data.gprSource === 'saved') ? 'provided' : 'missing', contextText, data.status === null || data.statusError ? 'status' : data.timing === 'unknown' ? 'snapshot-time' : 'gpr-snapshot');
+  add('context', '现场来源与采样时点', statusReady && (trap.interrupt || data.gprSource === 'saved') ? 'provided' : 'missing', contextText, data.status === null || data.statusError ? 'status' : data.timing === 'unknown' || trap.interrupt ? 'snapshot-time' : 'gpr-snapshot');
   if (trap.interrupt) {
     const prefix = trap.target === 'M' ? 'm' : trap.target === 'S' ? 's' : 'vs';
     const required = [prefix + 'ie', prefix + 'ip', 'mideleg', ...(trap.target === 'VS' ? ['hideleg'] : [])];
     const missing = required.filter(id => !data.routing[id]);
-    add('routing', '中断使能、挂起与委托', missing.length ? 'missing' : 'provided', missing.length ? '缺少 / 无效：' + missing.join('、') + '。EPC 是恢复 PC，不要求提供“故障访存指令”。' : '相关快照已提供；挂起位可能已被 handler 清除，VS 原因码也可能转换，需核对实际递送时序。', 'routing-inputs');
+    add('routing', '中断使能、挂起与委托', missing.length ? 'missing' : 'provided', missing.length ? '缺少：' + missing.join('、') + '。中断的 EPC 是恢复地址，不涉及“故障指令”。' : '相关快照已提供；挂起位可能已被 handler 清除，VS 原因码也可能转换，需核对实际递送时序。', 'routing-inputs');
   } else {
     const epcName = registerName('mepc', trap.target);
     const epcText = trap.mepc === null ? epcName + '（未采集）' : epcName + ' / EPC=' + formatHex(trap.mepc, trap.xlen);
     let instructionState = 'missing';
-    let instructionText = data.wordError || ('缺少 ' + epcText + ' 处的实际指令；提供同一轮 ELF / 指令转储与机器码。');
+    let instructionText = data.wordError || ('缺少 ' + epcText + ' 处的那条指令：请从同一轮 ELF / 指令转储里取机器码填入。');
     if (data.word !== null && !data.wordError) {
       instructionText = '已提供机器码。';
       if (data.instructionEpcError) { instructionState = 'conflict'; instructionText += data.instructionEpcError; }
-      else if (trap.mepc === null || data.instructionEpc === null) instructionText += ' 缺少 ' + [trap.mepc === null ? epcName : '', data.instructionEpc === null ? '“机器码对应的 EPC”' : ''].filter(Boolean).join('、') + '，不能确认机器码属于当前故障。';
-      else if (data.instructionEpc !== trap.mepc) { instructionState = 'conflict'; instructionText += ' 机器码对应的 EPC 与当前 ' + epcText + ' 不同。'; }
-      else { instructionState = 'provided'; instructionText += ' 对应 ' + epcText + '；仍需核实来自同一 hart / seed。'; }
+      else if (trap.mepc === null || data.instructionEpc === null) instructionText += ' 缺少 ' + [trap.mepc === null ? epcName : '', data.instructionEpc === null ? '“机器码所在的 EPC”' : ''].filter(Boolean).join('、') + '，还不能确认这条机器码就是本次故障的。';
+      else if (data.instructionEpc !== trap.mepc) { instructionState = 'conflict'; instructionText += ' 机器码所在的 EPC 和当前 ' + epcText + ' 不一致。'; }
+      else { instructionState = 'provided'; instructionText += ' 与当前 ' + epcText + ' 一致；仍需确认来自同一个 hart。'; }
     }
-    if (fetch) instructionText += ' 取指失败时可能拿不到完整指令，使用同轮 ELF 字节、取指 trace；跨页取指时 EPC 与 tval 可以不同。';
+    if (fetch) instructionText += ' 取指失败时可能拿不到完整指令，请用同一轮 ELF 字节或取指 trace 补；跨页取指时 EPC 和 tval 可能不同。';
     add('instruction', fetch ? '取指现场与原始代码' : '故障 PC 对应的实际指令', instructionState, instructionText, 'fault-instruction');
     if (memory) {
-      add('address', '故障地址与访问类型', trap.mtval === null ? 'missing' : trap.mtval === 0n ? 'review' : 'provided', trap.mtval === null ? '缺少 ' + registerName('mtval', trap.target) + '；请填写该陷阱寄存器，不能以 ' + registerName('mepc', trap.target) + ' 代替数据故障地址。' : 'tval=' + formatHex(trap.mtval, trap.xlen) + '；' + (trap.mtval === 0n ? '零既可能是地址零也可能未提供。' : '') + (fetch ? '取指' : read ? '读' : '写 / AMO') + '相关异常，不把 tval 直接当 PA。', 'mtval');
+      add('address', '故障地址与访问类型', trap.mtval === null ? 'missing' : trap.mtval === 0n ? 'review' : 'provided', trap.mtval === null ? '缺少 ' + registerName('mtval', trap.target) + '：请填上它。注意 ' + registerName('mepc', trap.target) + ' 是故障指令的地址，不能代替数据访问的故障地址。' : 'tval=' + formatHex(trap.mtval, trap.xlen) + '；' + (trap.mtval === 0n ? 'tval=0 可能是地址真的为 0，也可能是没提供。' : '') + (fetch ? '取指' : read ? '读' : '写 / AMO') + '相关异常；tval 是虚拟地址，别直接当 PA。', 'mtval');
       if (!fetch && data.word !== null && !data.wordError) {
         try {
           const instruction = analyzeInstruction(data.word, trap.xlen, data.registers);
           const absent = instruction.sources.filter(index => data.registers[index] === null);
           const wrong = instruction.access && instruction.access !== (read ? 'read' : 'write');
-          add('operands', '指令 → 源寄存器 → 有效地址', wrong ? 'conflict' : absent.length ? 'missing' : 'review', wrong ? '指令读写方向与原因码不一致，请核对机器码和现场。' : absent.length ? '缺少基址 / 存储源寄存器：' + absent.map(index => 'x' + index + '/' + ABI_NAMES[index]).join('、') : instruction.address !== undefined && instruction.address !== null ? '输入值计算的地址=' + formatHex(instruction.address, trap.xlen) + '。' + (trap.mtval !== null && instruction.address !== trap.mtval ? ' 与 tval 不同：核对跨页访问、指针屏蔽及现场来源。' : ' 需结合来源与执行记录确认。') : '当前解码器不能恢复此访存；压缩 / AMO / 向量指令需外部反汇编及对应源状态。', 'gpr-heading');
-        } catch (error) { add('operands', '实际操作数与访问宽度', 'review', '当前工具未能解码此指令：' + error.message + '。补充外部反汇编；不能据此判指令非法。', 'gpr-heading'); }
+          add('operands', '指令 → 源寄存器 → 有效地址', wrong ? 'conflict' : absent.length ? 'missing' : 'review', wrong ? '指令的读写方向和原因码对不上，请核对机器码和现场。' : absent.length ? '缺少基址 / 存储源寄存器：' + absent.map(index => 'x' + index + '/' + ABI_NAMES[index]).join('、') : instruction.address !== undefined && instruction.address !== null ? '按输入算出的地址=' + formatHex(instruction.address, trap.xlen) + '。' + (trap.mtval !== null && instruction.address !== trap.mtval ? ' 和 tval 不同：请核对跨页访问、指针屏蔽和现场来源。' : ' 还需结合来源与执行记录确认。') : '当前解码器算不出这条访存；压缩 / AMO / 向量指令需要外部反汇编和对应源状态。', 'gpr-heading');
+        } catch (error) { add('operands', '实际操作数与访问宽度', 'review', '这条机器码暂时解不出来：' + error.message + '。请用外部反汇编补充；这不代表指令非法。', 'gpr-heading'); }
       }
       if (guest) {
         const gpaRegister = registerName('mtval2', trap.target);
         const instRegister = registerName('mtinst', trap.target);
         const absent = [trap.mtval2 === null ? gpaRegister : '', data.trapInst === null ? instRegister : ''].filter(Boolean);
-        add('gpa', 'G-stage 故障 GPA 与访问环节', absent.length ? 'missing' : 'review', (absent.length ? '缺少 ' + absent.join('、') + '。' : '已提供 ' + gpaRegister + ' 和 ' + instRegister + '。') + interpretMtval2(trap.mtval2) + ' 需核实最终访问与 VS PTE 隐式访问；零值不等同于缺失输入。', trap.mtval2 === null ? 'mtval2' : 'trap-inst');
+        add('gpa', 'G-stage 故障 GPA 与访问环节', absent.length ? 'missing' : 'review', (absent.length ? '缺少 ' + absent.join('、') + '。' : '已提供 ' + gpaRegister + ' 和 ' + instRegister + '。') + interpretMtval2(trap.mtval2) + ' 还要确认是最终访问还是 VS PTE 的隐式访问；值为 0 不等于没填。', trap.mtval2 === null ? 'mtval2' : 'trap-inst');
       }
       let translationState = 'missing';
-      let translationText = data.pageMessage || '请补充 ' + ({ s:'satp', vs:'vsatp', g:'hgatp' }[data.stage]) + '、待翻译地址（' + (data.stage === 'g' ? 'GPA' : 'VA') + '）及从最高级开始的 PTE 原始值。';
-      if (data.pageState === 'fault') { translationState = 'review'; translationText = '发现基础翻译规则违规：' + translationText; }
-      if (data.pageState === 'candidate') { translationState = 'review'; translationText = '当前输入的基础检查通过，不等于原故障被排除。' + translationText; }
-      if (guest && data.stage !== 'g') { translationState = 'conflict'; translationText = 'guest-page fault 需要检查 G-stage；当前所选阶段不匹配。' + translationText; }
-      if (data.stage !== 'g' && trap.mtval !== null && data.walkAddress !== null && data.walkAddress !== trap.mtval) { translationState = 'conflict'; translationText += ' 当前翻译地址与 tval 不同，可能仍是示例 / 其他现场。'; }
-      if (accessFault) translationText += ' 原因码是 access fault，不能直接归因为普通 PTE 权限错误；继续核对页表物理访问和最终 PA。';
-      if (data.stage === 'vs') translationText += ' VS-stage 输出只是 GPA；继续确认 hgatp 和该 GPA 的 G-stage 各级 PTE / page-walk 记录，才能得到 PA。';
+      let translationText = data.pageMessage || '请补 ' + ({ s:'satp', vs:'vsatp', g:'hgatp' }[data.stage]) + '、待翻译地址（' + (data.stage === 'g' ? 'GPA' : 'VA') + '）和从最高级开始的各层 PTE 原始值。';
+      if (data.pageState === 'fault') { translationState = 'review'; translationText = '发现违反基础翻译规则：' + translationText; }
+      if (data.pageState === 'candidate') { translationState = 'review'; translationText = '按当前输入，基础检查通过——这不代表原故障已排除。' + translationText; }
+      if (guest && data.stage !== 'g') { translationState = 'conflict'; translationText = 'guest-page fault 需要检查 G-stage；当前选的阶段不匹配。' + translationText; }
+      if (data.stage !== 'g' && trap.mtval !== null && data.walkAddress !== null && data.walkAddress !== trap.mtval) { translationState = 'conflict'; translationText += ' 当前翻译地址和 tval 不同，可能不是同一次现场。'; }
+      if (accessFault) translationText += ' 原因码是访问故障，不能直接归为普通的 PTE 权限错误；继续核对页表物理访问和最终 PA。';
+      if (data.stage === 'vs') translationText += ' VS-stage 的输出只是 GPA：要继续查 hgatp 和这个 GPA 在 G-stage 的各级 PTE / 遍历记录，才能得到 PA。';
       add('translation', '访问 → 翻译阶段 → PTE / PA', translationState, translationText, guest && data.stage !== 'g' ? 'walk-stage' : data.pageMissingInput || 'page-panel');
     }
   }
-  add('external', trap.interrupt ? '中断来源与平台证据' : accessFault ? '物理访问失败原因' : '对应原因的外部证据', 'review', external + describeExternalEvidence(data.external), 'external-panel');
+  add('external', trap.interrupt ? '中断来源与平台证据' : accessFault ? '物理访问失败原因' : '对应原因的外部证据', 'review', external, 'external-panel');
   return { items, path, external };
 }
 
@@ -866,7 +922,7 @@ function renderEvidence(trap) {
   const get = id => document.getElementById(id);
   get('evidence-list').replaceChildren();
   get('external-panel').hidden = !trap;
-  if (!trap) { get('evidence-path').textContent = ''; get('evidence-summary').textContent = ''; return; }
+  if (!trap) { get('evidence-path').textContent = ''; get('evidence-summary').textContent = ''; get('next-step').textContent = ''; return; }
   const errors = {};
   const read = (id, width = trap.xlen) => { try { return optionalUnsigned(get(id).value, width, get(id).labels?.[0]?.textContent || id); } catch (error) { errors[id] = error.message; return null; } };
   const data = {
@@ -875,24 +931,29 @@ function renderEvidence(trap) {
     registers:ABI_NAMES.map((_, index) => index === 0 ? 0n : read('gpr-' + index)),
     routing:Object.fromEntries(ROUTING_CSRS.map(id => [id, read(id) !== null])),
     stage:get('walk-stage').value, walkAddress:read('walk-address', get('walk-stage').value === 'g' ? 64 : trap.xlen),
-    pageState:get('page-analysis').dataset.state, pageMessage:get('page-analysis').textContent, pageMissingInput:get('page-analysis').dataset.missingInput,
-    external:get('external-evidence').value.trim()
+    pageState:get('page-analysis').dataset.state, pageMessage:get('page-analysis').textContent, pageMissingInput:get('page-analysis').dataset.missingInput
   };
   data.statusError = errors.status; data.wordError = errors['fault-instruction']; data.instructionEpcError = errors['instruction-epc'];
   const plan = evidencePlan(trap, data);
   get('evidence-path').textContent = plan.path;
   get('external-guidance').textContent = plan.external;
-  const labels = { missing:'缺少 / 无效', provided:'已提供', review:'待核实', conflict:'不一致' };
+  const labels = { missing:'缺少', provided:'已提供', review:'待核实', conflict:'不一致' };
   plan.items.forEach(item => {
     const li = element('li', 'evidence-item'); li.dataset.state = item.state; li.dataset.evidence = item.id;
     li.append(element('strong', '', labels[item.state] + ' · ' + item.title), element('p', '', item.text));
-    const inputAnchor = { 'gpr-heading':'gpr-inputs', 'page-panel':'page-input-section', 'external-panel':'external-evidence' }[item.anchor] || item.anchor;
-    const link = element('a', 'action-button', '前往顶部补充输入'); link.href = '#' + inputAnchor;
-    link.addEventListener('click', () => { const node = get(inputAnchor); if (node.matches('input, select, textarea')) node.focus({ preventScroll:true }); });
+    const inputAnchor = { 'gpr-heading':'gpr-inputs', 'page-panel':'page-input-section', 'external-panel':'external-panel' }[item.anchor] || item.anchor;
+    const link = element('a', 'action-button', ['missing', 'conflict'].includes(item.state) ? '前往补充输入' : '查看对应输入'); link.href = '#' + inputAnchor;
+    link.addEventListener('click', () => { const node = get(inputAnchor); if (node.matches('input, select, textarea, button')) node.focus({ preventScroll:true }); });
     li.append(link); get('evidence-list').append(li);
   });
   const count = state => plan.items.filter(item => item.state === state).length;
-  get('evidence-summary').textContent = '缺少 / 无效 ' + count('missing') + ' 项 · 不一致 ' + count('conflict') + ' 项 · 待核实 ' + count('review') + ' 项 · 已提供 ' + count('provided') + ' 项。已提供不代表已验证；不以填满表单作为根因确定的判据。';
+  get('evidence-summary').textContent = '缺少 ' + count('missing') + ' 项 · 不一致 ' + count('conflict') + ' 项 · 待核实 ' + count('review') + ' 项 · 已提供 ' + count('provided') + ' 项。“已提供”不等于已验证；填满表单也不等于根因确定。';
+  const next = get('next-step');
+  const first = plan.items.find(item => item.state === 'missing' || item.state === 'conflict');
+  const reviews = plan.items.filter(item => item.state === 'review');
+  if (first) { next.dataset.state = 'fault'; next.textContent = '下一步：' + first.title + ' —— ' + first.text; }
+  else if (reviews.length) { next.dataset.state = 'candidate'; next.textContent = '输入已基本齐全；下一步：核实 ' + reviews.map(item => item.title).join('、') + '，并结合外部执行记录确认。'; }
+  else { next.dataset.state = 'candidate'; next.textContent = '关键输入都齐了；下一步：对照真实执行记录 / 控制器现场做最终确认。填满表单不等于找到根因。'; }
 }
 
 let currentTrap = null;
@@ -903,7 +964,7 @@ function renderDecode() {
   const xlen = Number(get('xlen').value);
   const errors = [];
   ['mcause', 'mepc', 'mtval', 'mtval2'].forEach(id => {
-    get(id).labels[0].textContent = registerName(id, target) + (id === 'mtval2' ? '（日志 TVAL2；含义依原因）' : '');
+    get(id).labels[0].textContent = registerName(id, target) + (id === 'mtval2' ? '（日志 TVAL2，含义取决于原因）' : '');
   });
   currentTrap = null;
   get('mtval2-group').hidden = true;
@@ -931,9 +992,10 @@ function renderDecode() {
     get('cause-name').textContent = result.cause.name + (result.cause.english ? ' · ' + result.cause.english : '') + ' · 原因码 ' + result.code;
     get('trap-summary').textContent = targetText([result.cause.scope, 'mepc：' + result.mepcText, 'mtval：' + result.mtvalText, ...(result.guestFault ? ['mtval2：' + interpretMtval2(result.mtval2)] : [])].join('\n'), target);
     get('context-note').textContent = target === 'VS' && !result.interrupt && [20n, 21n, 23n].includes(result.code)
-      ? '现场不一致：guest-page fault 不直接递送 VS，请核对实际陷入目标。'
-      : '按原始快照解码，不模拟硬件递送。不同陷阱或不同采样时点的数据不能混用。';
+      ? '现场可疑：guest-page fault 不会直接递送到 VS，请核对实际的陷入目标。'
+      : '按原始快照解码，不模拟硬件递送。不同陷阱、不同采样时点的数据不要混用。';
   }
+  applyCauseLayout(currentTrap);
   renderContext(currentTrap);
   renderPage(currentTrap);
   renderEvidence(currentTrap);
@@ -947,16 +1009,6 @@ function renderDecode() {
     catch (error) { extraErrors.push(error.message); }
   });
   get('extra-register-errors').textContent = extraErrors.join('\n');
-  const text = get('external-evidence').value.trim();
-  get('external-evidence').removeAttribute('aria-invalid');
-  if (!text) get('external-parse-status').textContent = '尚未提供结构化证据，可填写 JSON 或从当前输入生成。';
-  else try {
-    const parsed = TrapEvidence.parse(text);
-    get('external-parse-status').textContent = 'JSON 格式有效：' + Object.keys(parsed.inputs).length + ' 个可载入字段。' + (parsed.warnings.length ? parsed.warnings.join('；') : '') + ' 请点击载入按钮应用；有效不等于证据已核实。';
-  } catch (error) {
-    get('external-evidence').setAttribute('aria-invalid', 'true');
-    get('external-parse-status').textContent = '证据未解析：' + error.message;
-  }
 }
 
 function addSnapshotInput(container, id, label, fixed = false) {
@@ -971,79 +1023,6 @@ function addSnapshotInput(container, id, label, fixed = false) {
   if (fixed) { input.value = '0x0'; input.readOnly = true; }
   group.append(caption, input);
   container.append(group);
-}
-
-function describeExternalEvidence(text) {
-  if (!text) return ' 尚未提供结构化证据 JSON。';
-  try {
-    const parsed = TrapEvidence.parse(text);
-    const evidence = parsed.document;
-    const lines = [' 已解析 JSON；格式校验不等于证据已核实。'];
-    if (evidence.source) lines.push('来源：' + Object.entries(evidence.source).map(([key, value]) => key + '=' + value).join('，'));
-    if (evidence.physical) lines.push('物理访问记录：' + Object.entries(evidence.physical).map(([key, value]) => key + '=' + value).join('，'));
-    else lines.push('缺少 physical：可补充 pa、sizeBytes、failure、pmp / pma / bus / trace。');
-    if (evidence.xlen !== Number(document.getElementById('xlen').value) || evidence.target !== document.getElementById('trap-target').value) lines.push('JSON 的 xlen / target 与当前页面不一致，请载入或修正证据。');
-    const mismatch = Object.entries(parsed.inputs).filter(([id, value]) => {
-      const input = document.getElementById(id);
-      if (!input) return true;
-      if (input.tagName === 'SELECT') return input.value !== value;
-      try { return BigInt(input.value.replaceAll('_','')) !== BigInt(value); } catch { return input.value !== value; }
-    });
-    if (mismatch.length) lines.push('JSON 与当前输入不一致：' + mismatch.map(([id]) => document.getElementById(id)?.labels?.[0]?.textContent || id).join('、') + '；请载入或重新生成，勿混用现场。');
-    return lines.concat(parsed.warnings).join('\n');
-  } catch (error) { return ' 外部证据格式无效：' + error.message; }
-}
-
-function collectExternalEvidence(preserve = true) {
-  const get = id => document.getElementById(id);
-  const xlen = Number(get('xlen').value), target = get('trap-target').value;
-  let previous = {};
-  if (preserve && get('external-evidence').value.trim()) previous = TrapEvidence.parse(get('external-evidence').value).document;
-  const registers = Object.create(null);
-  for (const [name, [id, bits]] of TrapEvidence.mapping(target)) {
-    if (name === 'mstatus' && target !== 'M') continue;
-    const input = get(id);
-    if (!input?.value.trim()) continue;
-    registers[name] = '0x' + inputValue(id, bits === 'XLEN' ? xlen : Number(bits)).toString(16);
-  }
-  if (target === 'S' && get('status').value.trim()) registers.sstatus = '0x' + inputValue('status', xlen).toString(16);
-  if (target === 'VS' && get('status').value.trim()) registers.vsstatus = '0x' + inputValue('status', xlen).toString(16);
-  const evidence = { version:1, xlen, target, registers, snapshot:{ timing:get('snapshot-time').value, gprSource:get('gpr-snapshot').value } };
-  for (const key of ['source','physical','notes']) if (previous[key] !== undefined) evidence[key] = previous[key];
-  if (get('fault-instruction').value.trim() || get('instruction-epc').value.trim()) {
-    evidence.instruction = { epc:'0x' + parseUnsigned(get('instruction-epc').value, xlen, '机器码对应的 EPC').toString(16), word:'0x' + parseUnsigned(get('fault-instruction').value, 32, '故障机器码').toString(16) };
-    if (previous.instruction?.word && BigInt(previous.instruction.word.replaceAll('_','')) === BigInt(evidence.instruction.word) && previous.instruction.assembly) evidence.instruction.assembly = previous.instruction.assembly;
-  }
-  if (get('walk-root').value.trim() || get('walk-address').value.trim()) {
-    const t = { stage:get('walk-stage').value, ptes:{} };
-    for (const key of ['access','privilege','sum','mxr','ad','profile']) t[key] = get('walk-' + key).value;
-    if (get('walk-root').value.trim()) t.root = '0x' + inputValue('walk-root', xlen).toString(16);
-    if (get('walk-address').value.trim()) t.address = '0x' + inputValue('walk-address', t.stage === 'g' ? 64 : xlen).toString(16);
-    for (let level = 0; level < 5; level++) if (get('pte-' + level).value.trim()) t.ptes[level] = get('pte-' + level).value.trim();
-    evidence.translation = t;
-  }
-  TrapEvidence.validate(evidence);
-  return evidence;
-}
-
-function importExternalEvidence() {
-  const get = id => document.getElementById(id);
-  try {
-    const parsed = TrapEvidence.parse(get('external-evidence').value);
-    const json = JSON.stringify(parsed.document, null, 2);
-    document.querySelectorAll('#input-panel input, #input-panel textarea').forEach(input => { if (!input.readOnly) input.value = ''; });
-    document.querySelectorAll('#input-panel select').forEach(select => { select.selectedIndex = 0; });
-    get('xlen').value = String(parsed.document.xlen);
-    get('trap-target').value = parsed.document.target;
-    for (const [id, value] of Object.entries(parsed.inputs)) get(id).value = value;
-    get('external-evidence').value = json;
-    get('default-fault-note').hidden = true;
-    renderDecode();
-    get('external-parse-status').textContent = '已载入 ' + Object.keys(parsed.inputs).length + ' 个字段；未提供字段保持未知。' + parsed.warnings.join('；');
-  } catch (error) {
-    get('external-evidence').setAttribute('aria-invalid', 'true');
-    get('external-parse-status').textContent = '未载入，原现场未修改：' + error.message;
-  }
 }
 
 function clearInputs(container, resetView = false) {
@@ -1070,11 +1049,10 @@ function addClearButton(section, heading, title) {
 function arrangeInputPanel() {
   const get = id => document.getElementById(id);
   const groups = [
-    ['status-input-section', '状态 CSR 与采样时点', ['status-inputs'], '使用同一次陷阱的状态；先确认是陷入前还是入口保存值。'],
-    ['routing-input-section', '中断使能、挂起与委托', ['routing-inputs'], '按原因补充相关 CSR，未采集留空。'],
-    ['gpr-input-section', '故障指令与通用寄存器现场', ['instruction-inputs', 'gpr-inputs'], '填写入口汇编保存的现场；x0 固定为零，高亮项是指令相关源寄存器。'],
-    ['page-input-section', '地址翻译与逐级 PTE 输入', ['walk-inputs', 'walk-actions'], '从最高级填写真实 PTE。空白为未知；unreadable 表示读取失败。寻址和权限结果在下方展示。'],
-    ['external-input-section', '结构化外部证据', ['external-inputs'], 'JSON 校验后显式载入；仅验证格式和输入一致性，不代替硬件现场核实。']
+    ['status-input-section', '状态 CSR 与采样时点', ['status-inputs'], '使用同一次陷阱的状态；先确认是陷入前打的，还是入口保存的。'],
+    ['routing-input-section', '中断使能、挂起与委托', ['routing-inputs'], '按原因补相关 CSR，没采集就留空；没列出来的路由寄存器和当前原因无关。'],
+    ['gpr-input-section', '故障指令与通用寄存器现场', ['instruction-inputs', 'gpr-inputs'], '先填机器码，这里只显示这条指令计算地址用到的源寄存器；蓝色高亮的输入框就是需要的，其余不用填。x0 固定为零。向量访存还会高亮 vtype / vl / vstart 等向量 CSR。'],
+    ['page-input-section', '地址翻译与逐级 PTE 输入', ['walk-inputs', 'walk-actions'], '从最高级开始填真实 PTE。留空表示未知；填 unreadable 表示读取失败。寻址和权限结果在下方展示。']
   ];
   groups.forEach(([id, title, children, help]) => {
     const section = element('section', 'input-section'); section.id = id;
@@ -1177,91 +1155,22 @@ function renderCauseOptions() {
 
 function loadDefaultFault() {
   const get = id => document.getElementById(id);
-  document.querySelectorAll('#input-panel input, #input-panel textarea').forEach(input => { if (!input.readOnly) input.value = ''; });
-  document.querySelectorAll('#input-panel select').forEach(select => { select.selectedIndex = 0; });
+  document.querySelectorAll('main input, main textarea').forEach(input => { if (!input.readOnly && input.type !== 'file') input.value = ''; });
+  document.querySelectorAll('main select').forEach(select => { select.selectedIndex = 0; });
   get('default-fault-note').hidden = false;
   const values = {
-    'trap-target':'M', xlen:'64', mcause:'0x7', mepc:'0x9c600010', mtval:'0x1158095', mtval2:'0x0',
-    status:'0x8a00282b80', hstatus:'0x20003d000', hsstatus:'0x8000000200082700', vsstatus:'0x200082620',
-    medeleg:'0x700063', hedeleg:'0x0', sie:'0x0', mie:'0x80000a',
-    'snapshot-time':'unknown', 'gpr-snapshot':'unknown', 'walk-stage':'g', 'walk-root':'0x901610000008bc00',
-    'fault-instruction':'0x020ce827', 'instruction-epc':'0x9c600010',
-    'log-status':'0x800004ca00282f80', 'log-x0':'0x3c706c958ffef88e', satp:'0x0', vsatp:'0x0', hgatp:'0x901610000008bc00',
-    mseccfg:'0x200000300', menvcfg:'0xe8000002000000f1', henvcfg:'0xe8000003000000f1', senvcfg:'0x3000000f1',
-    mcounteren:'0x7ffff', hcounteren:'0x7ffff', mnscratch:'0', mnepc:'0', mncause:'0', mnstatus:'0', mntvec:'0',
-    fflags:'0', frm:'1', vtype:'0x9a', vl:'8', vlenb:'16', vstart:'0', vxsat:'0', vxrm:'3', vcsr:'6'
+    'trap-target':'M', xlen:'64', mcause:'0xf', mepc:'0x80001234', mtval:'0x3fc000c0',
+    status:'0x8000000200000880', 'snapshot-time':'entry', 'gpr-snapshot':'saved',
+    medeleg:'0x0',
+    'fault-instruction':'0x00b4a823', 'instruction-epc':'0x80001234',
+    'walk-stage':'s', 'walk-address':'0x3fc000c0', 'walk-root':'0x8000000040000000',
+    'walk-access':'auto', 'walk-privilege':'S', 'walk-sum':'0', 'walk-mxr':'0',
+    'walk-ad':'unknown', 'walk-profile':'base',
+    'pte-2':'0x10000000401', 'pte-1':'0x10000000801', 'pte-0':'0x0c0000c7'
   };
   Object.entries(values).forEach(([id, value]) => { get(id).value = value; });
-  const gprs = [
-    '0x0', '0x6948269577942ade', '0x87b794a5dca230b4', '0xd1a724838dbf2e2b',
-    '0x1dbc6d8ecee21cd4', '0xa61ae223492aaac3', '0xa0ae51463ae9b01c', '0x89340ccb8d17dcdc',
-    '0x7a20d28bf49e87e2', '0x17b1e5d9d739580e', '0x9ccc001587e37c6a', '0xece880c1407eda73',
-    '0x6324dd363dfad5e6', '0x36db740d534ee5f2', '0x5bb10ca98eaf5693', '0xcc2fead66f982295',
-    '0xe57d12f064f14335', '0xda37b10565f99fd', '0xc0599338d8ee3194', '0xffbc6fe3d5c24f94',
-    '0x4875f5e3fe6655b7', '0x4ca737aab13a2bef', '0xb43b6882f45724f6', '0xf99bd7dd07725883',
-    '0x8ac04918', '0x8ac04ae0', '0x8ac04bc8', '0x8ac04f20',
-    '0x8ac051c0', '0x8ac051c8', '0x8ac05780', '0x8ac05b00'
-  ];
-  gprs.forEach((value, index) => { get('gpr-' + index).value = value; });
-  const floats = [
-    'd14ca406d981c15b', 'dcf306fe2eea4cae', '75e02c35bbf3367b', '0180b99e9f3f025e',
-    'a8c186257dfc2da8', '91d634e7c6f00dba', '5341c1d1eb97767a', '1e3e93915b107d52',
-    'ab35fc89e12b4d46', '7841c3edddd3bff2', '9d4c1ea971a26324', '63b254334fa12abd',
-    'ab1a6cf8569d7f12', 'cbd19349dc02f080', '10e829df3c8a64b3', '491062767345fbf9',
-    '94b2f504daa173c7', 'f9321e7ac82fba1f', '980ac0f299ae04a8', 'd4881fe7d91d778b',
-    'ad22676e25443328', '4c2f7c6799b6c71a', '4f956bb1f0189b5b', '677818fe17dfd01a',
-    'f240e0b18bded745', '26425fe01828cf82', 'fce148f9c07483fd', '52a57538bae802be',
-    '6fdccb0591a5cf02', 'e98742797aa5c081', '4e261fec3e37c139', '7ad1794446b9d33b'
-  ];
-  const vectors = [
-    '73c153ae056c9c96_7ecb2f5e8a9f44cb', 'bc5a363e62ac7cb3_13fcaafd14271d9b',
-    '1496a2a387cc5361_265b9a76ce493f54', '610ecf18130b2a03_af80d54cf26bad5d',
-    '13b02e0d16025fa9_c10847860d9df7e6', '4011cf0188dcb681_a42c24f4b192b3aa',
-    '2e3ca474397263ee_f2f49dec90887d29', 'b55677dd516d30fa_7d4cda7591f444f6',
-    '4863dfd73649b04e_a8e80c115dc33858', 'ff64452ceffafdc9_9209fb5554466ac1',
-    'ad42e0b43dd0268e_35ecec94ad0ada69', 'bcc683cbd83f9173_133b7c956387431c',
-    '2ffaa7b7cb5398a7_bfd828368d8007b8', '7a3897f9b5866997_c6cf3ddaaf809a82',
-    '4bfdb119d8a657bb_52137a0a98cff022', '7dcb6eccd6264771_1518e9de3bf872e1',
-    '0000000000000000_0000000000000000', '0000000000000000_0000000000000000',
-    '653a525a3de6cf0d_9c53856172c65f27', '1b546994508b3df6_8feba5086b962ec9',
-    'f78b7037e8e9eff8_db371cdd54d65238', '2b55b9aba5cff5bc_b524f2f71640b87c',
-    '7521458ae2a66825_834355eb7d180317', '4267234b935a8de9_37fdfb40fef6009c',
-    'e9169f73d6b7cfd0_a853fe34e9ae4b64', '8460dc59fe72dd03_abe160ef6bfe3862',
-    'd07cb88ee9df5f80_819e5e86d580e52b', '2724d7ac19b0f9f8_7053ccdf4dd32741',
-    'b017aab990ddde2b_773c74f7ba9c0842', '00fa37e2df997467_b06b5d8e0b58c0cf',
-    'c710ce2484913dd4_19a9e69a34211199', '1262be7e5372fb23_e0258f23ef8df6db'
-  ];
-  floats.forEach((value, index) => { get('f' + index).value = '0x0000000000000000_' + value; });
-  vectors.forEach((value, index) => { get('v' + index).value = '0x' + value; });
-  get('external-evidence').value = [
-    '故障示例现场：example.tc · Loop 72 · seed 0xb7f1e2d4766c3919 · time 0x1fce6e652',
-    'Begin to golden test / Hang to default exception handler',
-    'Context[3]=0x80844250; THREAD_ID=0x3; Now el: 3, from el: 1; inst_area[3]=0x9c600000',
-    '原日志 X0=0x3c706c958ffef88e（不可能是架构 x0，输入框固定 0；需核对 Context 保存/打印逻辑）。',
-    'MSTATUS=0x8a00282b80; STATUS=0x800004ca00282f80（不同来源/时点未确认，主状态暂使用日志 MSTATUS，不合并两者）。',
-    'SSTATUS=0x8000000200082700 已填入 HS sstatus；VSSTATUS=0x200082620。',
-    'EPC=0x9c600010; CAUSE=0x7; TVAL=0x1158095; TVAL2=0x0。TVAL2 在此 access fault 中不按 GPA 解读。',
-    'SATP=0x0; VSATP=0x0; HGATP=0x901610000008bc00。暂选 G-stage 辅助检查，不证明故障时该阶段生效；完整 GPA 和 PTE 均未提供；实际指令已从 thread3.asm 补入，文件与 seed 的对应关系仍需核实。',
-    '反汇编来源：thread3.asm:7–12；同目录 thread0/1/2.asm 的起始地址分别为 0x9c000000 / 0x9c200000 / 0x9c400000，thread3 起始地址 0x9c600000 与 inst_area[3] 一致。',
-    'thread3.asm:8  9c600000: c9a9f057  vsetivli zero,19,e64,m4,tu,ma',
-    'thread3.asm:9  9c600004: 01107057  vsetvli zero,zero,e32,m2,tu,mu',
-    'thread3.asm:10 9c600008: 5e003857  vmv.v.i v16,0',
-    'thread3.asm:11 9c60000c: 09a07057  vsetvli zero,zero,e64,m4,tu,ma',
-    'thread3.asm:12 9c600010: 020ce827  vse32.v v16,(s9) ← EPC 对应指令',
-    '已核对地址和机器码：rs1=x25/s9，vs3=v16，EEW=32，vm=1（不使用 v0 掩码），单字段单位步长向量存储。当前基础整数解码器不支持该向量指令；这不是指令非法的证据。',
-    '条件分析：若 X25=0x8ac04ae0、VL=8、VSTART=0 为故障时真实现场，则 8 个 4 字节元素的有效地址范围为 0x8ac04ae0–0x8ac04aff，首元素地址 4 字节对齐。TVAL=0x1158095 不在此范围，不能直接归因于未对齐。',
-    'VTYPE=0x9a 对应 e64,m4,tu,ma；EEW=32 时 EMUL=2，源寄存器组为 v16–v17。日志中两者为零，与前序清零指令相容，但不能独立证明这些指令确已执行。',
-    '反汇编头仅标注 tmp.out / elf64-littleriscv，没有 seed 或 ELF 身份；不能仅凭地址匹配确认属于 seed 0xb7f1e2d4766c3919。下一步核对同轮 ELF/生成记录、thread3 执行 trace、入口保存代码、实际访问地址及物理失败记录。',
-    'FFLAG=0x0; FRM=0x1; MCOUNTEREN=0x7ffff; HCOUNTEREN=0x7ffff',
-    'MENVCFG=0xe8000002000000f1; HENVCFG=0xe8000003000000f1; SENVCFG=0x3000000f1; MSECCFG=0x200000300',
-    'MNSCRATCH=0x0; MNEPC=0x0; MNCAUSE=0x0; MNSTATUS=0x0; MNTVEC=0x0',
-    ...floats.map((value, index) => 'F' + index + ': 0x0000000000000000_' + value),
-    ...vectors.map((value, index) => 'V' + index + ': 0x' + value),
-    'VTYPE=0x9a; VL=0x8; VLENB=0x10; VSTART=0x0; VXSAT=0x0; VXRM=0x3; VCSR=0x6',
-    'ra=0x6948269577942ade; sp=0x87b794a5dca230b4。采样时点、转储来源、实际 PA、PMP/PMA 与总线错误尚未核实。'
-  ].join('\n');
-  const notes = get('external-evidence').value;
-  get('external-evidence').value = JSON.stringify({ ...collectExternalEvidence(false), source:{ file:'trap.log', testcase:'example.tc', loop:'72', seed:'0xb7f1e2d4766c3919', hart:'3', instructionFile:'thread3.asm' }, notes }, null, 2);
+  get('gpr-9').value = '0x3fc000b0';   // s1：地址基址
+  get('gpr-11').value = '0xdeadbeef';  // a1：待写数据
 }
 
 function init() {
@@ -1269,11 +1178,15 @@ function init() {
   arrangeInputPanel();
   ABI_NAMES.forEach((name, index) => addSnapshotInput(get('gpr-inputs'), 'gpr-' + index, 'x' + index + ' / ' + name, index === 0));
   ROUTING_CSRS.forEach(id => addSnapshotInput(get('routing-inputs'), id, id));
-  const extra = element('section', 'input-section'); extra.id = 'extra-register-inputs';
-  extra.append(element('h3', '', '日志补充寄存器 · 安全配置 / RNMI / 浮点 / 向量'), element('p', 'help', 'F/V 按日志 128 位槽位保存，支持十六进制高低半部下划线；不是 XLEN。STATUS 与 X0 原始槽位独立保留，不覆盖架构状态。分页原始 CSR 与诊断使用的根表输入分别保留。'));
-  TrapRegisters.forEach(reg => addSnapshotInput(extra, reg.id, reg.name));
+  const extra = element('details', ''); extra.id = 'extra-register-inputs';
+  extra.append(element('summary', '', '日志补充寄存器（安全配置 / RNMI / 浮点 / 向量 —— 排查常见原因一般用不上，向量访存时自动展开）'));
+  const extraHeading = element('h3', '', '日志补充寄存器 · 安全配置 / RNMI / 浮点 / 向量');
+  extra.append(extraHeading, element('p', 'help', 'F/V 按日志里的 128 位槽位保存，十六进制高低半部用下划线分开；它们不是 XLEN 宽度。STATUS 与 X0 的原始槽位单独保留，不覆盖架构状态；分页 CSR 的原值与诊断用的根表输入也分开保存。'));
+  const extraGrid = element('div', 'context-grid');
+  TrapRegisters.forEach(reg => addSnapshotInput(extraGrid, reg.id, reg.name));
+  extra.append(extraGrid);
   const errors = element('p', 'error'); errors.id = 'extra-register-errors'; errors.setAttribute('role', 'alert'); errors.style.gridColumn = '1 / -1'; extra.append(errors);
-  addClearButton(extra, extra.querySelector('h3'), '日志补充寄存器');
+  addClearButton(extra, extraHeading, '日志补充寄存器');
   get('snapshot-input-sections').append(extra);
   for (let level = 4; level >= 0; level--) {
     const row = element('tr');
@@ -1321,7 +1234,9 @@ function init() {
     get(rv32 ? 'pte-1' : 'pte-2').value = '0x20000401'; get(rv32 ? 'pte-0' : 'pte-1').value = '0x0';
     renderDecode();
   });
-  get('clear-all').addEventListener('click', () => clearInputs(get('input-panel'), true));
+  get('clear-all').addEventListener('click', () => {
+    clearInputs(document.querySelector('main'), true);
+  });
   get('view-instruction').addEventListener('click', () => {
     get('instruction-link-error').textContent = '';
     try {
@@ -1331,11 +1246,6 @@ function init() {
     } catch (error) { get('instruction-link-error').textContent = '未跳转：' + error.message; }
   });
   get('sync-registers').addEventListener('click', () => syncRegisterSnapshot());
-  get('import-evidence').addEventListener('click', importExternalEvidence);
-  get('export-evidence').addEventListener('click', () => {
-    try { get('external-evidence').value = JSON.stringify(collectExternalEvidence(), null, 2); renderDecode(); }
-    catch (error) { get('external-parse-status').textContent = '未生成：' + error.message; }
-  });
   get('load-fault-example').addEventListener('click', () => {
     loadDefaultFault();
     renderDecode();
@@ -1348,7 +1258,14 @@ function init() {
     }
   });
   renderDecode();
-  PageState.bind({ selector:'#input-panel input, #input-panel select, #input-panel textarea',
+  function updateScrollMargin() {
+    const header = document.querySelector('header');
+    const margin = (header ? header.getBoundingClientRect().height : 0) + 12;
+    document.querySelectorAll('[id]').forEach(node => { node.style.scrollMarginTop = margin + 'px'; });
+  }
+  updateScrollMargin();
+  window.addEventListener('resize', updateScrollMargin);
+  PageState.bind({ selector:'#input-panel input, #input-panel select, #supplement-panel input, #supplement-panel select',
     read:() => ({ exampleVisible:!get('default-fault-note').hidden }),
     restore:extra => { get('default-fault-note').hidden = extra?.exampleVisible !== true; }, render:renderDecode });
 }
