@@ -34,16 +34,29 @@
   .walk svg { display:block; width:100%; height:auto; min-width:900px; }
   .result { line-height:1.9; font-size:14px; overflow-wrap:anywhere; }
   ol { padding-left:24px; font-size:14px; line-height:1.9; }
-  .pte-scroll { overflow-x:auto; padding:4px 2px 8px; }
-  .pte-bitvalues, .pte-cells { display:grid; grid-template-columns:repeat(64,minmax(0,1fr)); min-width:1024px; }
+  .pte-scroll { overflow-x:auto; padding:4px 2px 8px; contain:layout paint; }
+  .pte-bitvalues, .pte-cells { display:grid; grid-template-columns:repeat(64,minmax(0,1fr)); min-width:1024px; contain:layout paint; }
   .pte-bitvalues { margin-bottom:10px; }
   .pte-bitvalues .bit-value { padding:4px 0; font:13px var(--mono); cursor:pointer; }
-  .pte-cell { min-width:0; min-height:56px; padding:6px 2px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:1px solid #b9b7a5; font:600 12px/1.4 var(--mono); cursor:pointer; }
+  .pte-cell { min-width:0; min-height:56px; padding:6px 2px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:1px solid #b9b7a5; font:600 12px/1.4 var(--mono); cursor:pointer; position:relative; user-select:none; -webkit-user-select:none; }
   .pte-cell.rsv { cursor:default; }
   .pte-cell .pte-cell-value { font-size:11px; }
-  .pte-cell.nonzero { box-shadow:inset 0 -3px var(--accent); }
+  .pte-cell::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity .08s ease;
+    pointer-events: none;
+  }
+  .pte-cell.nonzero::after { opacity: 1; }
   .pte-value-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:12px 0 6px; }
   .pte-value-row input { width:24ch; }
+  .pte-ops { display:flex; flex-wrap:wrap; gap:8px; }
   .pte-binary { display:block; font:12px/1.8 var(--mono); margin:6px 0; overflow-wrap:anywhere; }
   .pte-error { font-size:13px; }
   .pte-summary { font-size:13px; color:#7c0000; margin:6px 0; }
@@ -150,7 +163,11 @@
     <div class="pte-value-row">
       <label for="pte-value">64 位原始值</label>
       <input id="pte-value" type="text" value="0x0000000000000000" spellcheck="false" autocomplete="off" aria-describedby="pte-error">
-      <button id="pte-reset" type="button">清零</button>
+      <span class="pte-ops">
+        <button id="pte-reset" type="button" title="所有位置 0">清零</button>
+        <button id="pte-fill" type="button" title="所有位置 1">全 1</button>
+        <button id="pte-invert" type="button" title="所有位按位取反（NOT）">取反</button>
+      </span>
     </div>
     <p id="pte-error" class="error pte-error" role="alert"></p>
     <p id="pte-summary" class="pte-summary" aria-live="polite"></p>
@@ -487,6 +504,8 @@ const PTE_BOOL = {
 };
 let pteValue = 0n;
 const pteFieldRows = [];
+const pteBitButtons = [];
+const pteCellEls = [];
 
 function pteBitMask(bits) { return (1n << BigInt(bits)) - 1n; }
 function pteReadField(hi, lo) { return (pteValue >> BigInt(lo)) & pteBitMask(hi - lo + 1); }
@@ -526,13 +545,13 @@ function renderPte(origin) {
   document.getElementById('pte-error').textContent = '';
   document.getElementById('pte-binary').textContent = '二进制：' + pteValue.toString(2).padStart(64, '0').match(/.{1,4}/g).join(' ');
   document.getElementById('pte-summary').textContent = pteLeafSummary();
-  document.querySelectorAll('#pte-bitvalues .bit-value').forEach((btn, i) => {
+  pteBitButtons.forEach((btn, i) => {
     const bit = 63 - i;
     const on = ((pteValue >> BigInt(bit)) & 1n) === 1n;
     btn.textContent = on ? '1' : '0';
     btn.setAttribute('aria-pressed', String(on));
   });
-  document.querySelectorAll('#pte-cells .pte-cell').forEach((cell, i) => {
+  pteCellEls.forEach((cell, i) => {
     const field = PTE_FIELDS[i];
     if (field.reserved) return;
     const fv = pteReadField(field.hi, field.lo);
@@ -567,6 +586,7 @@ function initPteEditor() {
     btn.setAttribute('aria-label', 'PTE bit ' + bit + '，点击翻转');
     btn.addEventListener('click', () => { pteValue ^= 1n << BigInt(bit); renderPte(); });
     bitValues.appendChild(btn);
+    pteBitButtons.push(btn);
   }
   PTE_FIELDS.forEach((field, index) => {
     const width = field.hi - field.lo + 1;
@@ -592,6 +612,7 @@ function initPteEditor() {
       });
     }
     cells.appendChild(cell);
+    pteCellEls.push(cell);
   });
   PTE_FIELDS.forEach(field => {
     if (field.reserved) return;
@@ -639,7 +660,10 @@ function initPteEditor() {
       valueInput.setAttribute('aria-invalid', 'true');
     }
   });
+  const pteMask = pteBitMask(64);
   document.getElementById('pte-reset').addEventListener('click', () => { pteValue = 0n; renderPte(); });
+  document.getElementById('pte-fill').addEventListener('click', () => { pteValue = pteMask; renderPte(); });
+  document.getElementById('pte-invert').addEventListener('click', () => { pteValue = pteMask ^ pteValue; renderPte(); });
   renderPte();
 }
 
