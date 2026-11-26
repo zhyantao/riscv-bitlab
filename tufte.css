@@ -307,16 +307,37 @@ header select { background-color: #fffdf6; font-family: var(--sans); font-size: 
 .c4, .function, .vpn-odd { background: #e7e0ea; }
 .extension { background: #e9e8de; }
 
-.cell.nonzero { box-shadow: inset 0 -3px var(--accent); }
+.cell {
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.cell::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity .08s ease;
+  pointer-events: none;
+}
+.cell.nonzero::after { opacity: 1; }
 .bit-value, .codec-bit {
   border: 1px solid var(--line);
   background: #f7f5ec;
   color: var(--muted);
 }
+.bit-value { border-radius: 0; }
 .bit-value[aria-pressed="true"], .codec-bit[aria-pressed="true"], .bit-button[aria-pressed="true"] {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+.bit-value, .codec-bit, .bit-button {
+  transition: background .08s ease, border-color .08s ease, color .08s ease;
 }
 
 /* ---------- 页脚（参考站 footer 风格） ---------- */
