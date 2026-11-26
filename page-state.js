@@ -41,7 +41,13 @@
       try { sessionStorage.setItem(key, JSON.stringify({ version:1, controls, extra:read() })); }
       catch { warn(); }
     }
-    for (const event of ['input', 'change', 'click', 'submit', 'toggle']) document.addEventListener(event, save);
+    let frame = 0;
+    function scheduleSave() {
+      if (frame) return;
+      if (typeof requestAnimationFrame !== 'function') { save(); return; }
+      frame = requestAnimationFrame(() => { frame = 0; save(); });
+    }
+    for (const event of ['input', 'change', 'click', 'submit', 'toggle']) document.addEventListener(event, scheduleSave);
     window.addEventListener('pagehide', save);
     save();
     return save;
