@@ -10,7 +10,7 @@
   /* 页面专属布局（基础主题见 tufte.css） */
   .card h2 { margin:0 0 4px; font-size:18px; }
   .desc { font-size:13px; margin-bottom:12px; }
-  .bits-wrap { overflow-x:auto; padding:4px 2px 8px; }
+  .bits-wrap { overflow-x:auto; padding:4px 2px 8px; contain:layout paint; }
   .bit-labels, .row { display:grid; grid-template-columns:repeat(var(--bits),minmax(0,1fr)); min-width:calc(var(--bits) * 32px); }
   .row { margin-bottom:10px; }
   .cell { min-width:0; min-height:68px; padding:8px 4px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; position:relative; }
@@ -40,6 +40,7 @@
   .field-details { margin-top:8px; }
   .field-details > summary { cursor:pointer; padding:5px 0; font-size:13px; color:var(--muted); }
   .value-reset { height:34px; padding:0 14px; }
+  .value-ops { display:flex; flex-wrap:wrap; gap:8px; }
   @media (max-width:640px) {
     .value-controls form .value-input { flex:1 1 12ch; min-width:10ch; }
     .value-divider { display:none; }
@@ -934,13 +935,22 @@ function render() {
     const input = document.createElement('input'); input.className = 'value-input';
     input.id = `${reg.id}-value`; input.type = 'text'; input.spellcheck = false;
     input.maxLength = 2 * width + 2; input.readOnly = !!reg.readOnly; label.htmlFor = input.id;
-    const reset = document.createElement('button'); reset.className = 'value-reset';
-    reset.type = 'button'; reset.textContent = '清零'; reset.disabled = !!reg.readOnly;
+    const ops = document.createElement('div'); ops.className = 'value-ops';
+    const makeOpButton = (text, title) => {
+      const button = document.createElement('button');
+      button.className = 'value-reset'; button.type = 'button';
+      button.textContent = text; button.title = title; button.disabled = !!reg.readOnly;
+      ops.appendChild(button);
+      return button;
+    };
+    const reset = makeOpButton('清零', '所有位置 0');
+    const fillOnes = makeOpButton('全 1', '所有位置 1');
+    const invert = makeOpButton('取反', '所有位按位取反（NOT）');
     const error = document.createElement('div'); error.className = 'value-error';
     error.id = `${reg.id}-error`; error.setAttribute('aria-live', 'polite');
     input.setAttribute('aria-describedby', error.id);
     const binary = document.createElement('output'); binary.className = 'binary-value';
-    controls.append(label, input, reset);
+    controls.append(label, input, ops);
     panel.append(controls, error, binary);
     card.appendChild(panel);
     function refresh(origin) {
@@ -955,6 +965,8 @@ function render() {
       catch (e) { error.textContent = e.message; input.setAttribute('aria-invalid', 'true'); }
     });
     reset.addEventListener('click', () => { value = 0n; refresh(); });
+    fillOnes.addEventListener('click', () => { value = bitMask(width); refresh(); });
+    invert.addEventListener('click', () => { value = bitMask(width) ^ value; refresh(); });
 
     // 按位宽绘制，补齐空洞为未定义；超过 32 位时拆成 hi/lo 两行
     const cells = [];
