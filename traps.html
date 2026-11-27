@@ -7,90 +7,90 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="tufte.css">
 <style>
-  /* 页面专属布局（基础主题见 tufte.css） */
-  .intro, .card { padding:12px; margin-bottom:12px; }
+  /* 页面专属布局：线性排查向导（基础主题见 tufte.css） */
+  .intro, .card { padding:14px 16px; margin-bottom:14px; }
   p, li { line-height:1.5; font-size:13px; }
   .card p { margin:6px 0; }
   .intro > p:first-child { margin-top:0; }
-  h2 { margin:0 0 8px; font-size:18px; }
+  h2 { margin:0; font-size:17px; }
   h3 { font-size:14px; margin:12px 0 6px; }
-  .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:stretch; font-size:14px; }
-  .input-group :is(input, select) { flex:1; }
-  .input-group { display:flex; flex:1 1 240px; flex-direction:column; gap:6px; font-size:14px; min-width:0; }
   .optional { font-size:12px; font-weight:400; color:var(--muted); }
-  select { padding:9px 30px 9px 12px; }  /* 右侧 30px 留给下拉箭头 */
-  input, button { padding:9px 12px; }
-  input { min-width:0; width:100%; }
-  .help { font-size:13px; }
+  .help { font-size:12.5px; }
   .notes { padding:8px 10px; margin-top:8px; font-size:13px; line-height:1.5; }
-  .heading { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  .heading h2 { margin:0; }
   .binary { font:13px/1.8 var(--mono); overflow-wrap:anywhere; }
-  .result-title { font-size:16px; font-weight:600; font-style:normal; margin:12px 0 0; }
+  .result-title { font-size:15px; font-weight:600; font-style:normal; margin:10px 0 0; }
   .scroll { overflow-x:auto; padding:2px 2px 4px; }
   table { font-size:12px; margin-top:6px; }
   caption { font-weight:600; font-style:normal; padding:6px 0; }
   th, td { padding:6px; line-height:1.5; }
-  dl { display:grid; grid-template-columns:90px minmax(0,1fr); gap:12px; font-size:14px; line-height:1.7; }
-  dt { font-weight:600; }
-  dd { margin:0; overflow-wrap:anywhere; }
-  dd p { margin:6px 0 0; }
-  .context-grid, .gpr-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:14px; }
+  .context-grid, .gpr-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px 12px; margin-top:12px; }
   .gpr-grid { grid-template-columns:repeat(auto-fit,minmax(175px,1fr)); }
-  .gpr-source { background:#e9eff4; border-radius:2px; outline:2px solid #7a94ad; padding:6px; }
-  .diagnostic { padding:8px 10px; border-left:3px solid #b0aea0; background:#f7f4ea; margin:6px 0; font-size:13px; line-height:1.5; overflow-wrap:anywhere; white-space:pre-line; }
+  .input-group { display:flex; flex:1 1 200px; flex-direction:column; gap:4px; font-size:12px; min-width:0; }
+  .input-group label { line-height:1.4; overflow-wrap:anywhere; }
+  .input-group :is(input, select) { width:100%; }
+  .gpr-source { background:#e9eff4; border-radius:2px; outline:2px solid #7a94ad; padding:4px; }
+  .diagnostic { padding:8px 10px; border-left:3px solid #b0aea0; background:#f7f4ea; margin:8px 0 0; font-size:13px; line-height:1.5; overflow-wrap:anywhere; white-space:pre-line; }
   .diagnostic[data-state="fault"] { border-color:#b91c1c; background:#f9ecec; }
   .diagnostic[data-state="candidate"] { border-color:#55544a; background:#f2f1e8; }
   [hidden] { display:none !important; }
-  #next-step { font-weight:600; }
-  #trap-summary { font-size:14px; line-height:1.7; }
-  details#extra-register-inputs { margin:10px 0 0; padding:8px 10px; border:1px solid var(--line); border-radius:2px; }
-  details#extra-register-inputs > summary { cursor:pointer; font-size:13px; font-weight:600; }
-  details#extra-register-inputs h3 { margin-top:10px; }
-  #input-panel { padding:14px; }
-  #input-panel > p { margin:6px 0 10px; font-size:13px; }
-  #input-panel .controls, #snapshot-input-sections { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:6px 10px; align-items:end; }
-  #input-panel .controls .width-pair { display:flex; gap:6px 10px; align-items:end; min-width:0; }
-  #input-panel .controls .width-pair .input-group { flex:1 1 0; min-width:0; }
-  #snapshot-input-sections .input-section { display:grid; grid-column:1 / -1; grid-template-columns:subgrid; gap:6px 10px; align-items:end; }
-  #snapshot-input-sections .input-section .context-grid { display:contents; }
-  #snapshot-input-sections .gpr-grid { display:grid; grid-column:1 / -1; grid-template-columns:subgrid; gap:6px 10px; margin-top:0; }
-  #snapshot-input-sections > details#extra-register-inputs { grid-column:1 / -1; min-width:0; }
-  #snapshot-input-sections h3, #snapshot-input-sections .help, #snapshot-input-sections .actions { grid-column:1 / -1; }
-  #snapshot-input-sections h3 { margin:10px 0 0; font-size:13px; }
-  #snapshot-input-sections .help { margin:0; font-size:12px; line-height:1.4; }
-  #input-panel .input-group, #supplement-panel .input-group { gap:3px; font-size:12px; }
-  #input-panel .input-group label, #supplement-panel .input-group label { line-height:1.4; overflow-wrap:anywhere; }
+  #trap-summary { font-size:13.5px; line-height:1.7; }
   .register-input-row { display:flex; gap:4px; align-items:center; min-width:0; }
-  #input-panel .register-input-row input, #supplement-panel .register-input-row input { flex:1; width:0; min-width:0; }
-  #input-panel .register-input-row button, #supplement-panel .register-input-row button { flex:none; padding:4px 5px; font-size:11px; }
-  #input-panel :is(input, select), #supplement-panel :is(input, select) { flex:none; height:32px; padding:5px 8px; font-size:12px; }
-  #input-panel select, #supplement-panel select { padding-right:26px; }
-  #input-panel .actions, #supplement-panel .actions { margin:6px 0; font-size:12px; }
-  #input-panel button, #supplement-panel button { padding:5px 8px; font-size:12px; }
-  #input-panel .notes { margin:8px 0; padding:6px 10px; font-size:12px; line-height:1.5; }
-  #input-panel .gpr-source, #supplement-panel .gpr-source { padding:0; }
-  @media (max-width:600px) { #input-panel .controls, #snapshot-input-sections { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 8px; } }
-  @media (max-width:360px) { #input-panel .controls, #snapshot-input-sections { grid-template-columns:minmax(0,1fr); } }
+  .register-input-row input { flex:1; width:0; min-width:0; }
+  .register-input-row button { flex:none; padding:4px 6px; font-size:11px; }
+  main :is(input, select) { height:32px; padding:5px 8px; font-size:12px; }
+  main select { padding-right:26px; }
   .pte-input { min-width:0; }
   .actions { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
-  .evidence-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:8px; margin:8px 0; padding:0; list-style:none; }
-  .evidence-item { border:1px solid var(--line); border-left:4px solid #b45309; border-radius:2px; padding:8px; overflow-wrap:anywhere; }
-  .evidence-item[data-state="provided"] { border-color:#a9c39a; border-left-color:#4a7c3f; background:#eef3e6; }
-  .evidence-item[data-state="provided"] > strong { color:#3d6b34; }
-  .evidence-item[data-state="missing"], .evidence-item[data-state="conflict"] { border-color:#dcaea8; border-left-color:#b91c1c; background:#f9ecec; }
-  .evidence-item[data-state="missing"] > strong, .evidence-item[data-state="conflict"] > strong { color:#991b1b; }
-  .evidence-item p { margin:6px 0; }
   a.action-button { display:inline-flex; align-items:center; justify-content:center; padding:5px 8px; border:1px solid var(--accent); border-radius:2px; background:var(--accent); color:#fff; text-decoration:none; font-size:12px; line-height:1.5; }
   a.action-button:hover { background:#7c0000; border-color:#7c0000; color:#fff; }
   .title-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:8px; }
   .title-actions h2 { margin:0; margin-right:auto; }
-  #snapshot-input-sections h3 { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-  #snapshot-input-sections h3 button { margin-left:auto; font-weight:400; }
-  [id] { scroll-margin-top:200px; }
-  #external-panel pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; }
+  [id] { scroll-margin-top:120px; }
   textarea { min-height:90px; width:100%; padding:10px; resize:vertical; font-family:var(--mono); background:#fffdf6; color:var(--fg); border:1px solid #b9b7a5; border-radius:2px; }
-  @media (max-width:600px) { main { padding:12px; } .card, .intro { padding:10px; } dl { grid-template-columns:1fr; gap:6px; } dd { margin-bottom:10px; } }
+
+  /* —— 线性向导 —— */
+  .wizard-progress { border:1px solid var(--line); border-left:4px solid var(--accent); background:#f7f4ea; border-radius:2px; padding:10px 12px; margin:10px 0 0; }
+  .wizard-path { font:12px/1.6 var(--mono); color:var(--muted); margin:0 0 6px; overflow-wrap:anywhere; }
+  .wizard-counts { margin:4px 0; }
+  #next-step { font-weight:600; margin-bottom:0; cursor:pointer; }
+  .wizard-step { position:relative; padding:14px 16px 16px; border-left-width:4px; transition:border-color .15s, background .15s, box-shadow .15s; }
+  .wizard-step[data-state="todo"] { border-left-color:var(--line); }
+  .wizard-step[data-state="active"] { border-left-color:var(--accent); background:#fffdf6; box-shadow:0 0 0 3px rgba(160,0,0,.08); }
+  .wizard-step[data-state="done"] { border-left-color:#4a7c3f; }
+  .wizard-step[data-state="blocked"] { border-left-color:#b45309; }
+  .wizard-step[data-state="conflict"] { border-left-color:#b91c1c; background:#f9ecec; }
+  .wizard-step.is-current { box-shadow:0 0 0 3px rgba(160,0,0,.18); }
+  .step-status[data-state="active"] { color:#fff; background:var(--accent); border-color:var(--accent); }
+  .step-status[data-state="done"] { color:#fff; background:#4a7c3f; border-color:#4a7c3f; }
+  .step-status[data-state="blocked"] { color:#fff; background:#b45309; border-color:#b45309; }
+  .step-status[data-state="conflict"] { color:#fff; background:#b91c1c; border-color:#b91c1c; }
+  .step-head { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:4px; }
+  .step-head h2 { font-style:normal; font-size:16px; font-family:var(--sans); font-weight:600; }
+  .step-num { flex:none; width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; display:inline-flex; align-items:center; justify-content:center; font:600 13px/1 var(--sans); }
+  .wizard-step[data-state="done"] .step-num { background:#4a7c3f; }
+  .wizard-step[data-state="todo"] .step-num { background:#9a988c; }
+  .step-status { margin-left:4px; }
+  .step-clear { margin-left:auto; padding:3px 8px; font-size:11px; }
+  .step-subhead { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-style:normal; font-family:var(--sans); font-weight:600; font-size:13px; margin:14px 0 0; }
+  .wizard-step .controls { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:8px 10px; align-items:end; }
+  .wizard-step .controls .width-pair { display:contents; }
+  .step-evidence { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  .step-evidence:empty { display:none; }
+  .evidence-item { border:1px solid var(--line); border-left:4px solid #b45309; border-radius:2px; padding:8px 10px; overflow-wrap:anywhere; list-style:none; }
+  .evidence-item > strong { font-family:var(--sans); font-size:12.5px; }
+  .evidence-item[data-state="provided"] { border-color:#a9c39a; border-left-color:#4a7c3f; background:#eef3e6; }
+  .evidence-item[data-state="provided"] > strong { color:#3d6b34; }
+  .evidence-item[data-state="missing"], .evidence-item[data-state="conflict"] { border-color:#dcaea8; border-left-color:#b91c1c; background:#f9ecec; }
+  .evidence-item[data-state="missing"] > strong, .evidence-item[data-state="conflict"] > strong { color:#991b1b; }
+  .evidence-item[data-state="review"] { border-color:#d8c49a; border-left-color:#b45309; background:#faf3e3; }
+  .evidence-item p { margin:6px 0; }
+  .evidence-item .action-button { margin-top:4px; }
+  details#extra-register-inputs { margin:12px 0 0; padding:8px 10px; border:1px solid var(--line); border-radius:2px; }
+  details#extra-register-inputs > summary { cursor:pointer; font-size:13px; font-weight:600; }
+  details#extra-register-inputs h3 { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; font-style:normal; font-family:var(--sans); font-size:13px; }
+  details#extra-register-inputs h3 button { margin-left:auto; font-weight:400; }
+  @media (max-width:600px) { main { padding:12px; } .card, .intro { padding:10px; } .wizard-step .controls { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 8px; } }
+  @media (max-width:360px) { .wizard-step .controls { grid-template-columns:minmax(0,1fr); } }
 </style>
 </head>
 <body>
@@ -115,48 +115,44 @@
 </header>
 <main>
   <section id="input-panel" class="intro" aria-labelledby="page-heading">
-    <div class="title-actions"><h2 id="page-heading">异常与中断</h2><button id="load-fault-example" type="button">加载完整示例（覆盖当前输入）</button><button id="clear-all" class="secondary" type="button">清空全部</button></div>
-    <div class="trap-panel">
+    <div class="title-actions"><h2 id="page-heading">异常与中断 · 线性排查</h2><button id="load-fault-example" type="button">加载完整示例（覆盖当前输入）</button><button id="clear-all" class="secondary" type="button">清空全部</button></div>
+    <p class="help">按下面步骤顺序填写即可：每一步只问这一步需要的现场，卡片左边的状态条会提示缺什么；填好原因码后，与本次原因无关的步骤会自动收起，只留一条能走到根因的主线。</p>
+    <p class="help" id="default-fault-note" hidden>已加载模拟完整示例：RV64 · M 目标 · 存储页故障（mcause=15）。sw a1,16(s1) 指令、EPC / tval、s1 / a1 现场、入口 mstatus、medeleg、satp 与 Sv39 三级 PTE 均已填齐，逐级寻址与基础权限检查可完整走通（候选 PA=0x300000c0）。该现场为演示数据，不代表任何真实硬件；medeleg=0 表示异常未委托，故落入 M。</p>
+    <p id="example-sync-status" class="help" role="status"></p>
+    <div class="wizard-progress" id="wizard-progress" hidden>
+      <p class="wizard-path" id="wizard-path"></p>
+      <p class="help wizard-counts" id="evidence-summary"></p>
+      <p id="next-step" class="diagnostic" role="button" tabindex="0" title="点击跳到当前要处理的步骤"></p>
+    </div>
+    <div class="notes warning"><strong>本页按你填写的快照做辅助分析，不是硬件执行记录。</strong> 所有输入必须来自同一次陷阱、同一个 hart。内存里的 PTE 快照不一定等于触发异常时 TLB / 页表正在使用的值，不要只凭当前映射断定硬件出错。</div>
+  </section>
+
+  <div id="wizard">
+    <!-- 步骤 1：原因解码（前置，始终显示） -->
+    <section id="step-cause" class="card wizard-step" data-state="active" aria-labelledby="step-cause-heading">
+      <div class="step-head"><span class="step-num">1</span><h2 id="step-cause-heading">确认陷入目标与原因码</h2><span class="tag step-status" id="step-cause-status">待填</span><span class="tag" id="trap-kind" hidden></span></div>
+      <p class="help">先选陷入目标和寄存器宽度，再从下拉选原因，或直接填原始 cause；epc / tval 能采就采，采不到留空。</p>
       <div class="controls">
         <div class="width-pair">
           <div class="input-group"><label for="trap-target">陷入目标</label><select id="trap-target"><option value="M">M</option><option value="S">S / HS</option><option value="VS">VS</option></select></div>
           <div class="input-group"><label for="xlen">寄存器宽度</label><select id="xlen"><option value="32">RV32</option><option value="64" selected>RV64</option></select></div>
         </div>
-        <div class="input-group"><label for="cause-choice" id="cause-choice-label">mcause 原因选项</label><select id="cause-choice" aria-describedby="input-help"></select></div>
-        <div class="input-group"><label for="mcause">mcause</label><input id="mcause" type="text" value="" placeholder="请选择原因或填写原始值" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
-        <div class="input-group"><label for="mepc">mepc</label><input id="mepc" type="text" value="" placeholder="未知 / 未采集" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
-        <div class="input-group" id="mtval-group"><label for="mtval">mtval</label><input id="mtval" type="text" value="" placeholder="未知 / 未采集" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
-        <div class="input-group" id="mtval2-group" hidden><label for="mtval2">mtval2 <span class="optional">仅 guest-page fault</span></label><input id="mtval2" type="text" value="" placeholder="未知 / 未采集" spellcheck="false" autocomplete="off" aria-describedby="input-help input-error"></div>
+        <div class="input-group"><label for="cause-choice" id="cause-choice-label">mcause 原因选项</label><select id="cause-choice" aria-describedby="input-error"></select></div>
+        <div class="input-group"><label for="mcause">mcause</label><input id="mcause" type="text" value="" placeholder="请选择原因或填写原始值" spellcheck="false" autocomplete="off" aria-describedby="input-error"></div>
+        <div class="input-group"><label for="mepc">mepc</label><input id="mepc" type="text" value="" placeholder="未知 / 未采集" spellcheck="false" autocomplete="off" aria-describedby="input-error"></div>
+        <div class="input-group" id="mtval-group"><label for="mtval">mtval</label><input id="mtval" type="text" value="" placeholder="未知 / 未采集" spellcheck="false" autocomplete="off" aria-describedby="input-error"></div>
+        <div class="input-group" id="mtval2-group" hidden><label for="mtval2">mtval2 <span class="optional">仅 guest-page fault</span></label><input id="mtval2" type="text" value="" placeholder="未知 / 未采集" spellcheck="false" autocomplete="off" aria-describedby="input-error"></div>
       </div>
       <p id="input-error" class="error" role="alert"></p>
-    </div>
-    <div class="notes warning"><strong>本页按你填写的快照做辅助分析，不是硬件执行记录。</strong> 所有输入必须来自同一次陷阱、同一个 hart。内存里的 PTE 快照不一定等于触发异常时 TLB / 页表正在使用的值，不要只凭当前映射断定硬件出错。</div>
-  </section>
-  <section id="result" class="card" aria-labelledby="result-heading" aria-live="polite" aria-atomic="true" hidden>
-    <div class="heading"><h2 id="result-heading">定位链路与解读</h2><span class="tag" id="trap-kind"></span></div>
-    <p id="cause-name" class="result-title"></p>
-    <p id="trap-summary" class="diagnostic"></p>
-    <p id="next-step" class="diagnostic"></p>
-    <section aria-labelledby="evidence-heading">
-      <h3 id="evidence-heading">证据核对清单</h3>
-      <ol id="evidence-list" class="evidence-list"></ol>
-      <p id="evidence-summary" class="help"></p>
+      <p id="cause-name" class="result-title" hidden></p>
+      <p id="trap-summary" class="diagnostic" hidden></p>
+      <p id="context-note" class="desc" hidden></p>
     </section>
-    <p id="context-note" class="desc"></p>
-  </section>
-  <section id="supplement-panel" class="intro" aria-labelledby="supplement-heading">
-    <div class="title-actions"><h2 id="supplement-heading">按原因补充现场</h2></div>
-    <p class="help" id="layout-hint">先填写 mcause，或从下拉框选择原因：页面只会显示排查这个原因所需的寄存器和分析结果。</p>
-    <p class="help" id="default-fault-note" hidden>已加载模拟完整示例：RV64 · M 目标 · 存储页故障（mcause=15）。sw a1,16(s1) 指令、EPC / tval、s1 / a1 现场、入口 mstatus、medeleg、satp 与 Sv39 三级 PTE 均已填齐，逐级寻址与基础权限检查可完整走通（候选 PA=0x300000c0）。该现场为演示数据，不代表任何真实硬件；medeleg=0 表示异常未委托，故落入 M。</p>
-    <p id="example-sync-status" class="help" role="status"></p>
-    <div id="snapshot-input-sections"></div>
-    <div class="actions" id="supplement-actions" hidden><a class="action-button" href="#context">查看分析明细</a><button id="sync-registers" type="button">同步已填写值并打开寄存器位域</button></div>
-    <p class="help">只传递已填写且格式有效的寄存器和 PTE；寄存器位域页会保留完整字段目录，并标出本次带过去的现场值。数据只在当前标签页的临时存储里传递，不上传、不进链接。</p>
-    <p id="sync-error" class="error" role="alert"></p>
-  </section>
-  <section id="context" class="card" aria-labelledby="context-heading" hidden>
-    <div>
-      <h2 id="context-heading">状态与路由上下文 <span class="optional">可选</span></h2>
+
+    <!-- 步骤 2：现场来源与状态 CSR -->
+    <section id="step-context" class="card wizard-step" data-state="todo" hidden aria-labelledby="step-context-heading">
+      <div class="step-head"><span class="step-num">2</span><h2 id="step-context-heading">现场来源、采样时点与状态 CSR</h2><span class="tag step-status" id="step-context-status"></span><button class="secondary step-clear" type="button" data-clear="step-context">清空本组</button></div>
+      <p class="help">用同一次陷阱的状态；先确认这是陷入前打的点，还是入口汇编保存的现场。陷入后读到 xIE=0 不代表异常前没开中断。</p>
       <div class="context-grid" id="status-inputs">
         <div class="input-group"><label for="snapshot-time">状态 CSR 采样时点</label><select id="snapshot-time"><option value="unknown">未知 / 可能已被 handler 修改</option><option value="entry">陷入后、handler 修改前</option><option value="before">陷入前</option></select></div>
         <div class="input-group"><label for="status" id="status-label">mstatus</label><input id="status" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
@@ -167,17 +163,24 @@
         <div class="input-group" id="trap-inst-group"><label for="trap-inst" id="trap-inst-label">mtinst（H 扩展）</label><input id="trap-inst" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
       </div>
       <div id="status-analysis" class="diagnostic" aria-live="polite"></div>
-      <div><h3 id="routing-analysis-heading"><span id="routing-analysis-title">中断使能、挂起与委托</span> <span class="optional">按需提供</span></h3>
-        <div id="routing-inputs" class="context-grid"></div>
-        <div id="routing-analysis" class="diagnostic" aria-live="polite"></div>
-      </div>
+      <div class="step-evidence" id="evidence-slot-context"></div>
+      <details id="extra-register-inputs"><summary>日志补充寄存器（安全配置 / RNMI / 浮点 / 向量 —— 排查常见原因一般用不上，向量访存时自动展开）</summary></details>
+    </section>
+
+    <!-- 步骤 3：中断使能、挂起与委托 / 异常委托 -->
+    <section id="step-routing" class="card wizard-step" data-state="todo" hidden aria-labelledby="routing-input-section-heading">
+      <div class="step-head"><span class="step-num">3</span><h2 id="routing-input-section-heading"><span id="routing-analysis-title">中断使能、挂起与委托</span></h2><span class="tag step-status" id="step-routing-status"></span><button class="secondary step-clear" type="button" data-clear="step-routing">清空本组</button></div>
+      <p class="help">只列与当前原因有关的 CSR，没采集就留空；没出现的路由寄存器和本次原因无关。</p>
+      <div id="routing-inputs" class="context-grid"></div>
+      <div id="routing-analysis" class="diagnostic" aria-live="polite"></div>
+      <div class="step-evidence" id="evidence-slot-routing"></div>
       <p class="help">陷入时硬件会更新 MPP / SPP、MPV / SPV 和 xPIE，所以陷入后读到 MIE / SIE=0，并不能说明异常前没开中断。若曾用 MPRV 做过访问，它用到的 MPP / MPV 在本次陷入时已被覆盖，需要结合异常前的记录。外部中断还要 PLIC / AIA 等中断控制器的现场。</p>
-    </div>
-  </section>
-  <section id="gpr-card" class="card" aria-labelledby="gpr-heading" hidden>
-    <div>
-      <h2 id="gpr-heading">故障指令与通用寄存器分析 <span class="optional">x0–x31</span></h2>
-      <p class="help">填 trap 入口汇编保存下来的被中断程序现场，不是 C handler 当前的寄存器值。x0 固定为 0；留空表示未知。填好机器码后，这里只显示计算地址需要的源寄存器，蓝色高亮的输入框就是这条指令用到的；自动计算支持整数和浮点 / 向量访存的基址，向量访存范围、压缩指令和 AMO 需要另行分析。</p>
+    </section>
+
+    <!-- 步骤 4：故障指令与通用寄存器 -->
+    <section id="step-instruction" class="card wizard-step" data-state="todo" hidden aria-labelledby="gpr-heading">
+      <div class="step-head"><span class="step-num">4</span><h2 id="gpr-heading">故障指令与通用寄存器现场 <span class="optional">x0–x31</span></h2><span class="tag step-status" id="step-instruction-status"></span><button class="secondary step-clear" type="button" data-clear="step-instruction">清空本组</button></div>
+      <p class="help">填 trap 入口汇编保存下来的被中断程序现场，不是 C handler 当前的寄存器值。x0 固定为 0；留空表示未知。填好机器码后，只显示计算地址需要的源寄存器，蓝色高亮框就是这条指令用到的；向量访存范围、压缩指令和 AMO 需另行分析。</p>
       <div class="context-grid" id="instruction-inputs">
         <div class="input-group"><label for="fault-instruction">故障指令原始机器码（32 位）</label><div class="register-input-row"><input id="fault-instruction" placeholder="例如 0x0185b503 · ld a0, 24(a1)" autocomplete="off" spellcheck="false"><button id="view-instruction" class="secondary" type="button">查看指令</button></div><span id="instruction-link-error" class="error" role="alert"></span></div>
         <div class="input-group"><label for="instruction-epc">机器码所在的 EPC（用于核对是不是同一次现场）</label><input id="instruction-epc" placeholder="未知 / 尚未核对" autocomplete="off" spellcheck="false"></div>
@@ -185,33 +188,55 @@
       </div>
       <div id="instruction-analysis" class="diagnostic" aria-live="polite"></div>
       <div id="gpr-inputs" class="gpr-grid"></div>
-    </div>
-  </section>
-  <section id="page-panel" class="card" aria-labelledby="page-heading-analysis" hidden>
-    <h2 id="page-heading-analysis">页故障 · 逐级 PTE 分析</h2>
-    <p class="help">只有填了真实 PTE 快照才会继续向下寻址，遇到空位就停。支持 Sv32 / Sv39 / Sv48 / Sv57 和对应的 G-stage x4 模式；不模拟两阶段嵌套的访存过程。</p>
-    <div class="context-grid" id="walk-inputs">
-      <div class="input-group"><label for="walk-stage">本次检查的翻译阶段</label><select id="walk-stage"><option value="s">普通 S-stage（satp）</option><option value="vs">VS-stage（vsatp）</option><option value="g">G-stage（hgatp）</option></select></div>
-      <div class="input-group"><label for="walk-address">待翻译地址（VA / GPA）</label><input id="walk-address" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
-      <div class="input-group"><label for="walk-root" id="walk-root-label">satp</label><input id="walk-root" placeholder="完整 CSR，含 MODE / PPN" autocomplete="off" spellcheck="false"></div>
-      <div class="input-group"><label for="walk-access">该阶段访问类型</label><select id="walk-access"><option value="auto">由原因码推导（仅普通 / VS 阶段）</option><option value="fetch">取指</option><option value="read">读</option><option value="write">写 / AMO</option></select></div>
-      <div class="input-group"><label for="walk-privilege">访问时有效特权级</label><select id="walk-privilege"><option value="unknown">未知</option><option value="S">S / VS</option><option value="U">U / VU</option></select></div>
-      <div class="input-group"><label for="walk-sum">该阶段有效 SUM</label><select id="walk-sum"><option value="unknown">未知</option><option value="0">0</option><option value="1">1</option></select></div>
-      <div class="input-group"><label for="walk-mxr">该阶段有效 MXR</label><select id="walk-mxr"><option value="unknown">未知</option><option value="0">0</option><option value="1">1</option></select></div>
-      <div class="input-group"><label for="walk-ad">A/D 更新机制</label><select id="walk-ad"><option value="unknown">未知</option><option value="fault">软件管理：A/D 缺失触发页故障</option><option value="hardware">硬件更新 A/D</option></select></div>
-      <div class="input-group"><label for="walk-profile">PTE 格式约束</label><select id="walk-profile"><option value="unknown">是否启用扩展未知：遇到特殊编码不下结论</option><option value="base">确认使用基础 PTE（无扩展语义）</option></select></div>
-    </div>
-    <div class="actions" id="walk-actions"><button id="use-tval" type="button">使用 tval 地址</button><button id="page-example" type="button">填入独立缺页示例（覆盖页表输入）</button></div>
-    <div id="page-context" class="diagnostic"></div>
-    <p class="help">SUM / MXR 要填访问发生时的有效值，别直接抄当前 status：VS-stage 的 MXR = HS.MXR OR VS.MXR；G-stage 只用 HS.MXR，且按 U 权限检查、不使用 SUM。“写 / AMO”只检查页表的写权限，不模拟原子操作的其他约束。</p>
-    <div class="scroll"><table><caption>逐级 PTE 的寻址结果与原值回显；从没填的那一级开始停止遍历。</caption><thead><tr><th>级别</th><th>索引与 PTE 寻址</th><th>PTE 原始值</th><th>字段与检查结果</th></tr></thead><tbody id="pte-rows"></tbody></table></div>
-    <div id="page-analysis" class="diagnostic" aria-live="polite"></div>
-    <p class="help">这里只按基础页表规则检查，不覆盖 PMP / PMA、扩展权限、TLB 陈旧或 SFENCE.VMA / HFENCE 时序。PTE 本身读失败不能直接算作页故障，要区分访问故障和两阶段翻译失败。</p>
-  </section>
-  <section id="external-panel" class="card" aria-labelledby="external-heading" hidden>
-    <h2 id="external-heading">外部证据与平台检查</h2>
-    <p id="external-guidance" class="diagnostic"></p>
-    <p class="help">补充外部记录（中断控制器状态、PMP / PMA、总线 trace、执行记录等）时，请保留来源和采样时点，并与陷阱现场分开保存。这里的核对结论只是线索记录，不代表根因已经确定。</p>
+      <div class="step-evidence" id="evidence-slot-instruction"></div>
+    </section>
+
+    <!-- 步骤 5：故障地址与访问类型（结论核对，无新输入） -->
+    <section id="step-address" class="card wizard-step" data-state="todo" hidden aria-labelledby="step-address-heading">
+      <div class="step-head"><span class="step-num">5</span><h2 id="step-address-heading">故障地址、访问类型与操作数核对</h2><span class="tag step-status" id="step-address-status"></span></div>
+      <p class="help">这一步汇总故障地址与算址结论：tval 在第 1 步填，基址 / 数据寄存器在第 4 步填。这里告诉你两者是否对得上、是不是同一次现场。</p>
+      <div class="step-evidence" id="evidence-slot-address"></div>
+    </section>
+
+    <!-- 步骤 6：地址翻译与逐级 PTE -->
+    <section id="step-translation" class="card wizard-step" data-state="todo" hidden aria-labelledby="page-heading-analysis">
+      <div class="step-head"><span class="step-num">6</span><h2 id="page-heading-analysis">页故障 · 逐级 PTE 分析</h2><span class="tag step-status" id="step-translation-status"></span><button class="secondary step-clear" type="button" data-clear="step-translation">清空本组</button></div>
+      <p class="help">只有填了真实 PTE 快照才会继续向下寻址，遇到空位就停。支持 Sv32 / Sv39 / Sv48 / Sv57 和对应的 G-stage x4 模式；不模拟两阶段嵌套的访存过程。</p>
+      <div class="context-grid" id="walk-inputs">
+        <div class="input-group"><label for="walk-stage">本次检查的翻译阶段</label><select id="walk-stage"><option value="s">普通 S-stage（satp）</option><option value="vs">VS-stage（vsatp）</option><option value="g">G-stage（hgatp）</option></select></div>
+        <div class="input-group"><label for="walk-address">待翻译地址（VA / GPA）</label><input id="walk-address" placeholder="未知 / 未采集" autocomplete="off" spellcheck="false"></div>
+        <div class="input-group"><label for="walk-root" id="walk-root-label">satp</label><input id="walk-root" placeholder="完整 CSR，含 MODE / PPN" autocomplete="off" spellcheck="false"></div>
+        <div class="input-group"><label for="walk-access">该阶段访问类型</label><select id="walk-access"><option value="auto">由原因码推导（仅普通 / VS 阶段）</option><option value="fetch">取指</option><option value="read">读</option><option value="write">写 / AMO</option></select></div>
+        <div class="input-group"><label for="walk-privilege">访问时有效特权级</label><select id="walk-privilege"><option value="unknown">未知</option><option value="S">S / VS</option><option value="U">U / VU</option></select></div>
+        <div class="input-group"><label for="walk-sum">该阶段有效 SUM</label><select id="walk-sum"><option value="unknown">未知</option><option value="0">0</option><option value="1">1</option></select></div>
+        <div class="input-group"><label for="walk-mxr">该阶段有效 MXR</label><select id="walk-mxr"><option value="unknown">未知</option><option value="0">0</option><option value="1">1</option></select></div>
+        <div class="input-group"><label for="walk-ad">A/D 更新机制</label><select id="walk-ad"><option value="unknown">未知</option><option value="fault">软件管理：A/D 缺失触发页故障</option><option value="hardware">硬件更新 A/D</option></select></div>
+        <div class="input-group"><label for="walk-profile">PTE 格式约束</label><select id="walk-profile"><option value="unknown">是否启用扩展未知：遇到特殊编码不下结论</option><option value="base">确认使用基础 PTE（无扩展语义）</option></select></div>
+      </div>
+      <div class="actions" id="walk-actions"><button id="use-tval" type="button">使用 tval 地址</button><button id="page-example" type="button">填入独立缺页示例（覆盖页表输入）</button></div>
+      <div id="page-context" class="diagnostic"></div>
+      <p class="help">SUM / MXR 要填访问发生时的有效值，别直接抄当前 status：VS-stage 的 MXR = HS.MXR OR VS.MXR；G-stage 只用 HS.MXR，且按 U 权限检查、不使用 SUM。“写 / AMO”只检查页表的写权限，不模拟原子操作的其他约束。</p>
+      <div class="context-grid" id="pte-inputs"></div>
+      <div class="scroll"><table><caption>逐级 PTE 的寻址结果与原值回显；从没填的那一级开始停止遍历。</caption><thead><tr><th>级别</th><th>索引与 PTE 寻址</th><th>PTE 原始值</th><th>字段与检查结果</th></tr></thead><tbody id="pte-rows"></tbody></table></div>
+      <div id="page-analysis" class="diagnostic" aria-live="polite"></div>
+      <p class="help">这里只按基础页表规则检查，不覆盖 PMP / PMA、扩展权限、TLB 陈旧或 SFENCE.VMA / HFENCE 时序。PTE 本身读失败不能直接算作页故障，要区分访问故障和两阶段翻译失败。</p>
+      <div class="step-evidence" id="evidence-slot-translation"></div>
+    </section>
+
+    <!-- 步骤 7：外部证据与平台检查 -->
+    <section id="step-external" class="card wizard-step" data-state="todo" hidden aria-labelledby="external-heading">
+      <div class="step-head"><span class="step-num">7</span><h2 id="external-heading">外部证据与平台检查</h2><span class="tag step-status" id="step-external-status"></span></div>
+      <p id="external-guidance" class="diagnostic"></p>
+      <p class="help">补充外部记录（中断控制器状态、PMP / PMA、总线 trace、执行记录等）时，请保留来源和采样时点，并与陷阱现场分开保存。这里的核对结论只是线索记录，不代表根因已经确定。</p>
+      <div class="step-evidence" id="evidence-slot-external"></div>
+    </section>
+  </div>
+
+  <section id="supplement-panel" class="intro" aria-labelledby="supplement-heading" hidden>
+    <div class="title-actions"><h2 id="supplement-heading">同步到其他工具页</h2></div>
+    <div class="actions" id="supplement-actions"><a class="action-button" href="#step-translation">查看翻译明细</a><button id="sync-registers" type="button">同步已填写值并打开寄存器位域</button></div>
+    <p class="help">只传递已填写且格式有效的寄存器和 PTE；寄存器位域页会保留完整字段目录，并标出本次带过去的现场值。数据只在当前标签页的临时存储里传递，不上传、不进链接。</p>
+    <p id="sync-error" class="error" role="alert"></p>
   </section>
   <noscript><div class="card">请启用 JavaScript 以使用本地解码和原因码表。页面无需联网。</div></noscript>
 </main>
@@ -628,9 +653,22 @@ function relevantRoutingCSRs(trap) {
   return set;
 }
 
+const MEMORY_CAUSES = [0n, 1n, 4n, 5n, 6n, 7n, 12n, 13n, 15n, 20n, 21n, 23n];
+const WIZARD_STEPS = ['cause', 'context', 'routing', 'instruction', 'address', 'translation', 'external'];
+
+function isMemoryTrap(trap) {
+  return !!trap && !trap.interrupt && MEMORY_CAUSES.includes(trap.code);
+}
+
+function trapStepVisibility(trap) {
+  if (!trap) return { cause:true, context:false, routing:false, instruction:false, address:false, translation:false, external:false };
+  const memory = isMemoryTrap(trap);
+  return { cause:true, context:true, routing:true, instruction:!trap.interrupt, address:memory, translation:memory, external:true };
+}
+
 function applyCauseLayout(trap) {
   const get = id => document.getElementById(id);
-  const memory = trap && !trap.interrupt && [0n, 1n, 4n, 5n, 6n, 7n, 12n, 13n, 15n, 20n, 21n, 23n].includes(trap.code);
+  const memory = isMemoryTrap(trap);
   const guest = trap && !trap.interrupt && [20n, 21n, 23n].includes(trap.code);
   const pageFault = trap && !trap.interrupt && [12n, 13n, 15n].includes(trap.code);
   const hstatusShown = trap && (guest || (!trap.interrupt && [10n, 22n].includes(trap.code)) || (trap.interrupt && [2n, 6n, 10n, 12n].includes(trap.code)));
@@ -644,17 +682,14 @@ function applyCauseLayout(trap) {
   const relevant = relevantRoutingCSRs(trap);
   ROUTING_CSRS.forEach(id => { const group = get(id)?.closest('.input-group'); if (group) group.hidden = !relevant.includes(id); });
   const routingTitle = trap?.interrupt ? '中断使能、挂起与委托' : '异常委托与目标级';
-  get('routing-input-section-heading').textContent = routingTitle;
   get('routing-analysis-title').textContent = routingTitle;
-  get('layout-hint').hidden = !!trap;
-  get('status-input-section').hidden = !trap;
-  get('routing-input-section').hidden = !trap;
-  get('gpr-input-section').hidden = !trap || trap.interrupt;
-  get('gpr-card').hidden = !trap || trap.interrupt;
-  get('context').hidden = !trap;
   get('gpr-snapshot-group').hidden = !memory;
   get('gpr-inputs').hidden = !memory;
+  get('supplement-panel').hidden = !trap;
   get('supplement-actions').hidden = !trap;
+  const visibility = trapStepVisibility(trap);
+  WIZARD_STEPS.forEach(step => { get('step-' + step).hidden = !visibility[step]; });
+  get('wizard-progress').hidden = !trap;
 }
 
 function walkPage(options) {
@@ -754,10 +789,9 @@ function walkPage(options) {
 
 function renderPage(trap) {
   const get = id => document.getElementById(id);
-  const pageFault = trap && !trap.interrupt && [0n, 1n, 4n, 5n, 6n, 7n, 12n, 13n, 15n, 20n, 21n, 23n].includes(trap.code);
+  const pageFault = isMemoryTrap(trap);
   get('page-analysis').dataset.missingInput = '';
-  get('page-panel').hidden = !pageFault;
-  get('page-input-section').hidden = !pageFault;
+  get('step-translation').hidden = !pageFault;
   if (!pageFault) return;
   const stage = get('walk-stage').value;
   const xlen = Number(get('xlen').value);
@@ -911,7 +945,7 @@ function evidencePlan(trap, data) {
       if (data.stage !== 'g' && trap.mtval !== null && data.walkAddress !== null && data.walkAddress !== trap.mtval) { translationState = 'conflict'; translationText += ' 当前翻译地址和 tval 不同，可能不是同一次现场。'; }
       if (accessFault) translationText += ' 原因码是访问故障，不能直接归为普通的 PTE 权限错误；继续核对页表物理访问和最终 PA。';
       if (data.stage === 'vs') translationText += ' VS-stage 的输出只是 GPA：要继续查 hgatp 和这个 GPA 在 G-stage 的各级 PTE / 遍历记录，才能得到 PA。';
-      add('translation', '访问 → 翻译阶段 → PTE / PA', translationState, translationText, guest && data.stage !== 'g' ? 'walk-stage' : data.pageMissingInput || 'page-panel');
+      add('translation', '访问 → 翻译阶段 → PTE / PA', translationState, translationText, guest && data.stage !== 'g' ? 'walk-stage' : data.pageMissingInput || 'step-translation');
     }
   }
   const externalTitle = trap.interrupt ? '中断来源与平台证据'
@@ -920,15 +954,21 @@ function evidencePlan(trap, data) {
     : pageFault ? '实际翻译记录（TLB / page walk）'
     : ({ 2:'实际 ISA 与扩展配置', 3:'断点机制与调试配置', 16:'原始陷阱与双重陷阱控制', 18:'控制流扩展现场', 19:'平台错误记录', 22:'V 状态与陷入控制' })[Number(code)]
     || (trap.cause.ecall ? '调用 ABI 与服务号' : trap.cause.known ? '平台与执行记录' : '目标规范与平台定义');
-  add('external', externalTitle, 'review', external, 'external-panel');
+  add('external', externalTitle, 'review', external, 'step-external');
   return { items, path, external };
 }
 
+const EVIDENCE_STEP = { context:'context', routing:'routing', instruction:'instruction', address:'address', operands:'address', gpa:'address', translation:'translation', external:'external' };
+const STEP_BADGE = { active:'待补充', blocked:'待核实', done:'已完成', conflict:'有冲突' };
+
 function renderEvidence(trap) {
   const get = id => document.getElementById(id);
-  get('evidence-list').replaceChildren();
-  get('external-panel').hidden = !trap;
-  if (!trap) { get('evidence-summary').textContent = ''; get('next-step').textContent = ''; return; }
+  WIZARD_STEPS.forEach(step => { const slot = get('evidence-slot-' + step); if (slot) slot.replaceChildren(); });
+  if (!trap) {
+    get('evidence-summary').textContent = ''; get('next-step').textContent = ''; get('wizard-path').textContent = '';
+    get('step-cause').dataset.state = 'active'; get('step-cause-status').textContent = '待填';
+    return;
+  }
   const errors = {};
   const read = (id, width = trap.xlen) => { try { return optionalUnsigned(get(id).value, width, get(id).labels?.[0]?.textContent || id); } catch (error) { errors[id] = error.message; return null; } };
   const data = {
@@ -942,26 +982,61 @@ function renderEvidence(trap) {
   data.statusError = errors.status; data.wordError = errors['fault-instruction']; data.instructionEpcError = errors['instruction-epc'];
   const plan = evidencePlan(trap, data);
   get('external-guidance').textContent = plan.external;
+  get('wizard-path').textContent = '定位主线：' + plan.path;
   const labels = { missing:'缺少', provided:'已提供', review:'待核实', conflict:'不一致' };
+  const byStep = {};
   plan.items.forEach(item => {
-    const li = element('li', 'evidence-item'); li.dataset.state = item.state; li.dataset.evidence = item.id;
-    li.append(element('strong', '', labels[item.state] + ' · ' + item.title), element('p', '', item.text));
-    const inputAnchor = { 'gpr-heading':'gpr-inputs', 'page-panel':'page-input-section', 'external-panel':'external-panel' }[item.anchor] || item.anchor;
+    const step = EVIDENCE_STEP[item.id] || 'external';
+    (byStep[step] ||= []).push(item);
+    const slot = get('evidence-slot-' + step);
+    const card = element('div', 'evidence-item'); card.dataset.state = item.state; card.dataset.evidence = item.id;
+    card.append(element('strong', '', labels[item.state] + ' · ' + item.title), element('p', '', item.text));
+    const inputAnchor = { 'gpr-heading':'gpr-inputs', 'step-translation':'walk-inputs', 'step-external':'step-external' }[item.anchor] || item.anchor;
     const link = element('a', 'action-button', ['missing', 'conflict'].includes(item.state) ? '前往补充输入' : '查看对应输入'); link.href = '#' + inputAnchor;
-    link.addEventListener('click', () => { const node = get(inputAnchor); if (node.matches('input, select, textarea, button')) node.focus({ preventScroll:true }); });
-    li.append(link); get('evidence-list').append(li);
+    link.addEventListener('click', () => { const node = get(inputAnchor); if (node && node.matches && node.matches('input, select, textarea, button')) node.focus({ preventScroll:true }); });
+    card.append(link); slot.append(card);
   });
+  document.querySelectorAll('.wizard-step').forEach(sec => sec.classList.remove('is-current'));
+  let currentStep = null;
+  const mark = (step, state) => {
+    const section = get('step-' + step);
+    const badge = get('step-' + step + '-status');
+    section.dataset.state = state;
+    if (badge) { badge.textContent = STEP_BADGE[state] || ''; badge.dataset.state = state; }
+    if ((state === 'active' || state === 'blocked') && !currentStep && !section.hidden) currentStep = step;
+  };
+  WIZARD_STEPS.filter(step => step !== 'cause').forEach(step => {
+    if (get('step-' + step).hidden) return;
+    const items = byStep[step] || [];
+    const has = s => items.some(item => item.state === s);
+    if (items.length) {
+      if (has('conflict')) mark(step, 'conflict');
+      else if (has('missing')) mark(step, 'active');
+      else if (has('review')) mark(step, 'blocked');
+      else mark(step, 'done');
+    } else if (step === 'routing') {
+      const filled = relevantRoutingCSRs(trap).some(id => { const node = get(id); return node && node.value.trim() !== ''; });
+      mark(step, filled ? 'done' : 'active');
+    } else mark(step, 'done');
+  });
+  const causeHasError = get('input-error').textContent.trim() !== '';
+  mark('cause', causeHasError ? 'active' : 'done');
+  if (causeHasError) currentStep = 'cause';
+  if (!currentStep) currentStep = 'external';
+  const current = get('step-' + currentStep);
+  if (current && !current.hidden) current.classList.add('is-current');
   const count = state => plan.items.filter(item => item.state === state).length;
   get('evidence-summary').textContent = '缺少 ' + count('missing') + ' 项 · 不一致 ' + count('conflict') + ' 项 · 待核实 ' + count('review') + ' 项 · 已提供 ' + count('provided') + ' 项。“已提供”不等于已验证；填满表单也不等于根因确定。';
   const next = get('next-step');
+  next.dataset.targetStep = currentStep;
   const first = plan.items.find(item => item.state === 'missing' || item.state === 'conflict');
   const reviews = plan.items.filter(item => item.state === 'review');
-  if (first) { next.dataset.state = 'fault'; next.textContent = '下一步：' + first.title + ' —— ' + first.text; }
+  if (first) { next.dataset.state = 'fault'; next.textContent = '下一步：' + first.title + ' —— ' + first.text + '（点击跳到第 ' + (WIZARD_STEPS.indexOf(currentStep) + 1) + ' 步）'; }
   else {
     next.dataset.state = 'candidate';
     const specific = reviews.filter(item => item.id !== 'external');
-    if (specific.length) next.textContent = '输入已基本齐全；下一步：核实 ' + specific.map(item => item.title).join('、') + '。';
-    else if (reviews.length) next.textContent = '输入已基本齐全；下一步：按下方清单中平台证据项的说明补充现场。';
+    if (specific.length) next.textContent = '输入已基本齐全；下一步：核实 ' + specific.map(item => item.title).join('、') + '。（点击跳到第 ' + (WIZARD_STEPS.indexOf(currentStep) + 1) + ' 步）';
+    else if (reviews.length) next.textContent = '输入已基本齐全；下一步：按最后一步平台证据项的说明补充现场。';
     else next.textContent = '关键输入都齐了。';
   }
 }
@@ -991,8 +1066,12 @@ function renderDecode() {
     try { inputValue('mtval2', xlen); } catch (error) { errors.push(error.message); }
   }
   get('input-error').textContent = errors.join(' ');
-  get('result').hidden = !hasCause || errors.length > 0;
-  if (hasCause && !errors.length) {
+  const decoded = hasCause && !errors.length;
+  get('cause-name').hidden = !decoded;
+  get('trap-summary').hidden = !decoded;
+  get('context-note').hidden = !decoded;
+  get('trap-kind').hidden = !decoded;
+  if (decoded) {
     const result = decodeTrap(get('mcause').value, get('mepc').value, get('mtval').value, xlen);
     result.target = target;
     result.guestFault = target !== 'VS' && !result.interrupt && [20n, 21n, 23n].includes(result.code);
@@ -1056,28 +1135,6 @@ function addClearButton(section, heading, title) {
   heading.append(button);
 }
 
-function arrangeInputPanel() {
-  const get = id => document.getElementById(id);
-  const groups = [
-    ['status-input-section', '状态 CSR 与采样时点', ['status-inputs'], '使用同一次陷阱的状态；先确认是陷入前打的，还是入口保存的。'],
-    ['routing-input-section', '中断使能、挂起与委托', ['routing-inputs'], '按原因补相关 CSR，没采集就留空；没列出来的路由寄存器和当前原因无关。'],
-    ['gpr-input-section', '故障指令与通用寄存器现场', ['instruction-inputs', 'gpr-inputs'], '先填机器码，这里只显示这条指令计算地址用到的源寄存器；蓝色高亮的输入框就是需要的，其余不用填。x0 固定为零。向量访存还会高亮 vtype / vl / vstart 等向量 CSR。'],
-    ['page-input-section', '地址翻译与逐级 PTE 输入', ['walk-inputs', 'walk-actions'], '从最高级开始填真实 PTE。留空表示未知；填 unreadable 表示读取失败。寻址和权限结果在下方展示。']
-  ];
-  groups.forEach(([id, title, children, help]) => {
-    const section = element('section', 'input-section'); section.id = id;
-    const heading = element('h3', '', title); heading.id = id + '-heading';
-    section.setAttribute('aria-labelledby', heading.id);
-    addClearButton(section, heading, title);
-    section.append(heading, element('p', 'help', help));
-    children.forEach(child => section.append(get(child)));
-    if (id === 'page-input-section') {
-      const ptes = element('div', 'context-grid'); ptes.id = 'pte-inputs'; section.append(ptes);
-    }
-    get('snapshot-input-sections').append(section);
-  });
-}
-
 function snapshotRegisters() {
   const get = id => document.getElementById(id);
   const width = Number(get('xlen').value);
@@ -1092,7 +1149,7 @@ function snapshotRegisters() {
   if (!get('mtval2-group').hidden) defs.push(['mtval2', registerName('mtval2', target)]);
   ABI_NAMES.forEach((_, index) => defs.push(['gpr-' + index, 'gpr']));
   if (width === 32 && target === 'M') defs.push(['mstatush', 'mstatush']);
-  if (!get('page-panel').hidden) {
+  if (!get('step-translation').hidden) {
     defs.push(['walk-root', { s:'satp', vs:'vsatp', g:'hgatp' }[get('walk-stage').value]]);
     for (let level = 4; level >= 0; level--) if (!get('pte-input-group-' + level).hidden) defs.push(['pte-' + level, 'pte']);
   }
@@ -1185,11 +1242,9 @@ function loadDefaultFault() {
 
 function init() {
   const get = id => document.getElementById(id);
-  arrangeInputPanel();
   ABI_NAMES.forEach((name, index) => addSnapshotInput(get('gpr-inputs'), 'gpr-' + index, 'x' + index + ' / ' + name, index === 0));
   ROUTING_CSRS.forEach(id => addSnapshotInput(get('routing-inputs'), id, id));
-  const extra = element('details', ''); extra.id = 'extra-register-inputs';
-  extra.append(element('summary', '', '日志补充寄存器（安全配置 / RNMI / 浮点 / 向量 —— 排查常见原因一般用不上，向量访存时自动展开）'));
+  const extra = get('extra-register-inputs');
   const extraHeading = element('h3', '', '日志补充寄存器 · 安全配置 / RNMI / 浮点 / 向量');
   extra.append(extraHeading, element('p', 'help', 'F/V 按日志里的 128 位槽位保存，十六进制高低半部用下划线分开；它们不是 XLEN 宽度。STATUS 与 X0 的原始槽位单独保留，不覆盖架构状态；分页 CSR 的原值与诊断用的根表输入也分开保存。'));
   const extraGrid = element('div', 'context-grid');
@@ -1197,13 +1252,7 @@ function init() {
   extra.append(extraGrid);
   const errors = element('p', 'error'); errors.id = 'extra-register-errors'; errors.setAttribute('role', 'alert'); errors.style.gridColumn = '1 / -1'; extra.append(errors);
   addClearButton(extra, extraHeading, '日志补充寄存器');
-  get('snapshot-input-sections').append(extra);
   for (let level = 4; level >= 0; level--) {
-    const row = element('tr');
-    row.id = 'pte-row-' + level;
-    row.append(element('td', '', 'L' + level));
-    const address = element('td'); address.id = 'pte-address-' + level;
-    const inputCell = element('td'); inputCell.id = 'pte-raw-' + level;
     const inputGroup = element('div', 'input-group'); inputGroup.id = 'pte-input-group-' + level;
     const label = element('label', '', 'L' + level + ' PTE 原始值'); label.htmlFor = 'pte-' + level;
     const input = element('input', 'pte-input'); input.id = 'pte-' + level;
@@ -1211,6 +1260,11 @@ function init() {
     input.setAttribute('aria-label', 'L' + level + ' PTE 原始值');
     input.spellcheck = false; input.autocomplete = 'off';
     inputGroup.append(label, input); get('pte-inputs').append(inputGroup);
+    const row = element('tr');
+    row.id = 'pte-row-' + level;
+    row.append(element('td', '', 'L' + level));
+    const address = element('td'); address.id = 'pte-address-' + level;
+    const inputCell = element('td'); inputCell.id = 'pte-raw-' + level;
     const verdict = element('td'); verdict.id = 'pte-verdict-' + level;
     row.append(address, inputCell, verdict); get('pte-rows').append(row);
   }
@@ -1226,6 +1280,20 @@ function init() {
     }
     if (event.target.matches('select')) renderDecode();
   });
+  document.querySelectorAll('.step-clear').forEach(button => {
+    button.addEventListener('click', () => clearInputs(get(button.dataset.clear)));
+  });
+  const jumpToCurrent = () => {
+    const step = get('next-step').dataset.targetStep;
+    if (!step) return;
+    const section = get('step-' + step);
+    if (!section || section.hidden) return;
+    section.scrollIntoView({ behavior:'smooth', block:'start' });
+    const first = section.querySelector('input:not([readonly]):not([type=hidden]), select');
+    if (first) setTimeout(() => first.focus({ preventScroll:true }), 350);
+  };
+  get('next-step').addEventListener('click', jumpToCurrent);
+  get('next-step').addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); jumpToCurrent(); } });
   get('use-tval').addEventListener('click', () => {
     if (currentTrap && currentTrap.mtval !== null && get('walk-stage').value !== 'g') {
       get('walk-address').value = formatHex(currentTrap.mtval, currentTrap.xlen);
@@ -1275,7 +1343,7 @@ function init() {
   }
   updateScrollMargin();
   window.addEventListener('resize', updateScrollMargin);
-  PageState.bind({ selector:'#input-panel input, #input-panel select, #supplement-panel input, #supplement-panel select',
+  PageState.bind({ selector:'#wizard input, #wizard select',
     read:() => ({ exampleVisible:!get('default-fault-note').hidden }),
     restore:extra => { get('default-fault-note').hidden = extra?.exampleVisible !== true; }, render:renderDecode });
 }
